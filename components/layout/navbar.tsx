@@ -32,8 +32,8 @@ export default function Navbar({ user }: { user: User }) {
 
   return (
     <header style={{ background: '#0d102098', borderBottom: '1px solid #252d4a', backdropFilter: 'blur(16px)' }}
-      className="sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between h-16">
+      className="sticky top-0 z-50 w-full overflow-hidden">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between h-16 w-full">
 
         {/* Logo */}
         <Link href="/dashboard" className="flex items-center flex-shrink-0">
