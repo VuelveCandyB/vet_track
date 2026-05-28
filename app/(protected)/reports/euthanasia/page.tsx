@@ -45,7 +45,7 @@ export default async function EuthanasiaReportPage({
     <div>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-white" style={{ fontFamily: '"Dela Gothic One", sans-serif' }}>
+          <h1 className="text-2xl font-bold text-white" style={{ fontFamily: 'var(--font-dela)' }}>
             Reporte — Eutanasias
           </h1>
           <p className="text-sm mt-1" style={{ color: '#4a5280' }}>Registro histórico de eutanasias</p>

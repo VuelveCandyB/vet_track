@@ -27,7 +27,7 @@ export default async function AdminCatalogPage() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-white" style={{ fontFamily: '"Dela Gothic One", sans-serif' }}>
+        <h1 className="text-2xl font-bold text-white" style={{ fontFamily: 'var(--font-dela)' }}>
           Admin
         </h1>
         <p className="text-sm mt-1" style={{ color: '#4a5280' }}>Gestión del sistema</p>

@@ -53,7 +53,7 @@ export default async function HorsesPage({
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-white" style={{ fontFamily: '"Dela Gothic One", sans-serif' }}>
+          <h1 className="text-2xl font-bold text-white" style={{ fontFamily: 'var(--font-dela)' }}>
             Caballos
           </h1>
           <p className="text-sm mt-1" style={{ color: '#4a5280' }}>

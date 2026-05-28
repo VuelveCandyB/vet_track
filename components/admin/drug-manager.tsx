@@ -127,7 +127,7 @@ export default function DrugManager({ drugs }: { drugs: Drug[] }) {
         <SheetContent side="right" className="w-[520px] max-w-full overflow-y-auto"
           style={{ background: '#131829', border: '1px solid #252d4a' }}>
           <SheetHeader className="mb-6">
-            <SheetTitle className="text-white" style={{ fontFamily: '"Dela Gothic One", sans-serif' }}>
+            <SheetTitle className="text-white" style={{ fontFamily: 'var(--font-dela)' }}>
               {editing ? 'Editar medicamento' : 'Agregar medicamento'}
             </SheetTitle>
           </SheetHeader>

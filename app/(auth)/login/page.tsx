@@ -21,7 +21,7 @@ export default async function LoginPage() {
           <img src="/logo-horizontal-blanco.svg" alt="Hipódromo Camarero"
             className="h-10 w-auto mx-auto mb-8" style={{ filter: 'brightness(0) invert(1)' }} />
           <h2 className="text-3xl font-bold text-white leading-tight"
-            style={{ fontFamily: '"Dela Gothic One", sans-serif' }}>
+            style={{ fontFamily: 'var(--font-dela)' }}>
             Sistema de<br />
             <span style={{ color: '#C8F135' }}>Medicación Equina</span>
           </h2>
