@@ -39,7 +39,8 @@ export default function Navbar({ user }: { user: User }) {
         <Link href="/dashboard" className="flex items-center flex-shrink-0">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/logo-horizontal-blanco.svg" alt="Hipódromo Camarero"
-            className="h-7 sm:h-8 w-auto" style={{ filter: 'brightness(0) invert(1)' }} />
+            className="h-7 sm:h-8 w-auto max-w-[140px] sm:max-w-[200px]"
+            style={{ filter: 'brightness(0) invert(1)' }} />
         </Link>
 
         {/* Desktop nav */}
