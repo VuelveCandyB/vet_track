@@ -104,8 +104,15 @@ export default function Navbar({ user }: { user: User }) {
       </div>
 
       {/* Mobile menu */}
-      {menuOpen && (
-        <div className="md:hidden px-4 pb-4 space-y-1" style={{ borderTop: '1px solid #252d4a' }}>
+      <div
+        className="md:hidden overflow-hidden transition-[max-height,opacity] duration-200 ease-out"
+        style={{
+          maxHeight: menuOpen ? '400px' : '0px',
+          opacity: menuOpen ? 1 : 0,
+          borderTop: menuOpen ? '1px solid #252d4a' : 'none',
+        }}
+      >
+        <div className="px-4 pb-4 space-y-1">
           {navItems.map(({ href, label }) => (
             <Link key={href} href={href}
               onClick={() => setMenuOpen(false)}
@@ -125,7 +132,7 @@ export default function Navbar({ user }: { user: User }) {
             </button>
           </div>
         </div>
-      )}
+      </div>
     </header>
   )
 }
