@@ -83,6 +83,8 @@
 @layer base {
   * {
     @apply border-border outline-ring/50;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
   }
   html {
     @apply font-sans;
@@ -91,11 +93,12 @@
       radial-gradient(ellipse at 15% 0%, #2B55F428 0%, transparent 55%),
       radial-gradient(ellipse at 85% 100%, #1B2A6B22 0%, transparent 50%);
     background-attachment: fixed;
-    min-height: 100vh;
+    min-height: 100dvh;
   }
   body {
     @apply bg-transparent text-foreground;
     font-family: 'Inter', sans-serif;
+    min-height: 100dvh;
   }
   input[type="date"],
   input[type="datetime-local"] {

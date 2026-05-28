@@ -51,7 +51,7 @@ export default async function HorsesPage({
   return (
     <div>
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
         <div>
           <h1 className="text-2xl font-bold text-white" style={{ fontFamily: '"Dela Gothic One", sans-serif' }}>
             Caballos
@@ -60,16 +60,16 @@ export default async function HorsesPage({
             {total ?? 0} ejemplares registrados
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <SyncButton />
-          <Link href="/horses/new">
-            <Button style={{ background: '#2B55F4' }}>+ Nuevo Caballo</Button>
+          <Link href="/horses/new" className="flex-1 sm:flex-none">
+            <Button style={{ background: '#2B55F4' }} className="w-full sm:w-auto">+ Nuevo Caballo</Button>
           </Link>
         </div>
       </div>
 
       {/* Search */}
-      <form method="get" className="mb-5 flex gap-3 max-w-md">
+      <form method="get" className="mb-5 flex gap-3 w-full max-w-md">
         <Input name="q" defaultValue={q} placeholder="Buscar por nombre..." className="flex-1" />
         <Button type="submit" variant="secondary">Buscar</Button>
         {q && (

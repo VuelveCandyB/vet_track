@@ -1,4 +1,5 @@
 'use client'
+import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import type { User } from '@supabase/supabase-js'
@@ -9,6 +10,7 @@ export default function Navbar({ user }: { user: User }) {
   const pathname = usePathname()
   const router = useRouter()
   const isAdmin = user.email === ADMIN_EMAIL
+  const [menuOpen, setMenuOpen] = useState(false)
 
   async function handleLogout() {
     const supabase = createClient()
@@ -17,57 +19,49 @@ export default function Navbar({ user }: { user: User }) {
     router.refresh()
   }
 
-  function navClass(href: string) {
-    const active = href === '/dashboard'
-      ? pathname === '/dashboard'
-      : pathname.startsWith(href)
-    return active
-      ? 'px-4 py-1.5 text-sm font-medium text-white rounded-t-md border-b-2'
-      : 'px-4 py-1.5 text-sm font-medium rounded-md transition-colors hover:text-white'
-  }
+  const navItems = [
+    { href: '/dashboard', label: 'Dashboard' },
+    { href: '/horses',    label: 'Caballos' },
+    { href: '/reports',   label: 'Reportes' },
+    ...(isAdmin ? [{ href: '/admin', label: 'Admin' }] : []),
+  ]
 
-  function navStyle(href: string) {
-    const active = href === '/dashboard'
-      ? pathname === '/dashboard'
-      : pathname.startsWith(href)
-    return active
-      ? { background: '#2B55F420', borderColor: '#C8F135', color: '#fff' }
-      : { color: '#4a5280' }
+  function isActive(href: string) {
+    return href === '/dashboard' ? pathname === '/dashboard' : pathname.startsWith(href)
   }
 
   return (
     <header style={{ background: '#0d102098', borderBottom: '1px solid #252d4a', backdropFilter: 'blur(16px)' }}
       className="sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-6 flex items-center justify-between h-16">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between h-16">
 
         {/* Logo */}
         <Link href="/dashboard" className="flex items-center flex-shrink-0">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/logo-horizontal-blanco.svg" alt="Hipódromo Camarero"
-            className="h-8 w-auto" style={{ filter: 'brightness(0) invert(1)' }} />
+            className="h-7 sm:h-8 w-auto" style={{ filter: 'brightness(0) invert(1)' }} />
         </Link>
 
-        {/* Nav links */}
-        <nav className="flex gap-0.5">
-          {[
-            { href: '/dashboard', label: 'Dashboard' },
-            { href: '/horses',    label: 'Caballos' },
-            { href: '/reports',   label: 'Reportes' },
-            ...(isAdmin ? [{ href: '/admin', label: 'Admin' }] : []),
-          ].map(({ href, label }) => (
-            <Link key={href} href={href} className={navClass(href)} style={navStyle(href)}>
+        {/* Desktop nav */}
+        <nav className="hidden md:flex gap-0.5">
+          {navItems.map(({ href, label }) => (
+            <Link key={href} href={href}
+              className="px-4 py-1.5 text-sm font-medium rounded-md transition-colors -mb-px border-b-2"
+              style={isActive(href)
+                ? { background: '#2B55F420', color: '#fff', borderColor: '#C8F135', borderRadius: '6px 6px 0 0' }
+                : { color: '#4a5280', borderColor: 'transparent' }}>
               {label}
             </Link>
           ))}
         </nav>
 
-        {/* User */}
-        <div className="flex items-center gap-3">
+        {/* Desktop user */}
+        <div className="hidden md:flex items-center gap-3">
           <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold text-white flex-shrink-0"
             style={{ background: '#2B55F4' }}>
             {user.email?.[0].toUpperCase() ?? '?'}
           </div>
-          <div className="hidden sm:block">
+          <div className="hidden lg:block">
             <div className="text-sm font-medium" style={{ color: '#e2e8f0' }}>{user.email}</div>
             <div className="text-xs" style={{ color: '#4a5280' }}>Veterinario</div>
           </div>
@@ -78,7 +72,52 @@ export default function Navbar({ user }: { user: User }) {
           </button>
         </div>
 
+        {/* Mobile: avatar + hamburger */}
+        <div className="flex md:hidden items-center gap-3">
+          <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold text-white"
+            style={{ background: '#2B55F4' }}>
+            {user.email?.[0].toUpperCase() ?? '?'}
+          </div>
+          <button onClick={() => setMenuOpen(!menuOpen)}
+            className="p-2 rounded-md transition-colors"
+            style={{ color: '#9ca3af' }}
+            aria-label="Menú">
+            {menuOpen ? (
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            ) : (
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+              </svg>
+            )}
+          </button>
+        </div>
       </div>
+
+      {/* Mobile menu */}
+      {menuOpen && (
+        <div className="md:hidden px-4 pb-4 space-y-1" style={{ borderTop: '1px solid #252d4a' }}>
+          {navItems.map(({ href, label }) => (
+            <Link key={href} href={href}
+              onClick={() => setMenuOpen(false)}
+              className="flex items-center px-4 py-3 rounded-lg text-sm font-medium transition-colors"
+              style={isActive(href)
+                ? { background: '#2B55F420', color: '#fff', borderLeft: '3px solid #C8F135' }
+                : { color: '#9ca3af' }}>
+              {label}
+            </Link>
+          ))}
+          <div className="pt-2 mt-2" style={{ borderTop: '1px solid #1e2235' }}>
+            <div className="px-4 py-2 text-xs" style={{ color: '#4a5280' }}>{user.email}</div>
+            <button onClick={handleLogout}
+              className="w-full text-left px-4 py-3 rounded-lg text-sm transition-colors"
+              style={{ color: '#f87171' }}>
+              Cerrar sesión
+            </button>
+          </div>
+        </div>
+      )}
     </header>
   )
 }

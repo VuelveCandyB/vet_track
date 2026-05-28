@@ -25,7 +25,7 @@ export default async function NewHorsePage() {
         </CardHeader>
         <CardContent>
           <form action={createHorse} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="col-span-2 space-y-1.5">
                 <Label style={{ color: '#6b7399' }}>Nombre *</Label>
                 <Input name="name" required placeholder="NOMBRE DEL CABALLO" />
