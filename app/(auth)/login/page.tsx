@@ -19,7 +19,7 @@ export default async function LoginPage() {
         <div className="relative text-center">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/logo-horizontal-blanco.svg" alt="Hipódromo Camarero"
-            className="h-10 w-auto mx-auto mb-8" style={{ filter: 'brightness(0) invert(1)' }} />
+            className="h-10 w-auto max-w-full mx-auto mb-8" />
           <h2 className="text-3xl font-bold text-white leading-tight"
             style={{ fontFamily: 'var(--font-dela)' }}>
             Sistema de<br />
@@ -32,7 +32,11 @@ export default async function LoginPage() {
       </div>
 
       {/* Panel derecho — formulario */}
-      <div className="flex-1 flex items-center justify-center px-8 py-12">
+      <div className="flex-1 flex flex-col items-center justify-center px-8 py-12">
+        {/* Logo visible solo en móvil (el panel izquierdo está oculto en mobile) */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/logo-stacked-blanco.svg" alt="Hipódromo Camarero"
+          className="md:hidden h-14 w-auto mb-8" />
         <LoginForm />
       </div>
 
