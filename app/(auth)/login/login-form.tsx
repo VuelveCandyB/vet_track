@@ -77,7 +77,7 @@ export default function LoginForm() {
         </Button>
 
         <div className="text-center mt-3">
-          <Link href="/forgot-password" className="text-xs underline transition-colors hover:text-white"
+          <Link href="/reset-password" className="text-xs underline transition-colors hover:text-white"
             style={{ color: '#4a5280' }}>
             ¿Olvidaste tu contraseña?
           </Link>

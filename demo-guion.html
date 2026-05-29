@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Guion Demo VetTrack</title>
+  <style>
+    body { font-family: Calibri, Arial, sans-serif; max-width: 750px; margin: 40px auto; color: #1a1a1a; font-size: 14px; line-height: 1.7; }
+    h1 { font-size: 22px; border-bottom: 2px solid #2B55F4; padding-bottom: 8px; margin-bottom: 4px; }
+    .meta { color: #666; font-size: 12px; margin-bottom: 32px; }
+    h2 { font-size: 14px; background: #2B55F4; color: white; padding: 6px 12px; border-radius: 4px; margin-top: 28px; margin-bottom: 4px; }
+    .tiempo { font-size: 11px; color: #888; font-style: italic; margin-bottom: 8px; }
+    .accion { background: #f0f4ff; border-left: 3px solid #2B55F4; padding: 6px 12px; border-radius: 0 4px 4px 0; font-size: 12px; color: #444; margin-bottom: 6px; }
+    blockquote { margin: 6px 0 6px 16px; padding: 8px 12px; border-left: 3px solid #ccc; background: #fafafa; border-radius: 0 4px 4px 0; font-style: italic; }
+    .total { background: #f5f5f5; border: 1px solid #ddd; padding: 12px 16px; border-radius: 6px; margin-top: 36px; font-size: 13px; }
+    .total strong { font-size: 15px; }
+    @media print { body { margin: 20px; } }
+  </style>
+</head>
+<body>
+
+<h1>Guion Demo — VetTrack</h1>
+<p class="meta">Hipódromo Camarero · Demo ejecutivo · ~5 minutos</p>
+
+<h2>INTRO</h2>
+<div class="tiempo">⏱ 20 seg</div>
+<blockquote>"VetTrack es el sistema de registro médico del hipódromo. Te muestro las funciones principales en cinco minutos."</blockquote>
+
+<h2>LOGIN</h2>
+<div class="tiempo">⏱ 20 seg</div>
+<div class="accion">Abrir la URL. Hacer login.</div>
+<blockquote>"Los veterinarios entran con email y contraseña. Acceso interno."</blockquote>
+
+<h2>DASHBOARD</h2>
+<div class="tiempo">⏱ 40 seg</div>
+<div class="accion">Señalar las tarjetas de stats y la sección de vetlist.</div>
+<blockquote>"Al entrar ven el resumen del día: caballos activos, en descanso, en vetlist, y medicaciones registradas hoy. Aquí también aparecen los caballos que necesitan atención."</blockquote>
+
+<h2>CABALLOS + FICHA</h2>
+<div class="tiempo">⏱ 1 min</div>
+<div class="accion">Ir a Caballos. Abrir un caballo.</div>
+<blockquote>"La lista se sincroniza automáticamente con el hipódromo — no se carga a mano. En la ficha de cada caballo está su información y el historial médico completo: medicamento, dosis, veterinario, fecha, y si tiene tiempo de retiro regulatorio lo muestra aquí."</blockquote>
+<div class="accion">Señalar un registro con restricción.</div>
+
+<h2>REGISTRAR MEDICAMENTO</h2>
+<div class="tiempo">⏱ 1 min 20 seg</div>
+<div class="accion">Clic en "+ Registrar Medicamento".</div>
+<blockquote>"Cuando se administra un medicamento se registra así. Se selecciona la vía de administración, el propósito, y se filtra por categoría para encontrar el fármaco."</blockquote>
+<div class="accion">Seleccionar vía, propósito, categoría y fármaco. Mostrar el compliance panel.</div>
+<blockquote>"Al seleccionar el fármaco, el sistema muestra automáticamente el tiempo de retiro y detección según el reglamento. Se anota la dosis, se adjunta la receta si aplica, y se guarda."</blockquote>
+<div class="accion">Cerrar sin guardar.</div>
+
+<h2>VETLIST</h2>
+<div class="tiempo">⏱ 30 seg</div>
+<div class="accion">Mostrar el banner de vetlist en un caballo.</div>
+<blockquote>"Si un caballo queda fuera de competencia, se agrega a la vetlist. El sistema lleva la fecha de entrada, el motivo y el período de descanso. Un veterinario lo libera cuando está listo."</blockquote>
+
+<h2>REPORTES</h2>
+<div class="tiempo">⏱ 30 seg</div>
+<div class="accion">Ir a Reportes → Medicamentos. Aplicar un filtro.</div>
+<blockquote>"Los reportes permiten filtrar todas las medicaciones por caballo, fármaco, veterinario o fecha. Útil para auditorías y control de compliance."</blockquote>
+
+<h2>CIERRE</h2>
+<div class="tiempo">⏱ 20 seg</div>
+<blockquote>"Eso es VetTrack en su versión actual. Seguimos trabajando en mejoras. Cualquier pregunta con gusto."</blockquote>
+
+<div class="total">
+  <strong>⏱ Total estimado: 4 min 40 seg</strong><br/>
+  URL: <strong>https://vet-track-miguel-s-projects10.vercel.app</strong>
+</div>
+
+</body>
+</html>
