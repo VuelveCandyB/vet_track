@@ -31,6 +31,8 @@ export default function MedicationModal({ open, onClose, horseId, horseName, dru
   const [pending, startTransition] = useTransition()
   const [selectedDrug, setSelectedDrug] = useState<Drug | null>(null)
   const [fileName, setFileName] = useState('')
+  const [doseAmount, setDoseAmount] = useState('')
+  const [doseUnit, setDoseUnit] = useState('mg')
   const formRef = useRef<HTMLFormElement>(null)
 
   function handleDrugChange(nombre: string) {
@@ -46,6 +48,8 @@ export default function MedicationModal({ open, onClose, horseId, horseName, dru
       formRef.current?.reset()
       setSelectedDrug(null)
       setFileName('')
+      setDoseAmount('')
+      setDoseUnit('mg')
       onClose()
     })
   }
@@ -150,11 +154,30 @@ export default function MedicationModal({ open, onClose, horseId, horseName, dru
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#6b7399' }}>Dosis *</Label>
-              <Input name="dose" required list="dose-suggestions"
-                placeholder={selectedDrug?.dosis_ruta || 'ej. 5 mg/kg IV'} />
-              <datalist id="dose-suggestions">
-                {doseSuggestions.map(d => <option key={d} value={d} />)}
-              </datalist>
+              <input type="hidden" name="dose" value={doseAmount ? `${doseAmount} ${doseUnit}` : ''} />
+              <div className="flex h-9 rounded-md border overflow-hidden" style={{ borderColor: '#2a2d3e' }}>
+                <input
+                  type="text"
+                  value={doseAmount}
+                  onChange={e => setDoseAmount(e.target.value)}
+                  required
+                  placeholder="ej. 5"
+                  className="flex-1 min-w-0 px-3 text-sm bg-transparent outline-none"
+                  style={{ color: '#e2e8f0' }}
+                />
+                <select
+                  value={doseUnit}
+                  onChange={e => setDoseUnit(e.target.value)}
+                  className="border-l px-2 text-sm"
+                  style={{ background: '#13162080', borderColor: '#2a2d3e', color: '#6b7399' }}
+                >
+                  <option value="mg">mg</option>
+                  <option value="ml">ml</option>
+                  <option value="mcg">mcg</option>
+                  <option value="UI">UI</option>
+                  <option value="mg/kg">mg/kg</option>
+                </select>
+              </div>
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#6b7399' }}>Cantidad</Label>
