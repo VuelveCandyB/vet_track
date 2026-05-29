@@ -34,8 +34,7 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-8 py-12" style={{ background: '#0d1020' }}>
-      <div className="w-full max-w-sm">
+    <div className="w-full max-w-sm">
 
         <h2 className="text-2xl font-bold text-white mb-1">Recuperar contraseña</h2>
         <p className="text-sm mb-7" style={{ color: '#4a5280' }}>
@@ -91,6 +90,5 @@ export default function ForgotPasswordPage() {
         </div>
 
       </div>
-    </div>
   )
 }
