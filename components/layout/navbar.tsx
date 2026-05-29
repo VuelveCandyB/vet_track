@@ -73,6 +73,11 @@ export default function Navbar({ user }: { user: User }) {
             <div className="text-sm font-medium" style={{ color: '#e2e8f0' }}>{user.email}</div>
             <div className="text-xs" style={{ color: '#4a5280' }}>Veterinario</div>
           </div>
+          <Link href="/perfil"
+            className="text-xs px-3 py-1.5 rounded-md border transition-colors hover:text-white"
+            style={{ borderColor: '#252d4a', color: '#9ca3af' }}>
+            Mi perfil
+          </Link>
           <button onClick={handleLogout}
             className="text-xs px-3 py-1.5 rounded-md border transition-colors hover:text-white"
             style={{ borderColor: '#252d4a', color: '#9ca3af' }}>
@@ -125,6 +130,11 @@ export default function Navbar({ user }: { user: User }) {
           ))}
           <div className="pt-2 mt-2" style={{ borderTop: '1px solid #1e2235' }}>
             <div className="px-4 py-2 text-xs" style={{ color: '#4a5280' }}>{user.email}</div>
+            <Link href="/perfil" onClick={() => setMenuOpen(false)}
+              className="flex items-center px-4 py-3 rounded-lg text-sm transition-colors"
+              style={{ color: '#9ca3af' }}>
+              Mi perfil
+            </Link>
             <button onClick={handleLogout}
               className="w-full text-left px-4 py-3 rounded-lg text-sm transition-colors"
               style={{ color: '#f87171' }}>
