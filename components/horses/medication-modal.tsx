@@ -71,7 +71,7 @@ export default function MedicationModal({ open, onClose, horseId, horseName, dru
           <input type="hidden" name="tipo_restriccion"      value={selectedDrug?.tipo_restriccion ?? ''} />
           <input type="hidden" name="drug_notas"            value={selectedDrug?.notas ?? ''} />
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#6b7399' }}>
                 Fecha *
@@ -147,7 +147,7 @@ export default function MedicationModal({ open, onClose, horseId, horseName, dru
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#6b7399' }}>Dosis *</Label>
               <Input name="dose" required list="dose-suggestions"

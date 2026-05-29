@@ -41,7 +41,7 @@ export default function EuthanasiaModal({ open, onClose, horseId, horseName, vet
         </DialogHeader>
 
         <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#6b7399' }}>
                 Fecha *
