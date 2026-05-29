@@ -3,7 +3,6 @@ import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
-import { Button } from '@/components/ui/button'
 import SyncButton from '@/components/horses/sync-button'
 
 const STATUS_LABEL: Record<string, string> = {
@@ -62,9 +61,6 @@ export default async function HorsesPage({
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <SyncButton />
-          <Link href="/horses/new" className="flex-1 sm:flex-none">
-            <Button style={{ background: '#2B55F4' }} className="w-full sm:w-auto">+ Nuevo Caballo</Button>
-          </Link>
         </div>
       </div>
 
