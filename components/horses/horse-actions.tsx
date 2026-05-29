@@ -18,14 +18,12 @@ interface Props {
   vetName: string
   today: string
   drugs: Drug[]
-  medTypes: string[]
-  doseSuggestions: string[]
   diasRestantes: number | null
 }
 
 export default function HorseActions({
   horse, vetlistActiva, canEuth, isAdmin, vetName, today,
-  drugs, medTypes, doseSuggestions, diasRestantes,
+  drugs, diasRestantes,
 }: Props) {
   const [open, setOpen] = useState<ModalType>(null)
   const [, startTransition] = useTransition()
@@ -123,8 +121,7 @@ export default function HorseActions({
       <MedicationModal
         open={open === 'medication'} onClose={closeAndRefresh}
         horseId={horse.id} horseName={horse.name}
-        drugs={drugs} medTypes={medTypes} doseSuggestions={doseSuggestions}
-        vetName={vetName} today={today}
+        drugs={drugs} vetName={vetName} today={today}
       />
       <VetlistModal
         open={open === 'vetlist'} onClose={closeAndRefresh}

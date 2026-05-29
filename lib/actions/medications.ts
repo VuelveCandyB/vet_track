@@ -50,6 +50,7 @@ export async function createMedication(horseId: string, formData: FormData) {
     type:                  formData.get('type'),
     drug:                  formData.get('drug'),
     dose:                  formData.get('dose'),
+    proposito:             (formData.get('proposito') as string) || null,
     quantity:              (formData.get('quantity') as string) || null,
     notes:                 (formData.get('notes') as string) || null,
     administered_at:       formData.get('administered_at'),

@@ -18,6 +18,7 @@ export interface Medication {
   type: string
   drug: string
   dose: string
+  proposito?: string
   quantity?: string
   notes?: string
   administered_at: string

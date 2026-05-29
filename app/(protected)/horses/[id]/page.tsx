@@ -65,7 +65,7 @@ export default async function HorseDetailPage({
 
   const [
     horseRes, medsRes, vetlistRes, euthRes,
-    drugsRes, catalogRes, vetName,
+    drugsRes, vetName,
     canEuth,
   ] = await Promise.all([
     supabase.from('horses').select('*').eq('id', id).single(),
@@ -73,7 +73,6 @@ export default async function HorseDetailPage({
     supabase.from('vetlist').select('*').eq('horse_id', id).order('fecha_ingreso', { ascending: false }),
     supabase.from('euthanasia').select('*').eq('horse_id', id).maybeSingle(),
     supabase.from('drugs').select('*').eq('active', true).order('nombre'),
-    supabase.from('catalog_items').select('category, name').eq('active', true).order('sort_order'),
     getVetName(supabase, user),
     canRegisterEuthanasia(user.id, user.email!),
   ])
@@ -83,10 +82,6 @@ export default async function HorseDetailPage({
   const vetlist = (vetlistRes.data ?? []) as VetlistEntry[]
   const euthanasiaRecord = euthRes.data as EuthanasiaRecord | null
   const drugs = (drugsRes.data ?? []) as Drug[]
-  const catalogRows = catalogRes.data ?? []
-
-  const medTypes = catalogRows.filter((r: any) => r.category === 'med_type').map((r: any) => r.name)
-  const doseSuggestions = catalogRows.filter((r: any) => r.category === 'dose').map((r: any) => r.name)
 
   const vetlistActiva = vetlist.find(e => !e.fecha_egreso) ?? null
 
@@ -168,8 +163,6 @@ export default async function HorseDetailPage({
         vetName={vetName}
         today={today}
         drugs={drugs}
-        medTypes={medTypes}
-        doseSuggestions={doseSuggestions}
         diasRestantes={diasRestantes}
       />
 
