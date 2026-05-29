@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label'
 
 const SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL ??
-  'https://vet-track-miguel-s-projects10.vercel.app'
+  'https://vet-track-five.vercel.app'
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('')
