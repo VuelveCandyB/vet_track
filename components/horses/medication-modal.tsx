@@ -180,10 +180,6 @@ export default function MedicationModal({ open, onClose, horseId, horseName, dru
                 </select>
               </div>
             </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#6b7399' }}>Cantidad</Label>
-              <Input name="quantity" placeholder="ej. 1 vial, 10 ml" />
-            </div>
             <div className="col-span-2 space-y-1.5">
               <Label className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#6b7399' }}>Notas</Label>
               <Textarea name="notes" rows={2} placeholder="Observaciones, reacciones..." />
