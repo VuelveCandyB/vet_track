@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -76,14 +77,10 @@ export default function LoginForm() {
         </Button>
 
         <div className="text-center mt-3">
-          <button
-            type="button"
-            onClick={() => router.push('/forgot-password')}
-            className="text-xs transition-colors hover:text-white"
-            style={{ color: '#4a5280' }}
-          >
+          <Link href="/forgot-password" className="text-xs underline transition-colors hover:text-white"
+            style={{ color: '#4a5280' }}>
             ¿Olvidaste tu contraseña?
-          </button>
+          </Link>
         </div>
       </form>
 
