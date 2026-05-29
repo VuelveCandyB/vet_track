@@ -171,11 +171,12 @@ export default function MedicationModal({ open, onClose, horseId, horseName, dru
                   className="border-l px-2 text-sm"
                   style={{ background: '#13162080', borderColor: '#2a2d3e', color: '#6b7399' }}
                 >
+                  <option value="mL">mL</option>
+                  <option value="Litros">Litros</option>
                   <option value="mg">mg</option>
-                  <option value="ml">ml</option>
-                  <option value="mcg">mcg</option>
-                  <option value="UI">UI</option>
-                  <option value="mg/kg">mg/kg</option>
+                  <option value="g">g</option>
+                  <option value="Scoop">Scoop</option>
+                  <option value="Unidad">Unidad</option>
                 </select>
               </div>
             </div>
