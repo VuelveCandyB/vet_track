@@ -7,12 +7,19 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 
+const SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL ??
+  'https://vet-track-five.vercel.app'
+
 export default function LoginForm() {
   const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [mode, setMode] = useState<'login' | 'recover'>('login')
+  const [recoverStatus, setRecoverStatus] = useState<'idle' | 'loading' | 'sent' | 'error'>('idle')
+  const [recoverError, setRecoverError] = useState('')
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -30,6 +37,94 @@ export default function LoginForm() {
 
     router.push('/dashboard')
     router.refresh()
+  }
+
+  async function handleRecoverPassword(e: React.FormEvent) {
+    e.preventDefault()
+    setRecoverStatus('loading')
+    setRecoverError('')
+
+    const supabase = createClient()
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${SITE_URL}/auth/callback?next=/perfil`,
+    })
+
+    if (error) {
+      setRecoverError('No pudimos enviar el correo. Verifica que el email sea correcto.')
+      setRecoverStatus('error')
+    } else {
+      setRecoverStatus('sent')
+    }
+  }
+
+  if (mode === 'recover') {
+    return (
+      <div className="w-full max-w-sm">
+        <h2 className="text-2xl font-bold text-white mb-1">Recuperar contraseña</h2>
+        <p className="text-sm mb-7" style={{ color: '#4a5280' }}>
+          Ingresa tu email y te enviamos un link para crear una nueva contraseña.
+        </p>
+
+        {recoverStatus === 'sent' ? (
+          <div className="rounded-lg px-4 py-5 text-center"
+            style={{ background: '#0d2e1a', border: '1px solid #4ade8040' }}>
+            <div className="text-base font-semibold mb-1" style={{ color: '#4ade80' }}>
+              Revisa tu email
+            </div>
+            <p className="text-sm" style={{ color: '#9ca3af' }}>
+              Te enviamos un link a <strong style={{ color: '#e2e8f0' }}>{email}</strong>.
+              Puede tardar unos minutos.
+            </p>
+          </div>
+        ) : (
+          <>
+            {recoverStatus === 'error' && (
+              <div className="mb-5 rounded-lg px-4 py-3 text-sm"
+                style={{ background: '#2e0d0d', border: '1px solid #7f1d1d', color: '#f87171' }}>
+                {recoverError}
+              </div>
+            )}
+
+            <form onSubmit={handleRecoverPassword} className="space-y-5">
+              <div className="space-y-1.5">
+                <Label htmlFor="email" className="text-xs font-semibold uppercase tracking-wider"
+                  style={{ color: '#6b7399' }}>
+                  Correo electrónico
+                </Label>
+                <Input
+                  id="email" type="email" required autoFocus
+                  placeholder="veterinario@camarero.com"
+                  value={email} onChange={e => setEmail(e.target.value)}
+                />
+              </div>
+
+              <Button type="submit" className="w-full font-semibold" disabled={recoverStatus === 'loading'}
+                style={{ background: '#2B55F4' }}>
+                {recoverStatus === 'loading' ? 'Enviando...' : 'Enviar instrucciones'}
+              </Button>
+            </form>
+          </>
+        )}
+
+        <div className="mt-6 text-center">
+          <button
+            onClick={() => {
+              setMode('login')
+              setEmail('')
+              setRecoverStatus('idle')
+              setRecoverError('')
+            }}
+            className="text-xs transition-colors hover:text-white"
+            style={{ color: '#4a5280' }}>
+            Volver al inicio de sesión
+          </button>
+        </div>
+
+        <div className="mt-8 pt-6 text-center text-xs" style={{ borderTop: '1px solid #252d4a', color: '#252d4a' }}>
+          VetTrack © 2026 — Sistema interno Hipódromo Camarero
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -77,10 +172,12 @@ export default function LoginForm() {
         </Button>
 
         <div className="text-center mt-3">
-          <Link href="/reset-password" className="text-xs underline transition-colors hover:text-white"
+          <button
+            onClick={() => setMode('recover')}
+            className="text-xs underline transition-colors hover:text-white"
             style={{ color: '#4a5280' }}>
             ¿Olvidaste tu contraseña?
-          </Link>
+          </button>
         </div>
       </form>
 
