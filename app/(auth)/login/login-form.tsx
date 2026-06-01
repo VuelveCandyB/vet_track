@@ -114,7 +114,7 @@ export default function LoginForm() {
               setRecoverStatus('idle')
               setRecoverError('')
             }}
-            className="text-xs transition-colors hover:text-white"
+            className="text-xs transition-colors hover:text-white cursor-pointer"
             style={{ color: '#4a5280' }}>
             Volver al inicio de sesión
           </button>
@@ -174,7 +174,7 @@ export default function LoginForm() {
         <div className="text-center mt-3">
           <button
             onClick={() => setMode('recover')}
-            className="text-xs underline transition-colors hover:text-white"
+            className="text-xs underline transition-colors hover:text-white cursor-pointer"
             style={{ color: '#4a5280' }}>
             ¿Olvidaste tu contraseña?
           </button>
