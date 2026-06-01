@@ -46,7 +46,7 @@ export default function LoginForm() {
 
     const supabase = createClient()
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${SITE_URL}/auth/callback?next=/perfil`,
+      redirectTo: `${SITE_URL}/cambiar-contrasena`,
     })
 
     if (error) {
