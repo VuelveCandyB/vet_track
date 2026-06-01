@@ -24,12 +24,10 @@
 
 ## 🟡 Media prioridad
 
-### 3. Ruta `/horses/new` huérfana
+### 3. Ruta `/horses/new` huérfana ✅
 **Archivo:** `app/(protected)/horses/new/page.tsx`
 **Contexto:** El botón "Nuevo Caballo" fue eliminado de la lista (los caballos se sincronizan desde el hipódromo), pero la ruta sigue siendo accesible por URL directa.
-**Opciones:**
-- A) Eliminar la página completamente
-- B) Restringir a admins y restaurar el botón solo para ellos (casos excepcionales)
+**Estado:** Página eliminada completamente (2026-06-01)
 
 ---
 
