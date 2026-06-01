@@ -50,7 +50,11 @@ export default function LoginForm() {
     })
 
     if (error) {
-      setRecoverError('No pudimos enviar el correo. Verifica que el email sea correcto.')
+      let errorMsg = 'No pudimos enviar el correo. Verifica que el email sea correcto.'
+      if (error.message?.includes('rate limit')) {
+        errorMsg = 'Por seguridad, espera 1 hora antes de solicitar otro reset. Revisa tu inbox.'
+      }
+      setRecoverError(errorMsg)
       setRecoverStatus('error')
     } else {
       setRecoverStatus('sent')
