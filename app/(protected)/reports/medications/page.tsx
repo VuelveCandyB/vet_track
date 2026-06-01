@@ -15,7 +15,7 @@ const RESTRICTION_STYLE: Record<string, [string, string]> = {
 export default async function MedicationsReportPage({
   searchParams,
 }: {
-  searchParams: Promise<{ horse?: string; drug?: string; vet?: string; date_from?: string; date_to?: string; categoria?: string }>
+  searchParams: Promise<{ horse?: string; drug?: string; vet?: string; date_from?: string; date_to?: string; categoria?: string; proposito?: string }>
 }) {
   await requireUser()
   const filters = await searchParams
@@ -34,6 +34,7 @@ export default async function MedicationsReportPage({
       if (filters.vet)       q = q.ilike('vet_name', `%${filters.vet}%`)
       if (filters.drug)      q = q.ilike('drug', `%${filters.drug}%`)
       if (filters.categoria) q = q.eq('drug_categoria', filters.categoria)
+      if (filters.proposito) q = q.eq('proposito', filters.proposito)
       q = q.in('horse_id', matches.map((m: any) => m.id))
       const { data } = await q.order('administered_at', { ascending: false }).limit(500)
       rows = data ?? []
@@ -45,11 +46,13 @@ export default async function MedicationsReportPage({
     if (filters.vet)       q = q.ilike('vet_name', `%${filters.vet}%`)
     if (filters.drug)      q = q.ilike('drug', `%${filters.drug}%`)
     if (filters.categoria) q = q.eq('drug_categoria', filters.categoria)
+    if (filters.proposito) q = q.eq('proposito', filters.proposito)
     const { data } = await q.order('administered_at', { ascending: false }).limit(500)
     rows = data ?? []
   }
 
   const categorias = [...new Set(rows.map((r: any) => r.drug_categoria).filter(Boolean))].sort()
+  const propositos = [...new Set(rows.map((r: any) => r.proposito).filter(Boolean))].sort()
 
   return (
     <div>
@@ -68,7 +71,7 @@ export default async function MedicationsReportPage({
 
       {/* Filters */}
       <form method="get" className="rounded-xl p-5 mb-6" style={{ background: '#131829', border: '1px solid #252d4a' }}>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 items-end">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-3 items-end">
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5" style={{ color: '#4a5280' }}>Caballo</label>
             <Input name="horse" defaultValue={filters.horse} placeholder="Nombre..." />
@@ -80,6 +83,14 @@ export default async function MedicationsReportPage({
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5" style={{ color: '#4a5280' }}>Veterinario</label>
             <Input name="vet" defaultValue={filters.vet} placeholder="Nombre..." />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5" style={{ color: '#4a5280' }}>Propósito</label>
+            <select name="proposito" className="flex h-9 w-full rounded-md border px-3 py-1 text-sm"
+              style={{ background: '#0d102080', borderColor: '#252d4a', color: '#e2e8f0' }}>
+              <option value="">Todos</option>
+              {propositos.map(p => <option key={p} value={p}>{p}</option>)}
+            </select>
           </div>
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5" style={{ color: '#4a5280' }}>Desde</label>
@@ -114,7 +125,7 @@ export default async function MedicationsReportPage({
             <table className="w-full text-sm border-collapse">
               <thead>
                 <tr style={{ borderBottom: '1px solid #252d4a' }}>
-                  {['Caballo', 'Medicamento', 'Tipo', 'Dosis', 'Restricción', 'Vet. / Fecha', 'Retiro'].map(h => (
+                  {['Caballo', 'Medicamento', 'Vía', 'Propósito', 'Dosis', 'Restricción', 'Vet. / Fecha', 'Retiro'].map(h => (
                     <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider whitespace-nowrap"
                       style={{ color: '#4a5280' }}>{h}</th>
                   ))}
@@ -134,7 +145,8 @@ export default async function MedicationsReportPage({
                         <div className="font-medium text-white">{r.drug}</div>
                         {r.drug_categoria && <div className="text-xs mt-0.5" style={{ color: '#6b7399' }}>{r.drug_categoria}</div>}
                       </td>
-                      <td className="px-4 py-3" style={{ color: '#9ca3af' }}>{r.type}</td>
+                      <td className="px-4 py-3" style={{ color: '#9ca3af' }}>{r.type || '—'}</td>
+                      <td className="px-4 py-3" style={{ color: '#9ca3af' }}>{r.proposito || '—'}</td>
                       <td className="px-4 py-3 font-mono text-xs" style={{ color: '#c0c8e0' }}>{r.dose}</td>
                       <td className="px-4 py-3">
                         {r.tipo_restriccion

@@ -285,9 +285,16 @@ export default async function HorseDetailPage({
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap mb-1">
                             <span className="text-sm font-semibold text-white">{m.drug}</span>
-                            <Badge className="text-xs" style={{ background: `${color}22`, color, border: 'none' }}>
-                              {m.type}
-                            </Badge>
+                            {m.type && (
+                              <Badge className="text-xs" style={{ background: '#4a528022', color: '#6b7399', border: 'none' }}>
+                                {m.type}
+                              </Badge>
+                            )}
+                            {m.proposito && (
+                              <Badge className="text-xs" style={{ background: '#34d39922', color: '#34d399', border: 'none' }}>
+                                {m.proposito}
+                              </Badge>
+                            )}
                             {m.tipo_restriccion && (
                               <Badge className="text-xs" style={{ background: rbg, color: rfg, border: 'none' }}>
                                 {m.tipo_restriccion}
