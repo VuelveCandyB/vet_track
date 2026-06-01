@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { Eye, EyeSlash } from '@phosphor-icons/react'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -15,6 +16,8 @@ export default function ChangePasswordPage() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
   const [ready, setReady] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
+  const [showPasswordConfirm, setShowPasswordConfirm] = useState(false)
 
   useEffect(() => {
     const supabase = createClient()
@@ -102,11 +105,22 @@ export default function ChangePasswordPage() {
                     style={{ color: '#6b7399' }}>
                     Nueva contraseña
                   </Label>
-                  <Input
-                    id="password" type="password" required
-                    placeholder="••••••••"
-                    value={password} onChange={e => setPassword(e.target.value)}
-                  />
+                  <div className="relative">
+                    <Input
+                      id="password" type={showPassword ? 'text' : 'password'} required
+                      placeholder="••••••••"
+                      value={password} onChange={e => setPassword(e.target.value)}
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 transition-colors hover:text-white"
+                      style={{ color: '#4a5280' }}
+                      tabIndex={-1}>
+                      {showPassword ? <EyeSlash size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
                 </div>
 
                 <div className="space-y-1.5">
@@ -114,11 +128,22 @@ export default function ChangePasswordPage() {
                     style={{ color: '#6b7399' }}>
                     Confirmar contraseña
                   </Label>
-                  <Input
-                    id="passwordConfirm" type="password" required
-                    placeholder="••••••••"
-                    value={passwordConfirm} onChange={e => setPasswordConfirm(e.target.value)}
-                  />
+                  <div className="relative">
+                    <Input
+                      id="passwordConfirm" type={showPasswordConfirm ? 'text' : 'password'} required
+                      placeholder="••••••••"
+                      value={passwordConfirm} onChange={e => setPasswordConfirm(e.target.value)}
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPasswordConfirm(!showPasswordConfirm)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 transition-colors hover:text-white"
+                      style={{ color: '#4a5280' }}
+                      tabIndex={-1}>
+                      {showPasswordConfirm ? <EyeSlash size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
                 </div>
 
                 <Button type="submit" className="w-full font-semibold" disabled={loading}
