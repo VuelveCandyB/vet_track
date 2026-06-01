@@ -6,19 +6,17 @@
 
 ## 🔴 Alta prioridad
 
-### 1. Mostrar `proposito` y vía de administración en el timeline del caballo
+### 1. Mostrar `proposito` y vía de administración en el timeline del caballo ✅
 **Archivo:** `app/(protected)/horses/[id]/page.tsx` (~línea 325)
 **Contexto:** El modal ya captura y guarda estos campos en la DB (`medications.type` = vía, `medications.proposito` = propósito), pero no se renderizan en las tarjetas del historial médico.
-**Qué hacer:** Añadir un badge o línea de metadata en cada tarjeta de medicamento mostrando la vía de administración (ej. "IV") y el propósito (ej. "Terapéutica").
+**Estado:** Implementado - Se muestran como badges (vía en color gris, propósito en color verde) (2026-06-01)
 
 ---
 
-### 2. `proposito` en el reporte de medicamentos
+### 2. `proposito` en el reporte de medicamentos ✅
 **Archivo:** `app/(protected)/reports/medications/page.tsx`
 **Contexto:** La tabla del reporte muestra Caballo, Medicamento, Tipo, Dosis, Restricción, Vet/Fecha, Retiro — pero no el campo `proposito`.
-**Qué hacer:**
-- Añadir columna `Propósito` en la tabla del reporte
-- Añadir filtro dropdown `Propósito` (Preventiva / Terapéutica / Mantenimiento / Carga) en el formulario de filtros
+**Estado:** Implementado - Añadida columna Propósito en la tabla y filtro dropdown en el formulario (2026-06-01)
 
 ---
 
