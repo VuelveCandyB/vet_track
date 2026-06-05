@@ -127,7 +127,7 @@ export default function LoginForm() {
         </div>
 
         <div className="mt-8 pt-6 text-center text-xs" style={{ borderTop: '1px solid #E2E8F0', color: '#CBD5E1' }}>
-          VetTrack © 2026 — Sistema interno Hipódromo Camarero
+          PyAgentix © 2026 — Sistema interno Hipódromo Camarero
         </div>
       </div>
     )
@@ -199,7 +199,7 @@ export default function LoginForm() {
       </form>
 
       <div className="mt-8 pt-6 text-center text-xs" style={{ borderTop: '1px solid #E2E8F0', color: '#CBD5E1' }}>
-        VetTrack © 2026 — Sistema interno Hipódromo Camarero
+        PyAgentix © 2026 — Sistema interno Hipódromo Camarero
       </div>
     </div>
   )
