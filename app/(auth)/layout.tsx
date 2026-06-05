@@ -21,7 +21,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         <div
           className="absolute inset-0"
           style={{
-            background: 'rgba(5, 150, 105, 0.3)'
+            background: 'rgba(5, 150, 105, 0.05)'
           }}
         />
         <div className="text-center relative z-10">
