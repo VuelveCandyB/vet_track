@@ -3,11 +3,12 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
     <div className="min-h-[100dvh] grid grid-cols-1 md:grid-cols-2">
       {/* Left Panel - Brand */}
       <div
-        className="hidden md:flex items-center justify-center p-6 relative overflow-hidden"
+        className="hidden md:flex items-center justify-center p-6"
         style={{
           backgroundImage: 'url(/images/login-horse-bg.png)',
           backgroundSize: 'cover',
-          backgroundPosition: 'center'
+          backgroundPosition: 'center',
+          backgroundAttachment: 'fixed'
         }}
       >
         <div className="text-center relative z-10">
