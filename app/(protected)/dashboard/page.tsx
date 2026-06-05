@@ -1,4 +1,4 @@
-import { requireUser } from '@/lib/auth'
+import { requireUser, isAdmin, isOfficialVet } from '@/lib/auth'
 import { createClient } from '@/lib/supabase/server'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -15,12 +15,13 @@ const STATUS_COLOR: Record<string, string> = {
 }
 
 export default async function DashboardPage() {
-  await requireUser()
+  const user = await requireUser()
   const supabase = await createClient()
   const today = new Date().toISOString().split('T')[0]
+  const officialVet = await isOfficialVet(user.id, user.email!)
 
   const [
-    statsRes, attentionRes, recentMedsRes, vetlistRes, medsHoyRes, fallecidosRes
+    statsRes, attentionRes, recentMedsRes, vetlistRes, medsHoyRes, fallecidosRes, diagRes
   ] = await Promise.all([
     supabase.rpc('get_horse_stats'),
     supabase.from('horses').select('id, name, status').in('status', ['rest', 'injury']).limit(50),
@@ -28,6 +29,7 @@ export default async function DashboardPage() {
     supabase.from('vetlist').select('id, horse_id, motivo, fecha_ingreso, horses(name)').is('fecha_egreso', null).order('fecha_ingreso', { ascending: false }).limit(5),
     supabase.from('medications').select('id', { count: 'exact', head: true }).eq('administered_at', today),
     supabase.from('horses').select('id', { count: 'exact', head: true }).eq('status', 'deceased'),
+    officialVet ? supabase.from('diagnosticos').select('id, horse_id, diagnostico, vet_name, fecha, horses(name)').eq('recomendar_vetlist', true).order('fecha', { ascending: false }).limit(10) : Promise.resolve({ data: [] }),
   ])
 
   const statsRaw = statsRes.data || {}
@@ -36,6 +38,7 @@ export default async function DashboardPage() {
   const vetlistActiva = vetlistRes.data || []
   const medsHoy = medsHoyRes.count || 0
   const fallecidos = fallecidosRes.count || 0
+  const diagPendientes = diagRes.data || []
 
   const stats = {
     total:    (statsRaw as Record<string, number>).total    ?? 0,
@@ -138,6 +141,39 @@ export default async function DashboardPage() {
             )}
           </CardContent>
         </Card>
+
+        {/* Recomendaciones pendientes (solo para official_vet o admin) */}
+        {officialVet && (
+          <Card style={{ background: '#131829', border: '1px solid #252d4a' }}>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-semibold uppercase tracking-wider" style={{ color: '#4a5280' }}>
+                Recomendaciones Pendientes
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {diagPendientes.length === 0 ? (
+                <p className="text-sm" style={{ color: '#4a5280' }}>Sin recomendaciones pendientes.</p>
+              ) : (
+                <div className="space-y-2">
+                  {diagPendientes.map((d: any) => (
+                    <Link key={d.id} href={`/horses/${d.horse_id}`}
+                      className="flex items-center justify-between p-2.5 rounded-lg transition-colors hover:bg-white/5">
+                      <div>
+                        <div className="text-sm font-medium text-white">{d.horses?.name ?? '—'}</div>
+                        <div className="text-xs mt-0.5" style={{ color: '#6b7399' }}>
+                          {d.diagnostico} · {d.vet_name}
+                        </div>
+                      </div>
+                      <Badge className="bg-orange-950 text-orange-400 border-orange-900 text-xs">
+                        Revisar
+                      </Badge>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         {/* Medicaciones recientes */}
         <Card className="md:col-span-2" style={{ background: '#131829', border: '1px solid #252d4a' }}>
