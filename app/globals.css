@@ -54,13 +54,13 @@
   /* Warm Professional - Healthcare Brand */
   --hc-green:   #059669;
   --hc-red:     #DC2626;
-  --hc-surface: #F1F5F9;
+  --hc-surface: #E8ECEF;
   --hc-card:    #FFFFFF;
   --hc-border:  #E2E8F0;
   --hc-muted:   #64748B;
   --hc-text:    #334155;
 
-  --background: #F1F5F9;
+  --background: #E8ECEF;
   --foreground: #334155;
   --card: #FFFFFF;
   --card-foreground: #334155;
@@ -89,7 +89,7 @@
   }
   html {
     @apply font-sans;
-    background-color: #F1F5F9;
+    background-color: #E8ECEF;
     background-image:
       radial-gradient(ellipse at 15% 0%, #05966910 0%, transparent 55%),
       radial-gradient(ellipse at 85% 100%, #E2E8F0 0%, transparent 50%);
