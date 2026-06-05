@@ -165,7 +165,7 @@ export default async function DashboardPage() {
                         </div>
                       </div>
                       <Badge className="bg-orange-950 text-orange-400 border-orange-900 text-xs">
-                        Revisar
+                        VetList Recomendado
                       </Badge>
                     </Link>
                   ))}
