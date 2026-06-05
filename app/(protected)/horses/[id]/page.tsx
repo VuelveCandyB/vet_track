@@ -222,6 +222,35 @@ export default async function HorseDetailPage({
             </div>
           )}
 
+          {/* Diagnosis history */}
+          {diagnosticos.length > 0 && (
+            <div className="rounded-xl p-5" style={{ background: '#131829', border: '1px solid #252d4a' }}>
+              <h3 className="text-xs font-semibold uppercase tracking-wider mb-4" style={{ color: '#4a5280' }}>
+                Historial Diagnósticos
+              </h3>
+              {diagnosticos.map(diag => (
+                <div key={diag.id} className="py-2" style={{ borderBottom: '1px solid #1e2235' }}>
+                  <div className="flex items-center gap-2 mb-1 flex-wrap">
+                    <span className="text-xs font-medium" style={{ color: '#c0c8e0' }}>{diag.diagnostico}</span>
+                    {diag.severidad && (
+                      <Badge className="text-xs" style={{ background: '#7c3aed22', color: '#c084fc', border: 'none' }}>
+                        {diag.severidad}
+                      </Badge>
+                    )}
+                    {diag.recomendar_vetlist && (
+                      <Badge className="text-xs" style={{ background: '#f8717122', color: '#f87171', border: 'none' }}>
+                        Recomendado
+                      </Badge>
+                    )}
+                  </div>
+                  <div className="text-xs" style={{ color: '#6b7399' }}>
+                    {diag.fecha} · {diag.vet_name}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
           {/* Clinical summary */}
           <div className="rounded-xl p-5" style={{ background: '#131829', border: '1px solid #252d4a' }}>
             <h3 className="text-xs font-semibold uppercase tracking-wider mb-4" style={{ color: '#4a5280' }}>
