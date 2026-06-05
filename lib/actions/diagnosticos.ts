@@ -34,27 +34,34 @@ async function getVetName(supabase: any, user: any): Promise<string> {
 }
 
 export async function createDiagnostico(horseId: string, formData: FormData) {
-  const user = await requireUser()
-  const supabase = await createClient()
-  const vetName = await getVetName(supabase, user)
+  try {
+    const user = await requireUser()
+    const supabase = await createClient()
+    const vetName = await getVetName(supabase, user)
 
-  const file = formData.get('attachment') as File | null
-  const attachmentUrl = file ? await uploadAttachment(supabase, horseId, file, 'diag') : null
+    const file = formData.get('attachment') as File | null
+    const attachmentUrl = file ? await uploadAttachment(supabase, horseId, file, 'diag') : null
 
-  await supabase.from('diagnosticos').insert({
-    horse_id: horseId,
-    vet_name: vetName,
-    created_by: user.id,
-    fecha: formData.get('fecha'),
-    tipo: formData.get('tipo'),
-    diagnostico: formData.get('diagnostico'),
-    sistema_afectado: (formData.get('sistema_afectado') as string) || null,
-    severidad: (formData.get('severidad') as string) || null,
-    tratamiento_recomendado: (formData.get('tratamiento_recomendado') as string) || null,
-    notas: (formData.get('notas') as string) || null,
-    recomendar_vetlist: formData.get('recomendar_vetlist') === 'on',
-    attachment_url: attachmentUrl,
-  })
+    const { error } = await supabase.from('diagnosticos').insert({
+      horse_id: horseId,
+      vet_name: vetName,
+      created_by: user.id,
+      fecha: formData.get('fecha'),
+      tipo: formData.get('tipo'),
+      diagnostico: formData.get('diagnostico'),
+      sistema_afectado: (formData.get('sistema_afectado') as string) || null,
+      severidad: (formData.get('severidad') as string) || null,
+      tratamiento_recomendado: (formData.get('tratamiento_recomendado') as string) || null,
+      notas: (formData.get('notas') as string) || null,
+      recomendar_vetlist: formData.get('recomendar_vetlist') === 'on',
+      attachment_url: attachmentUrl,
+    })
 
-  revalidatePath(`/horses/${horseId}`)
+    if (error) throw error
+
+    revalidatePath(`/horses/${horseId}`)
+  } catch (err) {
+    console.error('Error creating diagnostico:', err)
+    throw err
+  }
 }
