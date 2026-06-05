@@ -3,7 +3,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
     <div className="min-h-[100dvh] grid grid-cols-1 md:grid-cols-2">
       {/* Left Panel - Brand */}
       <div
-        className="hidden md:flex items-center justify-center p-6"
+        className="hidden md:flex items-center justify-center"
         style={{
           backgroundImage: 'url(/images/login-horse-bg.png)',
           backgroundSize: 'cover',
@@ -11,7 +11,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           backgroundAttachment: 'fixed'
         }}
       >
-        <div className="text-center relative z-10">
+        <div className="text-center relative z-10 p-6">
           <h1 className="text-4xl font-bold text-white mb-4" style={{ fontFamily: 'Dela Gothic One' }}>
             VetTrack
           </h1>
