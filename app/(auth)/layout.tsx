@@ -5,25 +5,11 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       <div
         className="hidden md:flex items-center justify-center p-6 relative overflow-hidden"
         style={{
-          background: '#059669'
+          backgroundImage: 'url(/images/login-horse-bg.png)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center'
         }}
       >
-        <div
-          className="absolute inset-0"
-          style={{
-            backgroundImage: 'url(/images/login-horse-bg.png)',
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            opacity: 0.6,
-            mixBlendMode: 'multiply'
-          }}
-        />
-        <div
-          className="absolute inset-0"
-          style={{
-            background: 'rgba(5, 150, 105, 0.05)'
-          }}
-        />
         <div className="text-center relative z-10">
           <h1 className="text-4xl font-bold text-white mb-4" style={{ fontFamily: 'Dela Gothic One' }}>
             VetTrack
