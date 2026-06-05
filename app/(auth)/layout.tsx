@@ -17,7 +17,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       {/* Right Panel - Auth Content */}
       <div
         className="flex items-center justify-center p-6"
-        style={{ background: '#F8FAFC' }}
+        style={{ background: '#E8ECEF' }}
       >
         {children}
       </div>
