@@ -229,7 +229,9 @@ export default async function HorseDetailPage({
                 Historial Diagnósticos
               </h3>
               {diagnosticos.map(diag => (
-                <div key={diag.id} className="py-2" style={{ borderBottom: '1px solid #1e2235' }}>
+                <Link key={diag.id} href={`/horses/${horse.id}/diagnosticos/${diag.id}`}
+                  className="block py-2.5 px-2 rounded-lg transition-colors hover:bg-white/5"
+                  style={{ borderBottom: '1px solid #1e2235' }}>
                   <div className="flex items-center gap-2 mb-1 flex-wrap">
                     <span className="text-xs font-medium" style={{ color: '#c0c8e0' }}>{diag.diagnostico}</span>
                     {diag.severidad && (
@@ -246,7 +248,7 @@ export default async function HorseDetailPage({
                   <div className="text-xs" style={{ color: '#6b7399' }}>
                     {diag.fecha} · {diag.vet_name}
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           )}
