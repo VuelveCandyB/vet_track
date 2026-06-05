@@ -167,7 +167,7 @@ export default function MedicationModal({ open, onClose, horseId, horseName, dru
                 onChange={e => handleCategoriaChange(e.target.value)}
                 className="flex h-9 w-full rounded-md border px-3 py-1 text-sm"
                 style={SELECT_STYLE}>
-                <option value="">Todas</option>
+                <option value="" disabled>Seleccionar...</option>
                 {categoriaOptions.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
             </div>
