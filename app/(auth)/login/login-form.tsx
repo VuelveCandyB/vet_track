@@ -66,19 +66,19 @@ export default function LoginForm() {
   if (mode === 'recover') {
     return (
       <div className="w-full max-w-sm">
-        <h2 className="text-2xl font-bold text-white mb-1">Recuperar contraseña</h2>
-        <p className="text-sm mb-7" style={{ color: '#4a5280' }}>
+        <h2 className="text-2xl font-bold" style={{ color: '#0F172A' }}>Recuperar contraseña</h2>
+        <p className="text-sm mb-7" style={{ color: '#64748B' }}>
           Ingresa tu email y te enviamos un link para crear una nueva contraseña.
         </p>
 
         {recoverStatus === 'sent' ? (
           <div className="rounded-lg px-4 py-5 text-center"
-            style={{ background: '#0d2e1a', border: '1px solid #4ade8040' }}>
-            <div className="text-base font-semibold mb-1" style={{ color: '#4ade80' }}>
+            style={{ background: '#DCFCE7', border: '1px solid #059669' }}>
+            <div className="text-base font-semibold mb-1" style={{ color: '#065F46' }}>
               Revisa tu email
             </div>
-            <p className="text-sm" style={{ color: '#9ca3af' }}>
-              Te enviamos un link a <strong style={{ color: '#e2e8f0' }}>{email}</strong>.
+            <p className="text-sm" style={{ color: '#334155' }}>
+              Te enviamos un link a <strong style={{ color: '#0F172A' }}>{email}</strong>.
               Puede tardar unos minutos.
             </p>
           </div>
@@ -86,7 +86,7 @@ export default function LoginForm() {
           <>
             {recoverStatus === 'error' && (
               <div className="mb-5 rounded-lg px-4 py-3 text-sm"
-                style={{ background: '#2e0d0d', border: '1px solid #7f1d1d', color: '#f87171' }}>
+                style={{ background: '#FEE2E2', border: '1px solid #DC2626', color: '#991B1B' }}>
                 {recoverError}
               </div>
             )}
@@ -94,7 +94,7 @@ export default function LoginForm() {
             <form onSubmit={handleRecoverPassword} className="space-y-5">
               <div className="space-y-1.5">
                 <Label htmlFor="email" className="text-xs font-semibold uppercase tracking-wider"
-                  style={{ color: '#6b7399' }}>
+                  style={{ color: '#64748B' }}>
                   Correo electrónico
                 </Label>
                 <Input
@@ -105,7 +105,7 @@ export default function LoginForm() {
               </div>
 
               <Button type="submit" className="w-full font-semibold" disabled={recoverStatus === 'loading'}
-                style={{ background: '#2B55F4' }}>
+                style={{ background: '#059669' }}>
                 {recoverStatus === 'loading' ? 'Enviando...' : 'Enviar instrucciones'}
               </Button>
             </form>
@@ -120,13 +120,13 @@ export default function LoginForm() {
               setRecoverStatus('idle')
               setRecoverError('')
             }}
-            className="text-xs transition-colors hover:text-white cursor-pointer"
-            style={{ color: '#4a5280' }}>
+            className="text-xs transition-colors hover:font-semibold cursor-pointer"
+            style={{ color: '#059669' }}>
             Volver al inicio de sesión
           </button>
         </div>
 
-        <div className="mt-8 pt-6 text-center text-xs" style={{ borderTop: '1px solid #252d4a', color: '#252d4a' }}>
+        <div className="mt-8 pt-6 text-center text-xs" style={{ borderTop: '1px solid #E2E8F0', color: '#CBD5E1' }}>
           VetTrack © 2026 — Sistema interno Hipódromo Camarero
         </div>
       </div>
@@ -135,14 +135,14 @@ export default function LoginForm() {
 
   return (
     <div className="w-full max-w-sm">
-      <h2 className="text-2xl font-bold text-white mb-1">Iniciar Sesión</h2>
-      <p className="text-sm mb-7" style={{ color: '#4a5280' }}>
+      <h2 className="text-2xl font-bold" style={{ color: '#059669' }}>Iniciar Sesión</h2>
+      <p className="text-sm mb-7" style={{ color: '#64748B' }}>
         Ingresa tus credenciales para continuar
       </p>
 
       {error && (
         <div className="mb-5 rounded-lg px-4 py-3 text-sm"
-          style={{ background: '#2e0d0d', border: '1px solid #7f1d1d', color: '#f87171' }}>
+          style={{ background: '#FEE2E2', border: '1px solid #DC2626', color: '#991B1B' }}>
           {error}
         </div>
       )}
@@ -150,7 +150,7 @@ export default function LoginForm() {
       <form onSubmit={handleSubmit} className="space-y-5">
         <div className="space-y-1.5">
           <Label htmlFor="email" className="text-xs font-semibold uppercase tracking-wider"
-            style={{ color: '#6b7399' }}>
+            style={{ color: '#059669' }}>
             Correo Electrónico
           </Label>
           <Input
@@ -162,7 +162,7 @@ export default function LoginForm() {
 
         <div className="space-y-1.5">
           <Label htmlFor="password" className="text-xs font-semibold uppercase tracking-wider"
-            style={{ color: '#6b7399' }}>
+            style={{ color: '#059669' }}>
             Contraseña
           </Label>
           <div className="relative">
@@ -175,8 +175,8 @@ export default function LoginForm() {
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 transition-colors hover:text-white"
-              style={{ color: '#4a5280' }}
+              className="absolute right-3 top-1/2 -translate-y-1/2 transition-colors"
+              style={{ color: '#64748B' }}
               tabIndex={-1}>
               {showPassword ? <EyeSlash size={18} /> : <Eye size={18} />}
             </button>
@@ -184,21 +184,21 @@ export default function LoginForm() {
         </div>
 
         <Button type="submit" className="w-full font-semibold mt-2" disabled={loading}
-          style={{ background: '#2B55F4' }}>
+          style={{ background: '#059669' }}>
           {loading ? 'Entrando...' : 'Entrar'}
         </Button>
 
         <div className="text-center mt-3">
           <button
             onClick={() => setMode('recover')}
-            className="text-xs underline transition-colors hover:text-white cursor-pointer"
-            style={{ color: '#4a5280' }}>
+            className="text-xs transition-colors cursor-pointer hover:font-semibold"
+            style={{ color: '#059669' }}>
             ¿Olvidaste tu contraseña?
           </button>
         </div>
       </form>
 
-      <div className="mt-8 pt-6 text-center text-xs" style={{ borderTop: '1px solid #252d4a', color: '#252d4a' }}>
+      <div className="mt-8 pt-6 text-center text-xs" style={{ borderTop: '1px solid #E2E8F0', color: '#CBD5E1' }}>
         VetTrack © 2026 — Sistema interno Hipódromo Camarero
       </div>
     </div>

@@ -51,33 +51,33 @@
 }
 
 :root {
-  --hc-blue:    #2B55F4;
-  --hc-navy:    #1B2A6B;
-  --hc-lime:    #C8F135;
-  --hc-surface: #0d1020;
-  --hc-card:    #131829;
-  --hc-border:  #252d4a;
-  --hc-muted:   #4a5280;
-  --hc-text:    #e2e8f0;
+  /* Warm Professional - Healthcare Brand */
+  --hc-green:   #059669;
+  --hc-red:     #DC2626;
+  --hc-surface: #F8FAFC;
+  --hc-card:    #FFFFFF;
+  --hc-border:  #E2E8F0;
+  --hc-muted:   #64748B;
+  --hc-text:    #334155;
 
-  --background: #0d1020;
-  --foreground: #e2e8f0;
-  --card: #131829;
-  --card-foreground: #e2e8f0;
-  --popover: #131829;
-  --popover-foreground: #e2e8f0;
-  --primary: #2B55F4;
-  --primary-foreground: #ffffff;
-  --secondary: #1e2540;
-  --secondary-foreground: #e2e8f0;
-  --muted: #1e2540;
-  --muted-foreground: #4a5280;
-  --accent: #1e2540;
-  --accent-foreground: #e2e8f0;
-  --destructive: #dc2626;
-  --border: #252d4a;
-  --input: #252d4a;
-  --ring: #2B55F4;
+  --background: #F8FAFC;
+  --foreground: #334155;
+  --card: #FFFFFF;
+  --card-foreground: #334155;
+  --popover: #FFFFFF;
+  --popover-foreground: #334155;
+  --primary: #059669;
+  --primary-foreground: #FFFFFF;
+  --secondary: #F1F5F9;
+  --secondary-foreground: #334155;
+  --muted: #F1F5F9;
+  --muted-foreground: #64748B;
+  --accent: #F1F5F9;
+  --accent-foreground: #334155;
+  --destructive: #DC2626;
+  --border: #334155;
+  --input: #FFFFFF;
+  --ring: #059669;
   --radius: 0.5rem;
 }
 
@@ -89,10 +89,10 @@
   }
   html {
     @apply font-sans;
-    background-color: #0d1020;
+    background-color: #F8FAFC;
     background-image:
-      radial-gradient(ellipse at 15% 0%, #2B55F428 0%, transparent 55%),
-      radial-gradient(ellipse at 85% 100%, #1B2A6B22 0%, transparent 50%);
+      radial-gradient(ellipse at 15% 0%, #05966910 0%, transparent 55%),
+      radial-gradient(ellipse at 85% 100%, #E2E8F0 0%, transparent 50%);
     background-attachment: fixed;
     min-height: 100dvh;
   }
@@ -104,7 +104,7 @@
   }
   input[type="date"],
   input[type="datetime-local"] {
-    color-scheme: dark;
+    color-scheme: light;
   }
 }
 
