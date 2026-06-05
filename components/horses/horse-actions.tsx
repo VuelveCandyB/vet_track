@@ -16,6 +16,7 @@ interface Props {
   vetlistActiva: VetlistEntry | null
   canEuth: boolean
   isAdmin: boolean
+  isOfficialVet: boolean
   vetName: string
   today: string
   drugs: Drug[]
@@ -23,7 +24,7 @@ interface Props {
 }
 
 export default function HorseActions({
-  horse, vetlistActiva, canEuth, isAdmin, vetName, today,
+  horse, vetlistActiva, canEuth, isAdmin, isOfficialVet, vetName, today,
   drugs, diasRestantes,
 }: Props) {
   const [open, setOpen] = useState<ModalType>(null)

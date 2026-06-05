@@ -1,11 +1,11 @@
-import { requireUser, canRegisterEuthanasia, isAdmin } from '@/lib/auth'
+import { requireUser, canRegisterEuthanasia, isAdmin, isOfficialVet } from '@/lib/auth'
 import ConfirmDeleteButton from '@/components/admin/confirm-delete-button'
 import { createClient } from '@/lib/supabase/server'
 import { deleteMedication } from '@/lib/actions/medications'
 import HorseActions from '@/components/horses/horse-actions'
 import { Badge } from '@/components/ui/badge'
 import Link from 'next/link'
-import type { Horse, Medication, VetlistEntry, EuthanasiaRecord, Drug } from '@/lib/types'
+import type { Horse, Medication, VetlistEntry, EuthanasiaRecord, Drug, Diagnostico } from '@/lib/types'
 import { STATUS_LABEL } from '@/lib/constants'
 
 const STATUS_STYLE: Record<string, string> = {
@@ -65,16 +65,18 @@ export default async function HorseDetailPage({
 
   const [
     horseRes, medsRes, vetlistRes, euthRes,
-    drugsRes, vetName,
-    canEuth,
+    drugsRes, diagRes, vetName,
+    canEuth, officialVet,
   ] = await Promise.all([
     supabase.from('horses').select('*').eq('id', id).single(),
     supabase.from('medications').select('*').eq('horse_id', id).order('administered_at', { ascending: sort === 'asc' }),
     supabase.from('vetlist').select('*').eq('horse_id', id).order('fecha_ingreso', { ascending: false }),
     supabase.from('euthanasia').select('*').eq('horse_id', id).maybeSingle(),
     supabase.from('drugs').select('*').eq('active', true).order('nombre'),
+    supabase.from('diagnosticos').select('*').eq('horse_id', id).order('fecha', { ascending: false }),
     getVetName(supabase, user),
     canRegisterEuthanasia(user.id, user.email!),
+    isOfficialVet(user.id, user.email!),
   ])
 
   const horse = horseRes.data as Horse
@@ -82,6 +84,7 @@ export default async function HorseDetailPage({
   const vetlist = (vetlistRes.data ?? []) as VetlistEntry[]
   const euthanasiaRecord = euthRes.data as EuthanasiaRecord | null
   const drugs = (drugsRes.data ?? []) as Drug[]
+  const diagnosticos = (diagRes.data ?? []) as Diagnostico[]
 
   const vetlistActiva = vetlist.find(e => !e.fecha_egreso) ?? null
 
@@ -160,6 +163,7 @@ export default async function HorseDetailPage({
         vetlistActiva={vetlistActiva}
         canEuth={canEuth}
         isAdmin={userIsAdmin}
+        isOfficialVet={officialVet}
         vetName={vetName}
         today={today}
         drugs={drugs}
