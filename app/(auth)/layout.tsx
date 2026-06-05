@@ -10,7 +10,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           <h1 className="text-4xl font-bold text-white mb-4" style={{ fontFamily: 'Dela Gothic One' }}>
             VetTrack
           </h1>
-          <p style={{ color: '#86EFAC' }}>Sistema interno Hipódromo Camarero</p>
+          <p style={{ color: '#86EFAC' }}>Sistema de Medicación y Control Equino</p>
         </div>
       </div>
 
