@@ -135,7 +135,10 @@ export default function LoginForm() {
 
   return (
     <div className="w-full max-w-sm">
-      <h2 className="text-2xl font-bold" style={{ color: '#059669' }}>Iniciar Sesión</h2>
+      <div className="mb-2 flex flex-col items-center w-full">
+        <img src="https://res.cloudinary.com/dee0x7p16/image/upload/v1780695288/HC_Logo-Principal_Negro_mfsygj.png" alt="Logo" className="h-10 w-auto mb-4" />
+        <h2 className="text-2xl font-bold" style={{ color: '#059669' }}>Iniciar Sesión</h2>
+      </div>
       <p className="text-sm mb-7" style={{ color: '#64748B' }}>
         Ingresa tus credenciales para continuar
       </p>
