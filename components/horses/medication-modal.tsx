@@ -23,7 +23,7 @@ const ADMIN_ROUTES = [
   'Tópica',
 ]
 
-const PROPOSITOS = ['Preventiva', 'Terapéutica', 'Mantenimiento', 'Carga']
+const PROPOSITOS = ['Preventiva', 'Terapéutica', 'Mantenimiento', 'Seguimiento']
 
 function inferUnit(dosisRuta?: string): string {
   if (!dosisRuta) return 'mg'
