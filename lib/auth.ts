@@ -25,3 +25,15 @@ export async function canRegisterEuthanasia(userId: string, email: string): Prom
     .single()
   return !!data
 }
+
+export async function isOfficialVet(userId: string, email: string): Promise<boolean> {
+  if (isAdmin(email)) return true
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from('user_roles')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('role', 'official_vet')
+    .maybeSingle()
+  return !!data
+}

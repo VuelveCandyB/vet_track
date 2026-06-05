@@ -79,3 +79,20 @@ export interface Profile {
   first_name?: string
   last_name?: string
 }
+
+export interface Diagnostico {
+  id: string
+  horse_id: string
+  vet_name: string
+  created_by?: string
+  fecha: string
+  tipo: string
+  diagnostico: string
+  sistema_afectado?: string
+  severidad?: string
+  tratamiento_recomendado?: string
+  notas?: string
+  recomendar_vetlist: boolean
+  attachment_url?: string
+  created_at?: string
+}

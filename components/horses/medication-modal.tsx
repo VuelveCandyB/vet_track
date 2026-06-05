@@ -19,6 +19,7 @@ const ADMIN_ROUTES = [
   'Oral',
   'Intramuscular (IM)',
   'Intravenosa (IV)',
+  'Intraarticular (IA)',
   'Subcutánea (SC)',
   'Tópica',
 ]

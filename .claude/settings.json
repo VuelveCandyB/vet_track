@@ -1,0 +1,9 @@
+{
+  "max_file_size_context_warning": false,
+  "ignore_patterns": [
+    ".agents/**/*.md",
+    "node_modules/**",
+    ".next/**",
+    "dist/**"
+  ]
+}
