@@ -4,12 +4,6 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       {/* Left Panel - Brand */}
       <div
         className="hidden md:flex items-center justify-center"
-        style={{
-          backgroundImage: 'url(/images/login-horse-bg.png)',
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          backgroundAttachment: 'fixed'
-        }}
       >
         <div className="text-center relative z-10 p-6">
           <h1 className="text-4xl font-bold text-white mb-4" style={{ fontFamily: 'Dela Gothic One' }}>
