@@ -2,16 +2,17 @@ import { requireUser, isAdmin, isOfficialVet } from '@/lib/auth'
 import { createClient } from '@/lib/supabase/server'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { PALETTE } from '@/lib/palette'
 import Link from 'next/link'
 
 const STATUS_LABEL: Record<string, string> = {
   active: 'Activo', rest: 'Descanso', injury: 'Lesionado', deceased: 'Fallecido',
 }
 const STATUS_COLOR: Record<string, string> = {
-  active:   'bg-green-950 text-green-400 border-green-900',
-  rest:     'bg-yellow-950 text-yellow-400 border-yellow-900',
-  injury:   'bg-red-950 text-red-400 border-red-900',
-  deceased: 'bg-zinc-900 text-zinc-500 border-zinc-800',
+  active:   'border-l-4 border-green-600 bg-green-50',
+  rest:     'border-l-4 border-yellow-600 bg-yellow-50',
+  injury:   'border-l-4 border-red-600 bg-red-50',
+  deceased: 'border-l-4 border-gray-400 bg-gray-50',
 }
 
 export default async function DashboardPage() {
@@ -53,28 +54,27 @@ export default async function DashboardPage() {
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-white" style={{ fontFamily: 'var(--font-dela)' }}>
+        <h1 className="text-2xl" style={{ color: PALETTE.text.primary, fontFamily: 'var(--font-sans)' }}>
           Dashboard
         </h1>
-        <p className="text-sm mt-1" style={{ color: '#4a5280' }}>
+        <p className="text-sm mt-1" style={{ color: PALETTE.text.secondary }}>
           Resumen operacional del hipódromo
         </p>
       </div>
 
       {/* Stat cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-2 md:grid-cols-6 gap-2 mb-4">
         {[
-          { label: 'Total Caballos',   value: stats.total,    color: '#818cf8' },
-          { label: 'Activos',          value: stats.active,   color: '#4ade80' },
-          { label: 'En Descanso',      value: stats.rest,     color: '#facc15' },
-          { label: 'Lesionados',       value: stats.injury,   color: '#f87171' },
-          { label: 'En Vetlist',       value: stats.vetlist,  color: '#f97316' },
-          { label: 'Meds. Hoy',        value: stats.meds_hoy, color: '#38bdf8' },
+          { label: 'Total Caballos',   value: stats.total,    color: PALETTE.primary.green },
+          { label: 'Activos',          value: stats.active,   color: '#059669' },
+          { label: 'En Descanso',      value: stats.rest,     color: '#f59e0b' },
+          { label: 'En Vetlist',       value: stats.vetlist,  color: '#d97706' },
+          { label: 'Meds. Hoy',        value: stats.meds_hoy, color: '#0ea5e9' },
           { label: 'Fallecidos',       value: stats.deceased, color: '#6b7280' },
         ].map(({ label, value, color }) => (
-          <Card key={label} style={{ background: '#131829', border: '1px solid #252d4a' }}>
+          <Card key={label} style={{ background: PALETTE.background.white, border: `1px solid ${PALETTE.ui.border}` }}>
             <CardContent className="pt-5 pb-4">
-              <div className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: '#4a5280' }}>
+              <div className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: PALETTE.text.secondary }}>
                 {label}
               </div>
               <div className="text-3xl font-bold tabular-nums" style={{ color }}>
@@ -85,30 +85,30 @@ export default async function DashboardPage() {
         ))}
       </div>
 
-      <div className="grid md:grid-cols-2 gap-6">
+      <div className="grid md:grid-cols-3 gap-6">
 
         {/* Vetlist activa */}
-        <Card style={{ background: '#131829', border: '1px solid #252d4a' }}>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-semibold uppercase tracking-wider" style={{ color: '#4a5280' }}>
+        <Card style={{ background: PALETTE.background.white, border: `1px solid ${PALETTE.ui.border}` }}>
+          <CardHeader className="pb-3 px-0 -mx-2 px-2">
+            <CardTitle className="w-full text-sm font-semibold uppercase tracking-wider text-white px-4 py-2 rounded-md" style={{ background: PALETTE.primary.green }}>
               En Vetlist
             </CardTitle>
           </CardHeader>
           <CardContent>
             {vetlistActiva.length === 0 ? (
-              <p className="text-sm" style={{ color: '#4a5280' }}>Sin caballos en vetlist.</p>
+              <p className="text-sm" style={{ color: PALETTE.text.secondary }}>Sin caballos en vetlist.</p>
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-0 divide-y" style={{ borderColor: '#f0f5f9' }}>
                 {vetlistActiva.map((v: any) => (
                   <Link key={v.id} href={`/horses/${v.horse_id}`}
-                    className="flex items-center justify-between p-2.5 rounded-lg transition-colors hover:bg-white/5">
+                    className="flex items-center justify-between p-2.5 rounded-lg transition-colors hover:bg-[#05966920]">
                     <div>
-                      <div className="text-sm font-medium text-white">{v.horses?.name ?? '—'}</div>
-                      <div className="text-xs mt-0.5" style={{ color: '#6b7399' }}>
+                      <div className="text-sm font-medium" style={{ color: PALETTE.text.primary }}>{v.horses?.name ?? '—'}</div>
+                      <div className="text-xs mt-0.5" style={{ color: PALETTE.text.secondary }}>
                         {v.motivo} · {v.fecha_ingreso}
                       </div>
                     </div>
-                    <Badge className="bg-red-950 text-red-400 border-red-900 text-xs">Vetlist</Badge>
+                    <Badge style={{ background: '#fee2e2', border: '1px solid #dc2626', color: '#991B1B' }} className="text-xs">Vetlist</Badge>
                   </Link>
                 ))}
               </div>
@@ -117,22 +117,22 @@ export default async function DashboardPage() {
         </Card>
 
         {/* Atención */}
-        <Card style={{ background: '#131829', border: '1px solid #252d4a' }}>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-semibold uppercase tracking-wider" style={{ color: '#4a5280' }}>
+        <Card style={{ background: PALETTE.background.white, border: `1px solid ${PALETTE.ui.border}` }}>
+          <CardHeader className="pb-3 px-0 -mx-2 px-2">
+            <CardTitle className="w-full text-sm font-semibold uppercase tracking-wider text-white px-4 py-2 rounded-md" style={{ background: PALETTE.primary.green }}>
               Requieren Atención
             </CardTitle>
           </CardHeader>
           <CardContent>
             {attention.length === 0 ? (
-              <p className="text-sm" style={{ color: '#4a5280' }}>Ningún caballo requiere atención.</p>
+              <p className="text-sm" style={{ color: PALETTE.text.secondary }}>Ningún caballo requiere atención.</p>
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-0 divide-y" style={{ borderColor: '#f0f5f9' }}>
                 {attention.map((h: any) => (
                   <Link key={h.id} href={`/horses/${h.id}`}
-                    className="flex items-center justify-between p-2.5 rounded-lg transition-colors hover:bg-white/5">
-                    <span className="text-sm font-medium text-white">{h.name}</span>
-                    <Badge className={`text-xs border ${STATUS_COLOR[h.status] ?? ''}`}>
+                    className={`flex items-center justify-between p-2.5 rounded-lg transition-colors hover:bg-[#05966920] ${STATUS_COLOR[h.status] ?? ''}`}>
+                    <span className="text-sm font-medium" style={{ color: PALETTE.text.primary }}>{h.name}</span>
+                    <Badge className={`text-xs ${STATUS_COLOR[h.status] ?? ''}`}>
                       {STATUS_LABEL[h.status] ?? h.status}
                     </Badge>
                   </Link>
@@ -144,27 +144,27 @@ export default async function DashboardPage() {
 
         {/* Recomendaciones pendientes (solo para official_vet o admin) */}
         {officialVet && (
-          <Card style={{ background: '#131829', border: '1px solid #252d4a' }}>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-semibold uppercase tracking-wider" style={{ color: '#4a5280' }}>
+          <Card style={{ background: PALETTE.background.white, border: `1px solid ${PALETTE.ui.border}` }}>
+            <CardHeader className="pb-3 px-0">
+              <CardTitle className="w-screen text-sm font-semibold uppercase tracking-wider text-white px-4 py-2 rounded-md" style={{ background: PALETTE.primary.green, marginLeft: 'calc(-50vw + 50%)', marginRight: 'calc(-50vw + 50%)' }}>
                 Recomendaciones Pendientes
               </CardTitle>
             </CardHeader>
             <CardContent>
               {diagPendientes.length === 0 ? (
-                <p className="text-sm" style={{ color: '#4a5280' }}>Sin recomendaciones pendientes.</p>
+                <p className="text-sm" style={{ color: PALETTE.text.secondary }}>Sin recomendaciones pendientes.</p>
               ) : (
-                <div className="space-y-2">
+                <div className="space-y-0 divide-y" style={{ borderColor: '#f0f5f9' }}>
                   {diagPendientes.map((d: any) => (
                     <Link key={d.id} href={`/horses/${d.horse_id}`}
-                      className="flex items-center justify-between p-2.5 rounded-lg transition-colors hover:bg-white/5">
+                      className="flex items-center justify-between p-2.5 rounded-lg transition-colors hover:bg-[#05966920]">
                       <div>
-                        <div className="text-sm font-medium text-white">{d.horses?.name ?? '—'}</div>
-                        <div className="text-xs mt-0.5" style={{ color: '#6b7399' }}>
+                        <div className="text-sm font-medium" style={{ color: PALETTE.text.primary }}>{d.horses?.name ?? '—'}</div>
+                        <div className="text-xs mt-0.5" style={{ color: PALETTE.text.secondary }}>
                           {d.diagnostico} · {d.vet_name}
                         </div>
                       </div>
-                      <Badge className="bg-orange-950 text-orange-400 border-orange-900 text-xs">
+                      <Badge style={{ background: '#fef3c7', border: '1px solid #f59e0b', color: '#92400e' }} className="text-xs">
                         VetList Recomendado
                       </Badge>
                     </Link>
@@ -176,25 +176,29 @@ export default async function DashboardPage() {
         )}
 
         {/* Medicaciones recientes */}
-        <Card className="md:col-span-2" style={{ background: '#131829', border: '1px solid #252d4a' }}>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-semibold uppercase tracking-wider" style={{ color: '#4a5280' }}>
+        <Card className="md:col-span-3" style={{ background: PALETTE.background.white, border: `1px solid ${PALETTE.ui.border}` }}>
+          <CardHeader className="pb-3 px-0 -mx-2 px-2">
+            <CardTitle className="w-full text-sm font-semibold uppercase tracking-wider text-white px-4 py-2 rounded-md" style={{ background: PALETTE.primary.green }}>
               Medicaciones Recientes
             </CardTitle>
           </CardHeader>
           <CardContent>
             {recentMeds.length === 0 ? (
-              <p className="text-sm" style={{ color: '#4a5280' }}>Sin medicaciones registradas.</p>
+              <p className="text-sm" style={{ color: PALETTE.text.secondary }}>Sin medicaciones registradas.</p>
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-0 divide-y" style={{ borderColor: '#f0f5f9' }}>
                 {recentMeds.map((m: any) => (
                   <Link key={m.id} href={`/horses/${m.horse_id}`}
-                    className="flex items-center justify-between p-2.5 rounded-lg transition-colors hover:bg-white/5">
+                    className="flex items-center justify-between p-2.5 rounded-lg transition-colors hover:bg-[#05966920]">
                     <div>
-                      <span className="text-sm font-medium text-white">{(m.horses as any)?.name ?? '—'}</span>
-                      <span className="text-sm ml-2" style={{ color: '#9ca3af' }}>— {m.drug}</span>
+                      <div className="flex items-center gap-2">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src="https://res.cloudinary.com/dee0x7p16/image/upload/v1780762906/HC_Icono-Cabeza_Azul-Oscuro_jvimak.png" alt="caballo" className="h-5 w-5" />
+                        <span className="text-sm font-medium" style={{ color: PALETTE.text.primary }}>{(m.horses as any)?.name ?? '—'}</span>
+                      </div>
+                      <span className="text-sm ml-2" style={{ color: PALETTE.text.secondary }}>— {m.drug}</span>
                     </div>
-                    <div className="text-xs text-right" style={{ color: '#6b7399' }}>
+                    <div className="text-xs text-right" style={{ color: PALETTE.text.secondary }}>
                       <div>{m.type}</div>
                       <div>{m.administered_at}</div>
                     </div>
