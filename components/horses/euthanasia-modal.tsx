@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { createEuthanasia } from '@/lib/actions/euthanasia'
+import { PALETTE } from '@/lib/palette'
 
 interface Props {
   open: boolean
@@ -33,30 +34,30 @@ export default function EuthanasiaModal({ open, onClose, horseId, horseName, vet
 
   return (
     <Dialog open={open} onOpenChange={v => !v && onClose()}>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto"
-        style={{ background: '#1a1d27', border: '1px solid #3f1212' }}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto"
+        style={{ background: PALETTE.background.white, border: `1px solid ${PALETTE.ui.border}` }}>
         <DialogHeader>
-          <DialogTitle className="text-white">Registro de Eutanasia</DialogTitle>
-          <p className="text-xs" style={{ color: '#4a5280' }}>{horseName}</p>
+          <DialogTitle style={{ color: PALETTE.text.dark }}>Registro de Eutanasia</DialogTitle>
+          <p className="text-xs" style={{ color: PALETTE.text.secondary }}>{horseName}</p>
         </DialogHeader>
 
         <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#6b7399' }}>
+              <Label className="text-xs font-semibold uppercase tracking-wider" style={{ color: PALETTE.text.secondary }}>
                 Fecha *
               </Label>
               <Input type="date" name="fecha" required defaultValue={today} />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#6b7399' }}>
+              <Label className="text-xs font-semibold uppercase tracking-wider" style={{ color: PALETTE.text.secondary }}>
                 Veterinario
               </Label>
-              <Input value={vetName} readOnly style={{ color: '#6b7399', cursor: 'default' }} />
+              <Input value={vetName} readOnly style={{ color: PALETTE.text.secondary, cursor: 'default' }} />
             </div>
 
             <div className="col-span-2 space-y-1.5">
-              <Label className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#6b7399' }}>
+              <Label className="text-xs font-semibold uppercase tracking-wider" style={{ color: PALETTE.text.secondary }}>
                 Motivo / Diagnóstico *
               </Label>
               <Textarea name="motivo" rows={4} required
@@ -65,7 +66,7 @@ export default function EuthanasiaModal({ open, onClose, horseId, horseName, vet
 
             <div className="col-span-2">
               <label className="flex items-center gap-3 rounded-lg px-3 py-3 cursor-pointer"
-                style={{ background: '#13162080', border: '1px solid #2a2d3e' }}>
+                style={{ background: PALETTE.background.lightAlt, border: `1px solid ${PALETTE.ui.border}` }}>
                 <input type="checkbox" name="propietario_notificado"
                   className="w-4 h-4 flex-shrink-0" style={{ accentColor: '#818cf8' }} />
                 <div>
@@ -78,13 +79,13 @@ export default function EuthanasiaModal({ open, onClose, horseId, horseName, vet
             </div>
 
             <div className="col-span-2 space-y-1.5">
-              <Label className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#6b7399' }}>
+              <Label className="text-xs font-semibold uppercase tracking-wider" style={{ color: PALETTE.text.secondary }}>
                 Adjunto <span className="font-normal normal-case" style={{ color: '#4a5280' }}>(acta, autorización · máx. 10 MB)</span>
               </Label>
               <label className="flex items-center gap-3 rounded-lg px-3 py-2.5 cursor-pointer"
-                style={{ background: '#13162080', border: '1px dashed #2a2d3e' }}>
+                style={{ background: PALETTE.background.lightAlt, border: `1px dashed ${PALETTE.ui.border}` }}>
                 <span>📎</span>
-                <span className="text-sm" style={{ color: '#6b7399' }}>
+                <span className="text-sm" style={{ color: PALETTE.text.secondary }}>
                   {fileName || 'Seleccionar archivo...'}
                 </span>
                 <input type="file" name="attachment" accept=".pdf,.jpg,.jpeg,.png,.webp,.gif"
@@ -95,7 +96,7 @@ export default function EuthanasiaModal({ open, onClose, horseId, horseName, vet
           </div>
 
           <div className="rounded-lg px-3 py-2.5 flex gap-2.5"
-            style={{ background: '#1a0a0a', border: '1px solid #7f1d1d80' }}>
+            style={{ background: PALETTE.form.errorBg, border: `1px solid ${PALETTE.status.error}` }}>
             <span className="flex-shrink-0">⚠️</span>
             <p className="text-xs leading-relaxed" style={{ color: '#fca5a5' }}>
               Esta acción marcará al caballo como <strong>Fallecido</strong> y no podrá revertirse desde la interfaz.
@@ -104,7 +105,7 @@ export default function EuthanasiaModal({ open, onClose, horseId, horseName, vet
 
           <div className="flex gap-3">
             <Button type="submit" disabled={pending} className="flex-1"
-              style={{ background: 'linear-gradient(135deg, #7f1d1d, #991b1b)' }}>
+              style={{ background: PALETTE.primary.green, color: '#FFFFFF' }}>
               {pending ? 'Guardando...' : 'Registrar Eutanasia'}
             </Button>
             <Button type="button" variant="ghost" onClick={onClose} disabled={pending}>

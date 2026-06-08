@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { createDiagnostico } from '@/lib/actions/diagnosticos'
 import { DIAGNOSIS_TIPOS, DIAGNOSIS_POR_TIPO, SEVERIDADES, SISTEMAS_AFECTADOS } from '@/lib/constants'
+import { PALETTE } from '@/lib/palette'
 
 interface Props {
   open: boolean
@@ -17,7 +18,7 @@ interface Props {
   today: string
 }
 
-const SELECT_STYLE = { background: '#13162080', borderColor: '#2a2d3e', color: '#e2e8f0' }
+const SELECT_STYLE = { background: PALETTE.background.white, borderColor: PALETTE.ui.border, color: PALETTE.text.primary }
 
 export default function DiagnosisModal({ open, onClose, horseId, horseName, vetName, today }: Props) {
   const [pending, startTransition] = useTransition()
@@ -51,11 +52,11 @@ export default function DiagnosisModal({ open, onClose, horseId, horseName, vetN
 
   return (
     <Dialog open={open} onOpenChange={v => !v && onClose()}>
-      <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto"
-        style={{ background: '#1a1d27', border: '1px solid #2a2d3e' }}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto"
+        style={{ background: PALETTE.background.white, border: `1px solid ${PALETTE.ui.border}` }}>
         <DialogHeader>
-          <DialogTitle className="text-white">Diagnóstico del Ejemplar</DialogTitle>
-          <p className="text-xs" style={{ color: '#4a5280' }}>{horseName}</p>
+          <DialogTitle style={{ color: PALETTE.text.dark }}>Diagnóstico del Ejemplar</DialogTitle>
+          <p className="text-xs" style={{ color: PALETTE.text.secondary }}>{horseName}</p>
         </DialogHeader>
 
         <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
@@ -150,12 +151,12 @@ export default function DiagnosisModal({ open, onClose, horseId, horseName, vetN
                 checked={recomendar}
                 onChange={e => setRecomendar(e.target.checked)}
                 className="w-4 h-4 rounded" />
-              <span className="text-sm" style={{ color: '#e2e8f0' }}>
+              <span className="text-sm font-semibold" style={{ color: PALETTE.status.error }}>
                 Recomendar al Veterinario Oficial para Vet List
               </span>
             </label>
             {recomendar && (
-              <div className="rounded-lg p-3 text-sm mt-2" style={{ background: '#0d102080', border: '1px solid #2a2d3e' }}>
+              <div className="rounded-lg p-3 text-sm mt-2" style={{ background: PALETTE.background.lightAlt, border: `1px solid ${PALETTE.ui.border}` }}>
                 <p style={{ color: '#6b7399' }}>
                   ℹ️ Este diagnóstico será enviado al veterinario oficial para revisión y aprobación de ingreso a Vet List.
                 </p>
@@ -166,10 +167,10 @@ export default function DiagnosisModal({ open, onClose, horseId, horseName, vetN
           {/* Adjunto */}
           <div className="space-y-1.5">
             <Label className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#6b7399' }}>
-              Adjunto <span className="font-normal normal-case" style={{ color: '#4a5280' }}>(PDF o imagen · máx. 10 MB)</span>
+              Adjunto <span className="font-normal normal-case" style={{ color: PALETTE.text.secondary }}>(PDF o imagen · máx. 10 MB)</span>
             </Label>
             <label className="flex items-center gap-3 rounded-lg px-3 py-2.5 cursor-pointer transition-colors"
-              style={{ background: '#13162080', border: '1px dashed #2a2d3e' }}>
+              style={{ background: PALETTE.background.lightAlt, border: `1px dashed ${PALETTE.ui.border}` }}>
               <span>📎</span>
               <span className="text-sm" style={{ color: '#6b7399' }}>
                 {fileName || 'Seleccionar archivo...'}
@@ -182,7 +183,7 @@ export default function DiagnosisModal({ open, onClose, horseId, horseName, vetN
 
           <div className="flex gap-3 pt-1">
             <Button type="submit" disabled={pending} className="flex-1"
-              style={{ background: 'linear-gradient(135deg, #3a55e8, #7c3aed)' }}>
+              style={{ background: PALETTE.primary.green, color: '#FFFFFF' }}>
               {pending ? 'Guardando...' : 'Guardar Diagnóstico'}
             </Button>
             <Button type="button" variant="ghost" onClick={onClose} disabled={pending}>

@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import type { User } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/client'
 import { ADMIN_EMAIL } from '@/lib/constants'
+import { PALETTE } from '@/lib/palette'
 
 export default function Navbar({ user }: { user: User }) {
   const pathname = usePathname()
@@ -31,22 +32,15 @@ export default function Navbar({ user }: { user: User }) {
   }
 
   return (
-    <header style={{ background: '#0d102098', borderBottom: '1px solid #252d4a', backdropFilter: 'blur(16px)' }}
+    <header style={{ background: '#05966995', borderBottom: '1px solid #047857', backdropFilter: 'blur(16px)' }}
       className="sticky top-0 z-50 w-full overflow-hidden">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between h-16 w-full">
+      <div className="px-4 sm:px-6 flex items-center justify-between h-16 w-full">
 
         {/* Logo */}
         <Link href="/dashboard" className="flex items-center flex-shrink-0">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          {/* Mobile: logo stacked */}
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo-stacked-blanco.svg" alt="Hipódromo Camarero"
-            className="md:hidden h-10 w-auto"
-            style={{ filter: 'brightness(0) invert(1)' }} />
-          {/* Desktop: logo horizontal */}
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo-horizontal-blanco.svg" alt="Hipódromo Camarero"
-            className="hidden md:block h-8 w-auto"
+          <img src="https://res.cloudinary.com/dee0x7p16/image/upload/v1780695288/HC_Logo-Principal_Negro_mfsygj.png" alt="Hipódromo Camarero"
+            className="h-8 w-auto"
             style={{ filter: 'brightness(0) invert(1)' }} />
         </Link>
 
@@ -56,8 +50,8 @@ export default function Navbar({ user }: { user: User }) {
             <Link key={href} href={href}
               className="px-4 py-1.5 text-sm font-medium rounded-md transition-colors -mb-px border-b-2"
               style={isActive(href)
-                ? { background: '#2B55F420', color: '#fff', borderColor: '#C8F135', borderRadius: '6px 6px 0 0' }
-                : { color: '#4a5280', borderColor: 'transparent' }}>
+                ? { background: `${PALETTE.primary.green}20`, color: '#FFFFFF', borderColor: '#FFFFFF', borderRadius: '6px 6px 0 0' }
+                : { color: '#FFFFFF', borderColor: 'transparent' }}>
               {label}
             </Link>
           ))}
@@ -66,21 +60,21 @@ export default function Navbar({ user }: { user: User }) {
         {/* Desktop user */}
         <div className="hidden md:flex items-center gap-3">
           <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold text-white flex-shrink-0"
-            style={{ background: '#2B55F4' }}>
+            style={{ background: PALETTE.primary.green }}>
             {user.email?.[0].toUpperCase() ?? '?'}
           </div>
           <div className="hidden lg:block">
-            <div className="text-sm font-medium" style={{ color: '#e2e8f0' }}>{user.email}</div>
-            <div className="text-xs" style={{ color: '#4a5280' }}>Veterinario</div>
+            <div className="text-sm font-medium" style={{ color: PALETTE.text.primary }}>{user.email}</div>
+            <div className="text-xs" style={{ color: PALETTE.text.secondary }}>Veterinario</div>
           </div>
           <Link href="/perfil"
-            className="text-xs px-3 py-1.5 rounded-md border transition-colors hover:text-white"
-            style={{ borderColor: '#252d4a', color: '#9ca3af' }}>
+            className="text-xs px-3 py-1.5 rounded-md border transition-colors"
+            style={{ borderColor: PALETTE.primary.green, color: '#FFFFFF' }}>
             Mi perfil
           </Link>
           <button onClick={handleLogout}
-            className="text-xs px-3 py-1.5 rounded-md border transition-colors hover:text-white"
-            style={{ borderColor: '#252d4a', color: '#9ca3af' }}>
+            className="text-xs px-3 py-1.5 rounded-md border transition-colors"
+            style={{ borderColor: PALETTE.primary.green, color: '#FFFFFF' }}>
             Salir
           </button>
         </div>

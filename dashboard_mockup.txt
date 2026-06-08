@@ -1,0 +1,104 @@
+╔════════════════════════════════════════════════════════════════════════════╗
+║                                                                            ║
+║  📊 Dashboard                                                              ║
+║  Resumen operacional del hipódromo                                        ║
+║                                                                            ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+
+┌─ FRAME 1: STAT CARDS (7 métricas en grid) ─────────────────────────────────┐
+│                                                                              │
+│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐                       │
+│  │ TOTAL    │ │ ACTIVOS  │ │ DESCANSO │ │ LESIONADOS                       │
+│  │    42    │ │    38    │ │    3     │ │    1     │                       │
+│  └──────────┘ └──────────┘ └──────────┘ └──────────┘                       │
+│                                                                              │
+│  ┌──────────┐ ┌──────────┐ ┌──────────┐                                    │
+│  │ EN VETLIST                │ MEDS. HOY│ │ FALLECIDOS│                    │
+│  │    5     │ │    12    │ │    3     │                                    │
+│  └──────────┘ └──────────┘ └──────────┘                                    │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+                                ↓ (gap-6 vertical)
+
+┌─ FRAME 2: EN VETLIST (left, 50%) ─┐  ┌─ FRAME 3: REQUIEREN ATENCIÓN ────┐
+│                                   │  │ (right, 50%) - Optional            │
+│ EN VETLIST                        │  │                                    │
+│                                   │  │ REQUIEREN ATENCIÓN                 │
+│ • Caballo A                       │  │                                    │
+│   Cólico · 2026-06-05  [Vetlist] │  │ • Caballo B (con borde rojo/verde) │
+│                                   │  │   [Lesionado] [Descanso]           │
+│ • Caballo C                       │  │                                    │
+│   Fractura · 2026-06-04 [Vetlist]│  │ • Caballo D                        │
+│                                   │  │   [Activo]                         │
+└───────────────────────────────────┘  └────────────────────────────────────┘
+
+                                ↓ (gap-6 vertical)
+
+┌─ FRAME 4: RECOMENDACIONES PENDIENTES (left, 50%) ──────┐
+│ (Solo visible para Official Vet o Admin)                │
+│                                                          │
+│ RECOMENDACIONES PENDIENTES                              │
+│                                                          │
+│ • Caballo X                                             │
+│   Diagnóstico ... · Dr. Smith  [VetList Recomendado]   │
+│                                                          │
+│ • Caballo Y                                             │
+│   Diagnóstico ... · Dr. Jones  [VetList Recomendado]   │
+│                                                          │
+└──────────────────────────────────────────────────────────┘
+
+                                ↓ (gap-6 vertical)
+
+┌─ FRAME 5: MEDICACIONES RECIENTES (full-width, col-span-2) ──────────────────┐
+│                                                                               │
+│ MEDICACIONES RECIENTES                                                       │
+│                                                                               │
+│ • Caballo M  — Antibiótico              Inyectable         2026-06-05       │
+│ • Caballo N  — Antiinflamatorio         Oral              2026-06-04       │
+│ • Caballo O  — Vitaminas                Oral              2026-06-03       │
+│ • Caballo P  — Antidolor                Inyectable         2026-06-02       │
+│ • Caballo Q  — Probiótico               Oral              2026-06-01       │
+│                                                                               │
+└───────────────────────────────────────────────────────────────────────────────┘
+
+
+╔════════════════════════════════════════════════════════════════════════════╗
+║                            RESPONSIVE BEHAVIOR                             ║
+╠════════════════════════════════════════════════════════════════════════════╣
+║                                                                            ║
+║ DESKTOP (md: 768px+)               MOBILE (<768px)                        ║
+║                                                                            ║
+║ Frame 1: 4 columns               Frame 1: 2 columns stacked             ║
+║ Frames 2-4: 2-col grid           Frames 2-5: 1 column stacked            ║
+║ Frame 5: col-span-2 (full)       Frame 5: full width                     ║
+║                                                                            ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+
+═══════════════════════════════════════════════════════════════════════════════
+ESTRUCTURA TÉCNICA (Grid Layout)
+═══════════════════════════════════════════════════════════════════════════════
+
+Frame 1: grid grid-cols-2 md:grid-cols-4 gap-4
+         └─ 7 stat cards (última fila con 3 items)
+
+Frames 2-5: grid md:grid-cols-2 gap-6
+   ├─ Frame 2: (left)
+   ├─ Frame 3: (right) - Condicional: officialVet
+   ├─ Frame 4: (left) - Condicional: officialVet
+   └─ Frame 5: md:col-span-2 (full-width)
+
+
+═══════════════════════════════════════════════════════════════════════════════
+COLORES & ESTILOS ACTUALES
+═══════════════════════════════════════════════════════════════════════════════
+
+✓ Cards: white bg, light border, shadow-sm
+✓ Titles: uppercase, tracking-wider, text-secondary gray
+✓ Text: primary dark (#334155), secondary gray (#64748B)
+✓ Stat numbers: color-coded (green/orange/red/blue)
+✓ Badges: colored backgrounds (red, orange, yellow)
+✓ Links: hover:bg-gray-50 (subtle hover)
+✓ Status borders: left border colored (green/yellow/red/gray)

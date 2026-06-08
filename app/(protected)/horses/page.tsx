@@ -5,15 +5,16 @@ import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import SyncButton from '@/components/horses/sync-button'
+import { PALETTE } from '@/lib/palette'
 
 const STATUS_LABEL: Record<string, string> = {
   active: 'Activo', rest: 'Descanso', injury: 'Lesionado', deceased: 'Fallecido',
 }
 const STATUS_COLOR: Record<string, string> = {
-  active:   'bg-green-950 text-green-400 border-green-900',
-  rest:     'bg-yellow-950 text-yellow-400 border-yellow-900',
-  injury:   'bg-red-950 text-red-400 border-red-900',
-  deceased: 'bg-zinc-900 text-zinc-500 border-zinc-800',
+  active:   'bg-green-100 text-green-800 border-green-300',
+  rest:     'bg-yellow-100 text-yellow-800 border-yellow-300',
+  injury:   'bg-red-100 text-red-800 border-red-300',
+  deceased: 'bg-gray-100 text-gray-700 border-gray-300',
 }
 const COLOR_DOT: Record<string, string> = {
   'Bay':      '#c2852c',
@@ -53,10 +54,10 @@ export default async function HorsesPage({
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-white" style={{ fontFamily: 'var(--font-dela)' }}>
-            Caballos
+          <h1 className="text-2xl font-bold" style={{ fontFamily: 'var(--font-sans)', color: PALETTE.primary.green }}>
+            Listado de Caballos
           </h1>
-          <p className="text-sm mt-1" style={{ color: '#4a5280' }}>
+          <p className="text-sm mt-1" style={{ color: PALETTE.text.secondary }}>
             {total ?? 0} ejemplares registrados
           </p>
         </div>
@@ -77,18 +78,18 @@ export default async function HorsesPage({
       </form>
 
       {/* Table */}
-      <div className="rounded-xl overflow-hidden" style={{ background: '#131829', border: '1px solid #252d4a' }}>
-        <div className="px-5 py-3 border-b text-xs" style={{ borderColor: '#252d4a', color: '#4a5280' }}>
+      <div className="rounded-lg overflow-hidden" style={{ background: PALETTE.background.white, border: `1px solid ${PALETTE.ui.border}` }}>
+        <div className="px-5 py-3 border-b text-xs" style={{ borderColor: PALETTE.ui.border, color: PALETTE.text.secondary }}>
           {horses?.length ?? 0} resultado{horses?.length !== 1 ? 's' : ''}
           {q && ` para "${q}"`}
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm border-collapse">
             <thead>
-              <tr style={{ borderBottom: '1px solid #252d4a' }}>
+              <tr style={{ borderBottom: `1px solid ${PALETTE.ui.border}` }}>
                 {['Nombre', 'Color', 'Estado', 'Género', 'Edad', 'Microchip'].map(h => (
                   <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider"
-                    style={{ color: '#4a5280' }}>
+                    style={{ color: PALETTE.text.secondary }}>
                     {h}
                   </th>
                 ))}
@@ -97,17 +98,19 @@ export default async function HorsesPage({
             <tbody>
               {!horses?.length ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-12 text-center" style={{ color: '#4a5280' }}>
+                  <td colSpan={6} className="px-4 py-12 text-center" style={{ color: PALETTE.text.secondary }}>
                     Sin resultados
                   </td>
                 </tr>
               ) : horses.map(horse => (
                 <tr key={horse.id}
-                  className="transition-colors hover:bg-white/5"
-                  style={{ borderBottom: '1px solid #1e2235' }}>
+                  className="transition-colors hover:bg-[#05966920]"
+                  style={{ borderBottom: `1px solid ${PALETTE.ui.border}` }}>
                   <td className="px-4 py-3">
                     <Link href={`/horses/${horse.id}`}
-                      className="font-semibold text-white hover:text-blue-400 transition-colors">
+                      className="font-semibold transition-colors hover:text-[#059669] flex items-center gap-2" style={{ color: PALETTE.text.primary }}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src="https://res.cloudinary.com/dee0x7p16/image/upload/v1780762906/HC_Icono-Cabeza_Azul-Oscuro_jvimak.png" alt="caballo" className="h-5 w-5" />
                       {horse.name}
                     </Link>
                   </td>
@@ -115,7 +118,7 @@ export default async function HorsesPage({
                     <div className="flex items-center gap-2">
                       <div className="w-3 h-3 rounded-full flex-shrink-0"
                         style={{ background: COLOR_DOT[horse.color] ?? '#6b7399' }} />
-                      <span style={{ color: '#9ca3af' }}>{horse.color || '—'}</span>
+                      <span style={{ color: PALETTE.text.secondary }}>{horse.color || '—'}</span>
                     </div>
                   </td>
                   <td className="px-4 py-3">
@@ -123,8 +126,8 @@ export default async function HorsesPage({
                       {STATUS_LABEL[horse.status] ?? horse.status}
                     </Badge>
                   </td>
-                  <td className="px-4 py-3" style={{ color: '#9ca3af' }}>{horse.gender || '—'}</td>
-                  <td className="px-4 py-3" style={{ color: '#9ca3af' }}>
+                  <td className="px-4 py-3" style={{ color: PALETTE.text.secondary }}>{horse.gender || '—'}</td>
+                  <td className="px-4 py-3" style={{ color: PALETTE.text.secondary }}>
                     {horse.birth_date
                       ? `${todayYear - new Date(horse.birth_date).getFullYear()} años`
                       : '—'}
@@ -132,10 +135,10 @@ export default async function HorsesPage({
                   <td className="px-4 py-3">
                     {horse.microchip
                       ? <span className="font-mono text-xs px-2 py-0.5 rounded"
-                          style={{ background: '#1e2235', color: '#818cf8' }}>
+                          style={{ background: PALETTE.background.lightAlt, color: PALETTE.primary.green }}>
                           {horse.microchip}
                         </span>
-                      : <span style={{ color: '#4a5280' }}>—</span>}
+                      : <span style={{ color: PALETTE.text.secondary }}>—</span>}
                   </td>
                 </tr>
               ))}

@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { createMedication } from '@/lib/actions/medications'
+import { PALETTE } from '@/lib/palette'
 import type { Drug } from '@/lib/types'
 
 const RESTRICTION_COLORS: Record<string, [string, string]> = {
@@ -44,7 +45,7 @@ interface Props {
   today: string
 }
 
-const SELECT_STYLE = { background: '#13162080', borderColor: '#2a2d3e', color: '#e2e8f0' }
+const SELECT_STYLE = { background: PALETTE.background.white, borderColor: PALETTE.ui.border, color: PALETTE.text.primary }
 
 export default function MedicationModal({ open, onClose, horseId, horseName, drugs, vetName, today }: Props) {
   const [pending, startTransition] = useTransition()
@@ -97,11 +98,11 @@ export default function MedicationModal({ open, onClose, horseId, horseName, dru
 
   return (
     <Dialog open={open} onOpenChange={v => !v && onClose()}>
-      <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto"
-        style={{ background: '#1a1d27', border: '1px solid #2a2d3e' }}>
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto"
+        style={{ background: PALETTE.background.white, border: `1px solid ${PALETTE.ui.border}` }}>
         <DialogHeader>
-          <DialogTitle className="text-white">Registrar Medicamento</DialogTitle>
-          <p className="text-xs" style={{ color: '#4a5280' }}>{horseName}</p>
+          <DialogTitle style={{ color: PALETTE.text.dark }}>Registrar Medicamento</DialogTitle>
+          <p className="text-xs" style={{ color: PALETTE.text.secondary }}>{horseName}</p>
         </DialogHeader>
 
         <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
@@ -116,23 +117,23 @@ export default function MedicationModal({ open, onClose, horseId, horseName, dru
           {/* Fecha + Veterinario */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#6b7399' }}>
+              <Label className="text-xs font-semibold uppercase tracking-wider" style={{ color: PALETTE.text.secondary }}>
                 Fecha *
               </Label>
               <Input type="date" name="administered_at" required defaultValue={today} />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#6b7399' }}>
+              <Label className="text-xs font-semibold uppercase tracking-wider" style={{ color: PALETTE.text.secondary }}>
                 Veterinario
               </Label>
-              <Input value={vetName} readOnly style={{ color: '#6b7399', cursor: 'default' }} />
+              <Input value={vetName} readOnly style={{ color: PALETTE.text.secondary, cursor: 'default' }} />
             </div>
           </div>
 
           {/* Vía de administración + Propósito */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#6b7399' }}>
+              <Label className="text-xs font-semibold uppercase tracking-wider" style={{ color: PALETTE.text.secondary }}>
                 Vía de administración *
               </Label>
               <select name="type" required
@@ -143,7 +144,7 @@ export default function MedicationModal({ open, onClose, horseId, horseName, dru
               </select>
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#6b7399' }}>
+              <Label className="text-xs font-semibold uppercase tracking-wider" style={{ color: PALETTE.text.secondary }}>
                 Propósito *
               </Label>
               <select name="proposito" required
@@ -158,9 +159,9 @@ export default function MedicationModal({ open, onClose, horseId, horseName, dru
           {/* Categoría (filtro) + Medicamento */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#6b7399' }}>
+              <Label className="text-xs font-semibold uppercase tracking-wider" style={{ color: PALETTE.text.secondary }}>
                 Categoría{' '}
-                <span className="font-normal normal-case" style={{ color: '#4a5280' }}>(filtro)</span>
+                <span className="font-normal normal-case" style={{ color: PALETTE.text.secondary }}>(filtro)</span>
               </Label>
               <select
                 value={selectedCategoria}
@@ -172,7 +173,7 @@ export default function MedicationModal({ open, onClose, horseId, horseName, dru
               </select>
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#6b7399' }}>
+              <Label className="text-xs font-semibold uppercase tracking-wider" style={{ color: PALETTE.text.secondary }}>
                 Medicamento *
               </Label>
               <select name="drug" required
@@ -192,39 +193,39 @@ export default function MedicationModal({ open, onClose, horseId, horseName, dru
 
           {/* Compliance panel */}
           {selectedDrug && (
-            <div className="rounded-lg p-3 text-sm" style={{ background: '#0d102080', border: '1px solid #2a2d3e' }}>
+            <div className="rounded-lg p-3 text-sm" style={{ background: PALETTE.background.lightAlt, border: `1px solid ${PALETTE.ui.border}` }}>
               <div className="flex items-center gap-2 flex-wrap mb-2">
                 <span className="text-xs font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full"
                   style={{ color: fg, background: bg }}>
                   {selectedDrug.tipo_restriccion || 'Sin restricción'}
                 </span>
                 {selectedDrug.categoria && (
-                  <span className="text-xs" style={{ color: '#6b7399' }}>{selectedDrug.categoria}</span>
+                  <span className="text-xs" style={{ color: PALETTE.text.secondary }}>{selectedDrug.categoria}</span>
                 )}
               </div>
               <div className="flex gap-5 flex-wrap">
                 {selectedDrug.withdrawal_time_horas != null && (
                   <div>
-                    <div className="text-xs uppercase tracking-wider mb-1" style={{ color: '#4a5280' }}>Retiro</div>
-                    <div className="text-lg font-bold" style={{ color: fg }}>{selectedDrug.withdrawal_time_horas}h</div>
-                    <div className="text-xs" style={{ color: '#4a5280' }}>
+                    <div className="text-xs uppercase tracking-wider mb-1 font-semibold" style={{ color: PALETTE.primary.green }}>Retiro</div>
+                    <div className="text-lg font-bold" style={{ color: PALETTE.text.primary }}>{selectedDrug.withdrawal_time_horas}h</div>
+                    <div className="text-xs" style={{ color: PALETTE.text.secondary }}>
                       {Math.round(selectedDrug.withdrawal_time_horas / 24 * 10) / 10} días
                     </div>
                   </div>
                 )}
                 {selectedDrug.detection_time_horas != null && (
                   <div>
-                    <div className="text-xs uppercase tracking-wider mb-1" style={{ color: '#4a5280' }}>Detección</div>
-                    <div className="text-lg font-bold" style={{ color: '#818cf8' }}>{selectedDrug.detection_time_horas}h</div>
-                    <div className="text-xs" style={{ color: '#4a5280' }}>
+                    <div className="text-xs uppercase tracking-wider mb-1 font-semibold" style={{ color: PALETTE.primary.green }}>Detección</div>
+                    <div className="text-lg font-bold" style={{ color: PALETTE.text.primary }}>{selectedDrug.detection_time_horas}h</div>
+                    <div className="text-xs" style={{ color: PALETTE.text.secondary }}>
                       {Math.round(selectedDrug.detection_time_horas / 24 * 10) / 10} días
                     </div>
                   </div>
                 )}
                 {selectedDrug.notas && (
                   <div className="flex-1 min-w-36">
-                    <div className="text-xs uppercase tracking-wider mb-1" style={{ color: '#f97316' }}>Nota regulatoria</div>
-                    <div className="text-xs leading-relaxed" style={{ color: '#9ca3af' }}>{selectedDrug.notas}</div>
+                    <div className="text-xs uppercase tracking-wider mb-1 font-semibold" style={{ color: PALETTE.primary.green }}>Nota regulatoria</div>
+                    <div className="text-xs leading-relaxed" style={{ color: PALETTE.text.secondary }}>{selectedDrug.notas}</div>
                   </div>
                 )}
               </div>
@@ -233,24 +234,24 @@ export default function MedicationModal({ open, onClose, horseId, horseName, dru
 
           {/* Dosis */}
           <div className="space-y-1.5">
-            <Label className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#6b7399' }}>
+            <Label className="text-xs font-semibold uppercase tracking-wider" style={{ color: PALETTE.text.secondary }}>
               Dosis *
             </Label>
-            <div className="flex h-9 rounded-md border overflow-hidden" style={{ borderColor: '#2a2d3e' }}>
+            <div className="flex h-9 rounded-md border overflow-hidden" style={{ borderColor: PALETTE.ui.border }}>
               <input
                 type="text"
                 value={doseAmount}
                 onChange={e => setDoseAmount(e.target.value)}
                 required
                 placeholder="ej. 5"
-                className="flex-1 min-w-0 px-3 text-sm bg-transparent outline-none"
-                style={{ color: '#e2e8f0' }}
+                className="flex-1 min-w-0 px-3 text-sm"
+                style={{ color: PALETTE.text.primary, background: PALETTE.background.white, borderColor: PALETTE.ui.border }}
               />
               <select
                 value={doseUnit}
                 onChange={e => setDoseUnit(e.target.value)}
                 className="border-l px-2 text-sm"
-                style={{ background: '#13162080', borderColor: '#2a2d3e', color: '#6b7399' }}
+                style={{ background: PALETTE.background.white, borderColor: PALETTE.ui.border, color: PALETTE.text.primary }}
               >
                 <option value="mL">mL</option>
                 <option value="Litros">Litros</option>
@@ -264,17 +265,17 @@ export default function MedicationModal({ open, onClose, horseId, horseName, dru
 
           {/* Notas + Adjunto */}
           <div className="space-y-1.5">
-            <Label className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#6b7399' }}>Notas</Label>
+            <Label className="text-xs font-semibold uppercase tracking-wider" style={{ color: PALETTE.text.secondary }}>Notas</Label>
             <Textarea name="notes" rows={2} placeholder="Observaciones, reacciones..." />
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#6b7399' }}>
+            <Label className="text-xs font-semibold uppercase tracking-wider" style={{ color: PALETTE.text.secondary }}>
               Adjunto <span className="font-normal normal-case" style={{ color: '#4a5280' }}>(PDF o imagen · máx. 10 MB)</span>
             </Label>
             <label className="flex items-center gap-3 rounded-lg px-3 py-2.5 cursor-pointer transition-colors"
-              style={{ background: '#13162080', border: '1px dashed #2a2d3e' }}>
+              style={{ background: PALETTE.background.lightAlt, border: `1px dashed ${PALETTE.ui.border}` }}>
               <span>📎</span>
-              <span className="text-sm" style={{ color: '#6b7399' }}>
+              <span className="text-sm" style={{ color: PALETTE.text.secondary }}>
                 {fileName || 'Seleccionar archivo...'}
               </span>
               <input type="file" name="attachment" accept=".pdf,.jpg,.jpeg,.png,.webp,.gif"
@@ -285,7 +286,7 @@ export default function MedicationModal({ open, onClose, horseId, horseName, dru
 
           <div className="flex gap-3 pt-1">
             <Button type="submit" disabled={pending} className="flex-1"
-              style={{ background: 'linear-gradient(135deg, #3a55e8, #7c3aed)' }}>
+              style={{ background: PALETTE.primary.green, color: '#FFFFFF' }}>
               {pending ? 'Guardando...' : 'Guardar Registro'}
             </Button>
             <Button type="button" variant="ghost" onClick={onClose} disabled={pending}>

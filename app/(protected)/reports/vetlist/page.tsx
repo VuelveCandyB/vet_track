@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
+import { PALETTE } from '@/lib/palette'
 
 export default async function VetlistReportPage({
   searchParams,
@@ -54,46 +55,46 @@ export default async function VetlistReportPage({
     <div>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-white" style={{ fontFamily: 'var(--font-dela)' }}>
+          <h1 className="text-2xl font-bold" style={{ color: PALETTE.primary.green, fontFamily: 'var(--font-sans)' }}>
             Reporte — Vetlist
           </h1>
-          <p className="text-sm mt-1" style={{ color: '#4a5280' }}>Ingresos y egresos de caballos bajo tratamiento</p>
+          <p className="text-sm mt-1" style={{ color: PALETTE.text.secondary }}>Ingresos y egresos de caballos bajo tratamiento</p>
         </div>
         <div className="flex gap-2">
-          <Link href="/reports/medications"><Button variant="ghost" size="sm">Medicaciones</Button></Link>
-          <Link href="/reports/euthanasia"><Button variant="ghost" size="sm">Eutanasias</Button></Link>
+          <Link href="/reports/medications"><Button size="sm" style={{ background: PALETTE.primary.green, color: '#FFFFFF' }}>Medicaciones</Button></Link>
+          <Link href="/reports/euthanasia"><Button size="sm" style={{ background: PALETTE.primary.green, color: '#FFFFFF' }}>Eutanasias</Button></Link>
         </div>
       </div>
 
       {/* Filters */}
-      <form method="get" className="rounded-xl p-5 mb-6" style={{ background: '#131829', border: '1px solid #252d4a' }}>
+      <form method="get" className="rounded-xl p-5 mb-6" style={{ background: PALETTE.background.white, border: `1px solid ${PALETTE.ui.border}` }}>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 items-end">
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5" style={{ color: '#4a5280' }}>Caballo</label>
+            <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5" style={{ color: PALETTE.text.secondary }}>Caballo</label>
             <Input name="horse" defaultValue={filters.horse} placeholder="Nombre..." />
           </div>
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5" style={{ color: '#4a5280' }}>Vet. ingreso</label>
+            <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5" style={{ color: PALETTE.text.secondary }}>Vet. ingreso</label>
             <Input name="vet" defaultValue={filters.vet} placeholder="Nombre..." />
           </div>
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5" style={{ color: '#4a5280' }}>Desde</label>
+            <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5" style={{ color: PALETTE.text.secondary }}>Desde</label>
             <Input type="date" name="date_from" defaultValue={filters.date_from} />
           </div>
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5" style={{ color: '#4a5280' }}>Hasta</label>
+            <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5" style={{ color: PALETTE.text.secondary }}>Hasta</label>
             <Input type="date" name="date_to" defaultValue={filters.date_to} />
           </div>
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5" style={{ color: '#4a5280' }}>Estado</label>
+            <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5" style={{ color: PALETTE.text.secondary }}>Estado</label>
             <select name="estado" defaultValue={filters.estado ?? ''} className="flex h-9 w-full rounded-md border px-3 py-1 text-sm"
-              style={{ background: '#0d102080', borderColor: '#252d4a', color: '#e2e8f0' }}>
+              style={{ background: PALETTE.background.white, borderColor: PALETTE.ui.border, color: PALETTE.text.primary }}>
               <option value="">Todos</option>
               <option value="activos">Solo activos</option>
             </select>
           </div>
           <div className="flex gap-2">
-            <Button type="submit" style={{ background: '#2B55F4' }} className="flex-1">Filtrar</Button>
+            <Button type="submit" style={{ background: PALETTE.primary.green }} className="flex-1">Filtrar</Button>
             <Link href="/reports/vetlist"><Button variant="ghost" type="button">✕</Button></Link>
           </div>
         </div>
@@ -101,16 +102,16 @@ export default async function VetlistReportPage({
 
       {/* Table */}
       {noResults ? (
-        <div className="rounded-xl p-12 text-center" style={{ background: '#131829', border: '1px solid #252d4a', color: '#4a5280' }}>
+        <div className="rounded-xl p-12 text-center" style={{ background: PALETTE.background.white, border: `1px solid ${PALETTE.ui.border}`, color: PALETTE.text.secondary }}>
           No se encontraron caballos con ese nombre.
         </div>
       ) : !rows.length ? (
-        <div className="rounded-xl p-12 text-center" style={{ background: '#131829', border: '1px solid #252d4a', color: '#4a5280' }}>
+        <div className="rounded-xl p-12 text-center" style={{ background: PALETTE.background.white, border: `1px solid ${PALETTE.ui.border}`, color: PALETTE.text.secondary }}>
           Sin registros para los filtros seleccionados.
         </div>
       ) : (
-        <div className="rounded-xl overflow-hidden" style={{ background: '#131829', border: '1px solid #252d4a' }}>
-          <div className="px-5 py-3 border-b text-xs" style={{ borderColor: '#252d4a', color: '#4a5280' }}>
+        <div className="rounded-xl overflow-hidden" style={{ background: PALETTE.background.white, border: `1px solid ${PALETTE.ui.border}` }}>
+          <div className="px-5 py-3 border-b text-xs" style={{ borderColor: PALETTE.ui.border, color: PALETTE.text.secondary }}>
             {rows.length} registro{rows.length !== 1 ? 's' : ''}
           </div>
           <div className="overflow-x-auto">
@@ -119,44 +120,44 @@ export default async function VetlistReportPage({
                 <tr style={{ borderBottom: '1px solid #252d4a' }}>
                   {['Caballo', 'Ingreso', 'Egreso', 'Inicio descanso', 'Fin descanso', 'Duración', 'Días p/correr', 'Motivo', 'Veterinario', 'Estado'].map(h => (
                     <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider whitespace-nowrap"
-                      style={{ color: '#4a5280' }}>{h}</th>
+                      style={{ color: PALETTE.text.secondary }}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {rows.map((r: any) => (
-                  <tr key={r.id} className="transition-colors hover:bg-white/5" style={{ borderBottom: '1px solid #1e2235' }}>
+                  <tr key={r.id} className="transition-colors hover:bg-gray-50" style={{ borderBottom: '1px solid #1e2235' }}>
                     <td className="px-4 py-3">
-                      <Link href={`/horses/${r.horse_id}`} className="font-medium text-white hover:text-blue-400 transition-colors">
+                      <Link href={`/horses/${r.horse_id}`} className="font-medium transition-colors" style={{ color: PALETTE.primary.green }}>
                         {r.horses?.name ?? '—'}
                       </Link>
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap" style={{ color: '#9ca3af' }}>{r.fecha_ingreso || '—'}</td>
-                    <td className="px-4 py-3 whitespace-nowrap" style={{ color: '#9ca3af' }}>{r.fecha_egreso || '—'}</td>
-                    <td className="px-4 py-3 whitespace-nowrap" style={{ color: '#9ca3af' }}>{r.fecha_inicio_descanso || '—'}</td>
-                    <td className="px-4 py-3 whitespace-nowrap" style={{ color: '#9ca3af' }}>{r.fecha_fin_descanso || '—'}</td>
+                    <td className="px-4 py-3 whitespace-nowrap" style={{ color: PALETTE.text.secondary }}>{r.fecha_ingreso || '—'}</td>
+                    <td className="px-4 py-3 whitespace-nowrap" style={{ color: PALETTE.text.secondary }}>{r.fecha_egreso || '—'}</td>
+                    <td className="px-4 py-3 whitespace-nowrap" style={{ color: PALETTE.text.secondary }}>{r.fecha_inicio_descanso || '—'}</td>
+                    <td className="px-4 py-3 whitespace-nowrap" style={{ color: PALETTE.text.secondary }}>{r.fecha_fin_descanso || '—'}</td>
                     <td className="px-4 py-3">
                       <span className="text-xs font-semibold px-2 py-0.5 rounded-full"
-                        style={{ background: '#0d2e4a', color: '#7dd3fc' }}>
+                        style={{ background: '#E8ECEF', color: PALETTE.primary.green }}>
                         {r.duracion_dias}d
                       </span>
                     </td>
                     <td className="px-4 py-3">
                       {r.dias_restantes !== null ? (
                         r.dias_restantes > 0
-                          ? <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ background: '#2e1a0d', color: '#fb923c' }}>{r.dias_restantes}d</span>
+                          ? <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ background: '#FEE2E2', color: PALETTE.status.error }}>{r.dias_restantes}d</span>
                           : r.dias_restantes === 0
-                            ? <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ background: '#2e2a0d', color: '#facc15' }}>Hoy</span>
+                            ? <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ background: '#FEF3C7', color: PALETTE.text.secondary }}>Hoy</span>
                             : <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ background: '#0d2e1a', color: '#4ade80' }}>Listo</span>
-                      ) : <span style={{ color: '#4a5280' }}>—</span>}
+                      ) : <span style={{ color: PALETTE.text.secondary }}>—</span>}
                     </td>
-                    <td className="px-4 py-3" style={{ color: '#9ca3af', maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    <td className="px-4 py-3" style={{ color: PALETTE.text.secondary, maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {r.motivo || '—'}
                     </td>
-                    <td className="px-4 py-3" style={{ color: '#9ca3af' }}>{r.vet_ingreso || '—'}</td>
+                    <td className="px-4 py-3" style={{ color: PALETTE.text.secondary }}>{r.vet_ingreso || '—'}</td>
                     <td className="px-4 py-3">
                       {!r.fecha_egreso
-                        ? <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ background: '#14532d40', color: '#86efac' }}>Activo</span>
+                        ? <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ background: '#14532d40', color: PALETTE.primary.green }}>Activo</span>
                         : <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ background: '#1f293780', color: '#94a3b8' }}>Egresado</span>}
                     </td>
                   </tr>

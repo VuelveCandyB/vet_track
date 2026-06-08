@@ -7,20 +7,21 @@ import { Badge } from '@/components/ui/badge'
 import Link from 'next/link'
 import type { Horse, Medication, VetlistEntry, EuthanasiaRecord, Drug, Diagnostico } from '@/lib/types'
 import { STATUS_LABEL } from '@/lib/constants'
+import { PALETTE } from '@/lib/palette'
 
 const STATUS_STYLE: Record<string, string> = {
-  active:   'bg-green-950 text-green-400 border-green-900',
-  rest:     'bg-yellow-950 text-yellow-400 border-yellow-900',
-  injury:   'bg-red-950 text-red-400 border-red-900',
-  deceased: 'bg-zinc-900 text-zinc-500 border-zinc-800',
+  active:   'bg-green-100 text-green-800 border-green-300',
+  rest:     'bg-yellow-100 text-yellow-800 border-yellow-300',
+  injury:   'bg-red-100 text-red-800 border-red-300',
+  deceased: 'bg-gray-100 text-gray-700 border-gray-300',
 }
 const COLOR_STYLE: Record<string, string> = {
-  'Bay':      'bg-amber-950 text-amber-400 border-amber-900',
-  'Dark Bay': 'bg-slate-900 text-slate-400 border-slate-800',
-  'Chestnut': 'bg-orange-950 text-orange-400 border-orange-900',
-  'Grey':     'bg-blue-950 text-blue-300 border-blue-900',
-  'Roan':     'bg-purple-950 text-purple-400 border-purple-900',
-  'Black':    'bg-zinc-900 text-zinc-400 border-zinc-800',
+  'Bay':      'bg-amber-100 text-amber-800 border-amber-300',
+  'Dark Bay': 'bg-slate-100 text-slate-800 border-slate-300',
+  'Chestnut': 'bg-orange-100 text-orange-800 border-orange-300',
+  'Grey':     'bg-blue-100 text-blue-800 border-blue-300',
+  'Roan':     'bg-purple-100 text-purple-800 border-purple-300',
+  'Black':    'bg-gray-100 text-gray-800 border-gray-300',
 }
 const TYPE_COLORS: Record<string, string> = {
   'Vacuna': '#4ade80', 'Vaccine': '#4ade80',
@@ -28,7 +29,7 @@ const TYPE_COLORS: Record<string, string> = {
   'Antiparasitario': '#34d399', 'Desparasitante': '#34d399',
   'Suplemento': '#facc15',
   'Examen': '#38bdf8',
-  'Antibiótico': '#818cf8',
+  'Antibiótico': 'PALETTE.primary.green',
   'Cirugía': '#fb923c',
   'Anestesia': '#a78bfa',
   'Otro': '#9ca3af',
@@ -99,24 +100,27 @@ export default async function HorseDetailPage({
   const userIsAdmin = isAdmin(user.email!)
 
   return (
-    <div>
+    <div style={{
+      '--button-bg': PALETTE.primary.green,
+      '--button-text': '#FFFFFF',
+    } as React.CSSProperties}>
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 mb-4 text-sm">
-        <Link href="/horses" className="transition-colors hover:text-white" style={{ color: '#4a5280' }}>
+        <Link href="/horses" className="transition-colors hover:text-[#059669]" style={{ color: PALETTE.text.secondary }}>
           ← Caballos
         </Link>
-        <span style={{ color: '#2a2d3e' }}>/</span>
-        <span style={{ color: '#6b7399' }}>{horse.name}</span>
+        <span style={{ color: PALETTE.text.secondary }}>/</span>
+        <span style={{ color: PALETTE.text.secondary }}>{horse.name}</span>
       </div>
 
       {/* Horse header */}
       <div className="flex items-center gap-4 mb-6">
-        <div className="w-12 h-12 rounded-xl flex items-center justify-center text-lg font-bold flex-shrink-0"
-          style={{ background: 'linear-gradient(135deg, #1e2a5e, #3a1e5e)', color: '#c0c8e0' }}>
+        <div className="w-12 h-12 rounded-lg flex items-center justify-center text-lg font-bold flex-shrink-0"
+          style={{ background: PALETTE.primary.green, color: '#FFFFFF' }}>
           {horse.name.slice(0, 2)}
         </div>
         <div className="flex-1 min-w-0">
-          <h1 className="text-2xl font-bold text-white mb-1">{horse.name}</h1>
+          <h1 className="text-2xl font-bold mb-1" style={{ color: PALETTE.text.dark }}>{horse.name}</h1>
           <div className="flex items-center gap-2 flex-wrap">
             <Badge className={`text-xs border ${COLOR_STYLE[horse.color] ?? 'bg-zinc-900 text-zinc-400 border-zinc-800'}`}>
               {horse.color}
@@ -125,11 +129,11 @@ export default async function HorseDetailPage({
               {STATUS_LABEL[horse.status] ?? horse.status}
             </Badge>
             {horse.registration && (
-              <span className="text-xs" style={{ color: '#4a5280' }}>Reg. {horse.registration}</span>
+              <span className="text-xs" style={{ color: PALETTE.text.secondary }}>Reg. {horse.registration}</span>
             )}
             {horse.microchip && (
               <span className="font-mono text-xs px-1.5 py-0.5 rounded"
-                style={{ background: '#1e2235', color: '#818cf8' }}>
+                style={{ background: PALETTE.background.lightAlt, color: PALETTE.primary.green }}>
                 {horse.microchip}
               </span>
             )}
@@ -139,18 +143,18 @@ export default async function HorseDetailPage({
 
       {/* Euthanasia banner */}
       {euthanasiaRecord && (
-        <div className="rounded-xl px-4 py-3 mb-5 flex items-center gap-4"
-          style={{ background: '#0d0d0d', border: '1px solid #374151' }}>
-          <div className="text-sm font-bold" style={{ color: '#9ca3af' }}>
+        <div className="rounded-lg px-4 py-3 mb-5 flex items-center gap-4"
+          style={{ background: PALETTE.status.error + '15', border: `1px solid ${PALETTE.status.error}` }}>
+          <div className="text-sm font-bold" style={{ color: PALETTE.status.error }}>
             CABALLO FALLECIDO — EUTANASIA REGISTRADA
           </div>
-          <div className="text-xs ml-2" style={{ color: '#6b7280' }}>
+          <div className="text-xs ml-2" style={{ color: PALETTE.text.secondary }}>
             {euthanasiaRecord.fecha} · {euthanasiaRecord.vet_name}
           </div>
           {euthanasiaRecord.attachment_url && (
             <a href={euthanasiaRecord.attachment_url} target="_blank"
               className="ml-auto text-xs px-3 py-1.5 rounded-lg transition-colors"
-              style={{ color: '#818cf8', background: '#818cf810', border: '1px solid #818cf830' }}>
+              style={{ color: 'PALETTE.primary.green', background: 'PALETTE.primary.green10', border: '1px solid PALETTE.primary.green30' }}>
               Ver documento
             </a>
           )}
@@ -177,8 +181,8 @@ export default async function HorseDetailPage({
         <div className="space-y-4">
 
           {/* Info */}
-          <div className="rounded-xl p-5" style={{ background: '#131829', border: '1px solid #252d4a' }}>
-            <h3 className="text-xs font-semibold uppercase tracking-wider mb-4" style={{ color: '#4a5280' }}>
+          <div className="rounded-lg p-5" style={{ background: PALETTE.background.white, border: `1px solid ${PALETTE.ui.border}` }}>
+            <h3 className="text-xs font-semibold uppercase tracking-wider mb-4" style={{ color: PALETTE.text.primary }}>
               Información
             </h3>
             {[
@@ -190,10 +194,10 @@ export default async function HorseDetailPage({
               ['Microchip',   horse.microchip],
             ].map(([label, val]) => (
               <div key={label} className="flex justify-between items-center py-2"
-                style={{ borderBottom: '1px solid #1e2235' }}>
-                <span className="text-xs" style={{ color: '#4a5280' }}>{label}</span>
-                <span className="text-xs font-medium text-right max-w-36 break-all"
-                  style={{ color: label === 'Microchip' && val ? '#818cf8' : '#c0c8e0' }}>
+                style={{ borderBottom: `1px solid ${PALETTE.ui.border}` }}>
+                <span className="text-xs" style={{ color: PALETTE.text.secondary }}>{label}</span>
+                <span className="text-xs font-semibold text-right max-w-36 break-all"
+                  style={{ color: label === 'Microchip' && val ? PALETTE.primary.green : PALETTE.text.primary }}>
                   {val || '—'}
                 </span>
               </div>
@@ -202,8 +206,8 @@ export default async function HorseDetailPage({
 
           {/* Vetlist history */}
           {vetlist.length > 0 && (
-            <div className="rounded-xl p-5" style={{ background: '#131829', border: '1px solid #252d4a' }}>
-              <h3 className="text-xs font-semibold uppercase tracking-wider mb-4" style={{ color: '#4a5280' }}>
+            <div className="rounded-lg p-5" style={{ background: PALETTE.background.white, border: `1px solid ${PALETTE.ui.border}` }}>
+              <h3 className="text-xs font-semibold uppercase tracking-wider mb-4" style={{ color: PALETTE.text.primary }}>
                 Historial Vetlist
               </h3>
               {vetlist.map(entry => (
@@ -212,9 +216,9 @@ export default async function HorseDetailPage({
                     <Badge className={`text-xs border ${entry.fecha_egreso ? 'bg-green-950 text-green-400 border-green-900' : 'bg-red-950 text-red-400 border-red-900'}`}>
                       {entry.fecha_egreso ? 'Liberado' : 'Activo'}
                     </Badge>
-                    <span className="text-xs" style={{ color: '#4a5280' }}>{entry.motivo}</span>
+                    <span className="text-xs" style={{ color: PALETTE.text.primary }}>{entry.motivo}</span>
                   </div>
-                  <div className="text-xs" style={{ color: '#6b7399' }}>
+                  <div className="text-xs" style={{ color: PALETTE.text.primary }}>
                     {entry.fecha_ingreso}{entry.fecha_egreso ? ` → ${entry.fecha_egreso}` : ''}
                   </div>
                 </div>
@@ -224,16 +228,16 @@ export default async function HorseDetailPage({
 
           {/* Diagnosis history */}
           {diagnosticos.length > 0 && (
-            <div className="rounded-xl p-5" style={{ background: '#131829', border: '1px solid #252d4a' }}>
-              <h3 className="text-xs font-semibold uppercase tracking-wider mb-4" style={{ color: '#4a5280' }}>
+            <div className="rounded-lg p-5" style={{ background: PALETTE.background.white, border: `1px solid ${PALETTE.ui.border}` }}>
+              <h3 className="text-xs font-semibold uppercase tracking-wider mb-4" style={{ color: PALETTE.text.primary }}>
                 Historial Diagnósticos
               </h3>
               {diagnosticos.map(diag => (
                 <Link key={diag.id} href={`/horses/${horse.id}/diagnosticos/${diag.id}`}
-                  className="block py-2.5 px-2 rounded-lg transition-colors hover:bg-white/5"
-                  style={{ borderBottom: '1px solid #1e2235' }}>
+                  className="block py-2.5 px-2 rounded-lg transition-colors hover:bg-[#05966920]"
+                  style={{ borderBottom: `1px solid ${PALETTE.ui.border}` }}>
                   <div className="flex items-center gap-2 mb-1 flex-wrap">
-                    <span className="text-xs font-medium" style={{ color: '#c0c8e0' }}>{diag.diagnostico}</span>
+                    <span className="text-xs font-medium" style={{ color: 'PALETTE.text.primary' }}>{diag.diagnostico}</span>
                     {diag.severidad && (
                       <Badge className="text-xs" style={{ background: '#7c3aed22', color: '#c084fc', border: 'none' }}>
                         {diag.severidad}
@@ -245,7 +249,7 @@ export default async function HorseDetailPage({
                       </Badge>
                     )}
                   </div>
-                  <div className="text-xs" style={{ color: '#6b7399' }}>
+                  <div className="text-xs" style={{ color: PALETTE.text.primary }}>
                     {diag.fecha} · {diag.vet_name}
                   </div>
                 </Link>
@@ -254,23 +258,23 @@ export default async function HorseDetailPage({
           )}
 
           {/* Clinical summary */}
-          <div className="rounded-xl p-5" style={{ background: '#131829', border: '1px solid #252d4a' }}>
-            <h3 className="text-xs font-semibold uppercase tracking-wider mb-4" style={{ color: '#4a5280' }}>
+          <div className="rounded-lg p-5" style={{ background: PALETTE.background.white, border: `1px solid ${PALETTE.ui.border}` }}>
+            <h3 className="text-xs font-semibold uppercase tracking-wider mb-4" style={{ color: PALETTE.text.primary }}>
               Resumen Clínico
             </h3>
-            <div className="flex justify-between items-center py-2" style={{ borderBottom: '1px solid #1e2235' }}>
-              <span className="text-xs" style={{ color: '#4a5280' }}>Total Registros</span>
-              <span className="text-2xl font-bold tabular-nums" style={{ color: '#818cf8' }}>{medications.length}</span>
+            <div className="flex justify-between items-center py-2" style={{ borderBottom: `1px solid ${PALETTE.ui.border}` }}>
+              <span className="text-xs" style={{ color: PALETTE.text.secondary }}>Total Registros</span>
+              <span className="text-2xl font-bold tabular-nums" style={{ color: PALETTE.primary.green }}>{medications.length}</span>
             </div>
             {medications[0] && (
               <>
-                <div className="flex justify-between py-2" style={{ borderBottom: '1px solid #1e2235' }}>
-                  <span className="text-xs" style={{ color: '#4a5280' }}>Último</span>
-                  <span className="text-xs" style={{ color: '#c0c8e0' }}>{medications[0].administered_at}</span>
+                <div className="flex justify-between py-2" style={{ borderBottom: `1px solid ${PALETTE.ui.border}` }}>
+                  <span className="text-xs" style={{ color: PALETTE.text.secondary }}>Último</span>
+                  <span className="text-xs font-semibold" style={{ color: PALETTE.text.primary }}>{medications[0].administered_at}</span>
                 </div>
-                <div className="flex justify-between py-2" style={{ borderBottom: '1px solid #1e2235' }}>
-                  <span className="text-xs" style={{ color: '#4a5280' }}>Veterinario</span>
-                  <span className="text-xs text-right max-w-32" style={{ color: '#c0c8e0' }}>{medications[0].vet_name}</span>
+                <div className="flex justify-between py-2" style={{ borderBottom: `1px solid ${PALETTE.ui.border}` }}>
+                  <span className="text-xs" style={{ color: PALETTE.text.secondary }}>Veterinario</span>
+                  <span className="text-xs text-right max-w-32 font-semibold" style={{ color: PALETTE.text.primary }}>{medications[0].vet_name}</span>
                 </div>
               </>
             )}
@@ -278,16 +282,16 @@ export default async function HorseDetailPage({
         </div>
 
         {/* Timeline */}
-        <div className="rounded-xl p-6" style={{ background: '#131829', border: '1px solid #252d4a' }}>
+        <div className="rounded-lg p-6" style={{ background: PALETTE.background.white, border: `1px solid ${PALETTE.ui.border}` }}>
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-base font-semibold text-white">Historial Médico</h2>
+            <h2 className="text-base font-semibold" style={{ color: PALETTE.text.dark }}>Historial Médico</h2>
             <div className="flex gap-1">
               {[['desc', 'Más reciente'], ['asc', 'Más antiguo']].map(([val, label]) => (
                 <Link key={val} href={`?sort=${val}`}
                   className="px-3 py-1 text-xs rounded-md font-medium transition-colors"
                   style={sort === val
-                    ? { background: '#2B55F420', color: '#fff', border: '1px solid #2B55F460' }
-                    : { color: '#4a5280', border: '1px solid #2a2d3e' }}>
+                    ? { background: `${PALETTE.primary.green}20`, color: PALETTE.primary.green, border: `1px solid ${PALETTE.primary.green}60` }
+                    : { color: PALETTE.text.secondary, border: `1px solid ${PALETTE.ui.border}` }}>
                   {label}
                 </Link>
               ))}
@@ -296,17 +300,17 @@ export default async function HorseDetailPage({
 
           {medications.length === 0 ? (
             <div className="text-center py-14">
-              <div className="text-base font-semibold mb-1" style={{ color: '#6b7399' }}>Sin registros médicos</div>
-              <div className="text-sm" style={{ color: '#4a5280' }}>Este caballo no tiene medicamentos registrados aún.</div>
+              <div className="text-base font-semibold mb-1" style={{ color: PALETTE.text.primary }}>Sin registros médicos</div>
+              <div className="text-sm" style={{ color: PALETTE.text.primary }}>Este caballo no tiene medicamentos registrados aún.</div>
             </div>
           ) : (
             <div className="relative pl-9">
               {/* Timeline line */}
               <div className="absolute left-[15px] top-4 bottom-4 w-0.5"
-                style={{ background: 'linear-gradient(to bottom, #3a55e8 0%, #3a55e830 100%)' }} />
+                style={{ background: `linear-gradient(to bottom, ${PALETTE.primary.green} 0%, ${PALETTE.primary.green}30 100%)` }} />
 
               {medications.map((m, i) => {
-                const color = TYPE_COLORS[m.type] ?? '#818cf8'
+                const color = TYPE_COLORS[m.type] ?? 'PALETTE.primary.green'
                 const [rfg, rbg] = m.tipo_restriccion ? (RESTRICTION_STYLE[m.tipo_restriccion] ?? ['#9ca3af', '#1e2235']) : ['#9ca3af', '#1e2235']
                 return (
                   <div key={m.id} className={`relative ${i < medications.length - 1 ? 'mb-5' : ''}`}>
@@ -315,13 +319,13 @@ export default async function HorseDetailPage({
                       style={{ background: `${color}20`, borderColor: color }} />
 
                     <div className="rounded-lg p-4"
-                      style={{ background: '#13162080', border: `1px solid #2a2d3e`, borderLeft: `3px solid ${color}` }}>
+                      style={{ background: '#F1F5F9', border: `1px solid ${PALETTE.ui.border}`, borderLeft: `3px solid ${color}` }}>
                       <div className="flex items-start justify-between gap-3 mb-3">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap mb-1">
-                            <span className="text-sm font-semibold text-white">{m.drug}</span>
+                            <span className="text-sm font-semibold" style={{ color: PALETTE.primary.green }}>{m.drug}</span>
                             {m.type && (
-                              <Badge className="text-xs" style={{ background: '#4a528022', color: '#6b7399', border: 'none' }}>
+                              <Badge className="text-xs" style={{ background: 'PALETTE.text.secondary22', color: PALETTE.text.primary, border: 'none' }}>
                                 {m.type}
                               </Badge>
                             )}
@@ -337,16 +341,16 @@ export default async function HorseDetailPage({
                             )}
                             {m.withdrawal_time_horas && (
                               <span className="text-xs font-semibold" style={{ color: '#f97316' }}>
-                                Retiro: {m.withdrawal_time_horas}h
+                                Tiempo restr.: {m.withdrawal_time_horas}h
                               </span>
                             )}
                           </div>
-                          <div className="text-xs" style={{ color: '#4a5280' }}>
+                          <div className="text-xs" style={{ color: PALETTE.text.primary }}>
                             {m.vet_name}{m.drug_categoria ? ` · ${m.drug_categoria}` : ''}
                           </div>
                         </div>
                         <div className="flex items-center gap-2 flex-shrink-0">
-                          <span className="text-xs whitespace-nowrap" style={{ color: '#4a5280' }}>
+                          <span className="text-xs whitespace-nowrap" style={{ color: PALETTE.text.primary }}>
                             {m.administered_at}
                           </span>
                           {userIsAdmin && (
@@ -354,7 +358,7 @@ export default async function HorseDetailPage({
                               action={deleteMedication.bind(null, horse.id, m.id)}
                               message="¿Eliminar este registro?"
                               className="p-1 rounded transition-colors hover:text-red-400"
-                              style={{ color: '#4a5280', background: 'none', border: 'none', cursor: 'pointer' }}>
+                              style={{ color: PALETTE.text.primary, background: 'none', border: 'none', cursor: 'pointer' }}>
                               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                 <polyline points="3 6 5 6 21 6"/>
                                 <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
@@ -366,18 +370,18 @@ export default async function HorseDetailPage({
 
                       <div className="flex gap-5 flex-wrap">
                         <div>
-                          <div className="text-xs uppercase tracking-wider mb-0.5" style={{ color: '#4a5280' }}>Dosis</div>
-                          <div className="text-sm font-mono" style={{ color: '#c0c8e0' }}>{m.dose}</div>
+                          <div className="text-xs uppercase tracking-wider mb-0.5 font-semibold" style={{ color: PALETTE.text.primary }}>Dosis</div>
+                          <div className="text-sm font-mono" style={{ color: PALETTE.text.secondary }}>{m.dose}</div>
                         </div>
                         {m.quantity && (
                           <div>
-                            <div className="text-xs uppercase tracking-wider mb-0.5" style={{ color: '#4a5280' }}>Cantidad</div>
-                            <div className="text-sm" style={{ color: '#c0c8e0' }}>{m.quantity}</div>
+                            <div className="text-xs uppercase tracking-wider mb-0.5 font-semibold" style={{ color: PALETTE.text.primary }}>Cantidad</div>
+                            <div className="text-sm" style={{ color: PALETTE.text.secondary }}>{m.quantity}</div>
                           </div>
                         )}
                         {m.notes && (
                           <div className="flex-1 min-w-0">
-                            <div className="text-xs uppercase tracking-wider mb-0.5" style={{ color: '#4a5280' }}>Notas</div>
+                            <div className="text-xs uppercase tracking-wider mb-0.5" style={{ color: PALETTE.text.primary }}>Notas</div>
                             <div className="text-sm" style={{ color: '#9ca3af' }}>{m.notes}</div>
                           </div>
                         )}
@@ -393,7 +397,7 @@ export default async function HorseDetailPage({
                         <div className="mt-3">
                           <a href={m.attachment_url} target="_blank"
                             className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-md transition-colors"
-                            style={{ color: '#818cf8', background: '#818cf810', border: '1px solid #818cf830' }}>
+                            style={{ color: 'PALETTE.primary.green', background: 'PALETTE.primary.green10', border: '1px solid PALETTE.primary.green30' }}>
                             📄 {m.attachment_url.endsWith('.pdf') ? 'Ver PDF' : 'Ver imagen'}
                           </a>
                         </div>

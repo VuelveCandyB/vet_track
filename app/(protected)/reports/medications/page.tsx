@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
+import { PALETTE } from '@/lib/palette'
 
 const RESTRICTION_STYLE: Record<string, [string, string]> = {
   'WDT':        ['#facc15', '#2e2a0d'],
@@ -58,50 +59,50 @@ export default async function MedicationsReportPage({
     <div>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-white" style={{ fontFamily: 'var(--font-dela)' }}>
+          <h1 className="text-2xl font-bold" style={{ color: PALETTE.primary.green, fontFamily: 'var(--font-sans)' }}>
             Reporte — Medicaciones
           </h1>
-          <p className="text-sm mt-1" style={{ color: '#4a5280' }}>Historial de medicamentos administrados</p>
+          <p className="text-sm mt-1" style={{ color: PALETTE.text.secondary }}>Historial de medicamentos administrados</p>
         </div>
         <div className="flex gap-2">
-          <Link href="/reports/vetlist"><Button variant="ghost" size="sm">Vetlist</Button></Link>
-          <Link href="/reports/euthanasia"><Button variant="ghost" size="sm">Eutanasias</Button></Link>
+          <Link href="/reports/vetlist"><Button size="sm" style={{ background: PALETTE.primary.green, color: '#FFFFFF' }}>Vetlist</Button></Link>
+          <Link href="/reports/euthanasia"><Button size="sm" style={{ background: PALETTE.primary.green, color: '#FFFFFF' }}>Eutanasias</Button></Link>
         </div>
       </div>
 
       {/* Filters */}
-      <form method="get" className="rounded-xl p-5 mb-6" style={{ background: '#131829', border: '1px solid #252d4a' }}>
+      <form method="get" className="rounded-xl p-5 mb-6" style={{ background: PALETTE.background.white, border: `1px solid ${PALETTE.ui.border}` }}>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-3 items-end">
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5" style={{ color: '#4a5280' }}>Caballo</label>
+            <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5" style={{ color: PALETTE.text.secondary }}>Caballo</label>
             <Input name="horse" defaultValue={filters.horse} placeholder="Nombre..." />
           </div>
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5" style={{ color: '#4a5280' }}>Medicamento</label>
+            <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5" style={{ color: PALETTE.text.secondary }}>Medicamento</label>
             <Input name="drug" defaultValue={filters.drug} placeholder="Nombre..." />
           </div>
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5" style={{ color: '#4a5280' }}>Veterinario</label>
+            <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5" style={{ color: PALETTE.text.secondary }}>Veterinario</label>
             <Input name="vet" defaultValue={filters.vet} placeholder="Nombre..." />
           </div>
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5" style={{ color: '#4a5280' }}>Propósito</label>
+            <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5" style={{ color: PALETTE.text.secondary }}>Propósito</label>
             <select name="proposito" className="flex h-9 w-full rounded-md border px-3 py-1 text-sm"
-              style={{ background: '#0d102080', borderColor: '#252d4a', color: '#e2e8f0' }}>
+              style={{ background: PALETTE.background.white, borderColor: PALETTE.ui.border, color: PALETTE.text.primary }}>
               <option value="">Todos</option>
               {propositos.map(p => <option key={p} value={p}>{p}</option>)}
             </select>
           </div>
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5" style={{ color: '#4a5280' }}>Desde</label>
+            <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5" style={{ color: PALETTE.text.secondary }}>Desde</label>
             <Input type="date" name="date_from" defaultValue={filters.date_from} />
           </div>
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5" style={{ color: '#4a5280' }}>Hasta</label>
+            <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5" style={{ color: PALETTE.text.secondary }}>Hasta</label>
             <Input type="date" name="date_to" defaultValue={filters.date_to} />
           </div>
           <div className="flex gap-2">
-            <Button type="submit" style={{ background: '#2B55F4' }} className="flex-1">Filtrar</Button>
+            <Button type="submit" style={{ background: PALETTE.primary.green, color: '#FFFFFF' }} className="flex-1">Filtrar</Button>
             <Link href="/reports/medications"><Button variant="ghost" type="button">✕</Button></Link>
           </div>
         </div>
@@ -109,16 +110,16 @@ export default async function MedicationsReportPage({
 
       {/* Table */}
       {noResults ? (
-        <div className="rounded-xl p-12 text-center" style={{ background: '#131829', border: '1px solid #252d4a', color: '#4a5280' }}>
+        <div className="rounded-xl p-12 text-center" style={{ background: PALETTE.background.white, border: `1px solid ${PALETTE.ui.border}`, color: PALETTE.text.secondary }}>
           No se encontraron caballos con ese nombre.
         </div>
       ) : !rows.length ? (
-        <div className="rounded-xl p-12 text-center" style={{ background: '#131829', border: '1px solid #252d4a', color: '#4a5280' }}>
+        <div className="rounded-xl p-12 text-center" style={{ background: PALETTE.background.white, border: `1px solid ${PALETTE.ui.border}`, color: PALETTE.text.secondary }}>
           Sin registros para los filtros seleccionados.
         </div>
       ) : (
-        <div className="rounded-xl overflow-hidden" style={{ background: '#131829', border: '1px solid #252d4a' }}>
-          <div className="px-5 py-3 border-b text-xs" style={{ borderColor: '#252d4a', color: '#4a5280' }}>
+        <div className="rounded-xl overflow-hidden" style={{ background: PALETTE.background.white, border: `1px solid ${PALETTE.ui.border}` }}>
+          <div className="px-5 py-3 border-b text-xs" style={{ borderColor: PALETTE.ui.border, color: PALETTE.text.secondary }}>
             {rows.length} registro{rows.length !== 1 ? 's' : ''}
           </div>
           <div className="overflow-x-auto">
@@ -127,7 +128,7 @@ export default async function MedicationsReportPage({
                 <tr style={{ borderBottom: '1px solid #252d4a' }}>
                   {['Caballo', 'Medicamento', 'Vía', 'Propósito', 'Dosis', 'Restricción', 'Vet. / Fecha', 'Retiro'].map(h => (
                     <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider whitespace-nowrap"
-                      style={{ color: '#4a5280' }}>{h}</th>
+                      style={{ color: PALETTE.text.secondary }}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -135,33 +136,33 @@ export default async function MedicationsReportPage({
                 {rows.map((r: any) => {
                   const [rfg, rbg] = r.tipo_restriccion ? (RESTRICTION_STYLE[r.tipo_restriccion] ?? ['#9ca3af', '#1e2235']) : ['#9ca3af', '#1e2235']
                   return (
-                    <tr key={r.id} className="transition-colors hover:bg-white/5" style={{ borderBottom: '1px solid #1e2235' }}>
+                    <tr key={r.id} className="transition-colors hover:bg-gray-50" style={{ borderBottom: `1px solid ${PALETTE.ui.border}` }}>
                       <td className="px-4 py-3">
-                        <Link href={`/horses/${r.horse_id}`} className="font-medium text-white hover:text-blue-400 transition-colors">
+                        <Link href={`/horses/${r.horse_id}`} className="font-medium transition-colors" style={{ color: PALETTE.primary.green }}>
                           {r.horses?.name ?? '—'}
                         </Link>
                       </td>
                       <td className="px-4 py-3">
-                        <div className="font-medium text-white">{r.drug}</div>
-                        {r.drug_categoria && <div className="text-xs mt-0.5" style={{ color: '#6b7399' }}>{r.drug_categoria}</div>}
+                        <div className="font-medium" style={{ color: PALETTE.primary.green }}>{r.drug}</div>
+                        {r.drug_categoria && <div className="text-xs mt-0.5" style={{ color: PALETTE.text.secondary }}>{r.drug_categoria}</div>}
                       </td>
-                      <td className="px-4 py-3" style={{ color: '#9ca3af' }}>{r.type || '—'}</td>
-                      <td className="px-4 py-3" style={{ color: '#9ca3af' }}>{r.proposito || '—'}</td>
-                      <td className="px-4 py-3 font-mono text-xs" style={{ color: '#c0c8e0' }}>{r.dose}</td>
+                      <td className="px-4 py-3" style={{ color: PALETTE.text.secondary }}>{r.type || '—'}</td>
+                      <td className="px-4 py-3" style={{ color: PALETTE.text.secondary }}>{r.proposito || '—'}</td>
+                      <td className="px-4 py-3 font-mono text-xs" style={{ color: PALETTE.text.primary }}>{r.dose}</td>
                       <td className="px-4 py-3">
                         {r.tipo_restriccion
                           ? <span className="text-xs font-semibold px-2 py-0.5 rounded-full"
                               style={{ color: rfg, background: rbg }}>{r.tipo_restriccion}</span>
-                          : <span style={{ color: '#4a5280' }}>—</span>}
+                          : <span style={{ color: PALETTE.text.secondary }}>—</span>}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap">
-                        <div className="text-xs" style={{ color: '#9ca3af' }}>{r.vet_name}</div>
-                        <div className="text-xs" style={{ color: '#6b7399' }}>{r.administered_at}</div>
+                        <div className="text-xs" style={{ color: PALETTE.text.secondary }}>{r.vet_name}</div>
+                        <div className="text-xs" style={{ color: PALETTE.text.secondary }}>{r.administered_at}</div>
                       </td>
                       <td className="px-4 py-3">
                         {r.withdrawal_time_horas
-                          ? <span className="text-xs font-semibold" style={{ color: '#f97316' }}>{r.withdrawal_time_horas}h</span>
-                          : <span style={{ color: '#4a5280' }}>—</span>}
+                          ? <span className="text-xs font-semibold" style={{ color: PALETTE.primary.green }}>{r.withdrawal_time_horas}h</span>
+                          : <span style={{ color: PALETTE.text.secondary }}>—</span>}
                       </td>
                     </tr>
                   )

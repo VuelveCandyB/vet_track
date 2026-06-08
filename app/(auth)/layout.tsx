@@ -3,18 +3,30 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
     <div className="min-h-[100dvh] grid grid-cols-1 md:grid-cols-2">
       {/* Left Panel - Brand */}
       <div
-        className="hidden md:flex items-center justify-center"
+        className="hidden md:flex items-center justify-center relative"
         style={{
-          backgroundImage: 'url(https://d8j0ntlcm91z4.cloudfront.net/user_3D2jk5eyOM6W6WlW8vZSJpCgYh2/hf_20260605_210008_c815785a-4c4d-41bb-9c0e-421788f4ff6a.png)',
-          backgroundSize: 'cover',
-          backgroundPosition: 'top'
+          background: '#059669',
+          backgroundImage: 'url(https://res.cloudinary.com/dee0x7p16/image/upload/v1780914226/hf_20260605_210008_c815785a-4c4d-41bb-9c0e-421788f4ff6a_1_zhzmai.png)',
+          backgroundSize: '40%',
+          backgroundPosition: 'center',
+          backgroundAttachment: 'fixed'
         }}
       >
-        <div className="text-center relative z-10 p-6">
-          <h1 className="text-4xl font-bold text-white mb-4" style={{ fontFamily: 'Dela Gothic One' }}>
-            VetTrack
+        {/* Overlay */}
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            background: 'rgba(5, 150, 105, 0.7)',
+            zIndex: 1
+          }}
+        />
+        <div className="text-center p-6 relative z-10">
+          <h1 className="text-5xl font-bold text-white mb-2" style={{ fontFamily: 'Dela Gothic One' }}>
+            Sistema de Control Equino
           </h1>
-          <p style={{ color: '#86EFAC' }}>Sistema de Medicación y Control Equino</p>
+          <p className="text-lg text-white mb-6">Hipódromo Camarero</p>
+          <p style={{ color: '#86EFAC' }}>PyAgentix © 2026</p>
         </div>
       </div>
 

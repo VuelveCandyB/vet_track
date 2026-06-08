@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { createVetlistEntry } from '@/lib/actions/vetlist'
 import { MOTIVOS_VETLIST } from '@/lib/constants'
+import { PALETTE } from '@/lib/palette'
 
 interface Props {
   open: boolean
@@ -35,42 +36,42 @@ export default function VetlistModal({ open, onClose, horseId, horseName, vetNam
 
   return (
     <Dialog open={open} onOpenChange={v => !v && onClose()}>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto"
-        style={{ background: '#1a1d27', border: '1px solid #2a2d3e' }}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto"
+        style={{ background: PALETTE.background.white, border: `1px solid ${PALETTE.ui.border}` }}>
         <DialogHeader>
-          <DialogTitle className="text-white">Agregar a Vetlist</DialogTitle>
-          <p className="text-xs" style={{ color: '#4a5280' }}>{horseName}</p>
+          <DialogTitle style={{ color: PALETTE.text.dark }}>Agregar a Vetlist</DialogTitle>
+          <p className="text-xs" style={{ color: PALETTE.text.secondary }}>{horseName}</p>
         </DialogHeader>
 
         <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#6b7399' }}>
+              <Label className="text-xs font-semibold uppercase tracking-wider" style={{ color: PALETTE.text.secondary }}>
                 Fecha de ingreso *
               </Label>
               <Input type="date" name="fecha_ingreso" required defaultValue={today} />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#6b7399' }}>
+              <Label className="text-xs font-semibold uppercase tracking-wider" style={{ color: PALETTE.text.secondary }}>
                 Veterinario
               </Label>
-              <Input value={vetName} readOnly style={{ color: '#6b7399', cursor: 'default' }} />
+              <Input value={vetName} readOnly style={{ color: PALETTE.text.secondary, cursor: 'default' }} />
             </div>
 
             <div className="col-span-2 space-y-1.5">
-              <Label className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#6b7399' }}>
+              <Label className="text-xs font-semibold uppercase tracking-wider" style={{ color: PALETTE.text.secondary }}>
                 Motivo *
               </Label>
               <select name="motivo" required
                 className="flex h-9 w-full rounded-md border px-3 py-1 text-sm"
-                style={{ background: '#13162080', borderColor: '#2a2d3e', color: '#e2e8f0' }}>
+                style={{ background: PALETTE.background.white, borderColor: PALETTE.ui.border, color: PALETTE.text.primary }}>
                 <option value="" disabled>Seleccionar...</option>
                 {MOTIVOS_VETLIST.map(m => <option key={m} value={m}>{m}</option>)}
               </select>
             </div>
 
             <div className="col-span-2 space-y-1.5">
-              <Label className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#6b7399' }}>
+              <Label className="text-xs font-semibold uppercase tracking-wider" style={{ color: PALETTE.text.secondary }}>
                 Descripción clínica
               </Label>
               <Textarea name="descripcion" rows={3}
@@ -78,27 +79,27 @@ export default function VetlistModal({ open, onClose, horseId, horseName, vetNam
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#6b7399' }}>
+              <Label className="text-xs font-semibold uppercase tracking-wider" style={{ color: PALETTE.text.secondary }}>
                 Inicio descanso <span className="font-normal normal-case" style={{ color: '#4a5280' }}>(opcional)</span>
               </Label>
               <Input type="date" name="fecha_inicio_descanso" />
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#6b7399' }}>
+              <Label className="text-xs font-semibold uppercase tracking-wider" style={{ color: PALETTE.text.secondary }}>
                 Fin descanso <span className="font-normal normal-case" style={{ color: '#4a5280' }}>(opcional)</span>
               </Label>
               <Input type="date" name="fecha_fin_descanso" />
             </div>
 
             <div className="col-span-2 space-y-1.5">
-              <Label className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#6b7399' }}>
+              <Label className="text-xs font-semibold uppercase tracking-wider" style={{ color: PALETTE.text.secondary }}>
                 Adjunto <span className="font-normal normal-case" style={{ color: '#4a5280' }}>(PDF o imagen · máx. 10 MB)</span>
               </Label>
               <label className="flex items-center gap-3 rounded-lg px-3 py-2.5 cursor-pointer"
-                style={{ background: '#13162080', border: '1px dashed #2a2d3e' }}>
+                style={{ background: PALETTE.background.lightAlt, border: `1px dashed ${PALETTE.ui.border}` }}>
                 <span>📎</span>
-                <span className="text-sm" style={{ color: '#6b7399' }}>
+                <span className="text-sm" style={{ color: PALETTE.text.secondary }}>
                   {fileName || 'Seleccionar archivo...'}
                 </span>
                 <input type="file" name="attachment" accept=".pdf,.jpg,.jpeg,.png,.webp,.gif"
@@ -118,7 +119,7 @@ export default function VetlistModal({ open, onClose, horseId, horseName, vetNam
 
           <div className="flex gap-3">
             <Button type="submit" disabled={pending} className="flex-1"
-              style={{ background: 'linear-gradient(135deg, #dc2626, #991b1b)' }}>
+              style={{ background: PALETTE.primary.green, color: '#FFFFFF' }}>
               {pending ? 'Guardando...' : 'Agregar a Vetlist'}
             </Button>
             <Button type="button" variant="ghost" onClick={onClose} disabled={pending}>

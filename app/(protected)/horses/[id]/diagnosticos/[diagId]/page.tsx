@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { Badge } from '@/components/ui/badge'
 import Link from 'next/link'
 import type { Diagnostico } from '@/lib/types'
+import { PALETTE } from '@/lib/palette'
 
 export default async function DiagnosisDetailPage({
   params,
@@ -24,35 +25,39 @@ export default async function DiagnosisDetailPage({
   if (!diagnosis) {
     return (
       <div className="text-center py-12">
-        <p style={{ color: '#4a5280' }}>Diagnóstico no encontrado.</p>
+        <p style={{ color: PALETTE.text.secondary }}>Diagnóstico no encontrado.</p>
       </div>
     )
   }
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-7xl mx-auto">
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 mb-8 text-sm">
-        <Link href="/horses" className="transition-colors hover:text-white" style={{ color: '#4a5280' }}>
+        <Link href="/horses" className="transition-colors hover:text-white" style={{ color: PALETTE.text.secondary }}>
           ← Caballos
         </Link>
         <span style={{ color: '#2a2d3e' }}>/</span>
-        <Link href={`/horses/${horseId}`} className="transition-colors hover:text-white" style={{ color: '#4a5280' }}>
+        <Link href={`/horses/${horseId}`} className="transition-colors hover:text-white" style={{ color: PALETTE.text.secondary }}>
           {horse?.name}
         </Link>
         <span style={{ color: '#2a2d3e' }}>/</span>
-        <span style={{ color: '#6b7399' }}>Diagnóstico</span>
+        <span style={{ color: PALETTE.text.secondary }}>Diagnóstico</span>
       </div>
 
       {/* Header */}
       <div className="mb-12">
+        <div className="mb-6 pb-4" style={{ borderBottom: `1px solid ${PALETTE.ui.border}` }}>
+          <p className="text-sm font-semibold uppercase tracking-wider mb-1" style={{ color: PALETTE.text.secondary }}>Caballo</p>
+          <h2 className="text-3xl font-bold" style={{ color: PALETTE.primary.green }}>{horse?.name}</h2>
+        </div>
         <div className="flex items-start justify-between mb-4">
           <div>
-            <h1 className="text-2xl font-semibold text-white mb-2">{diagnosis.diagnostico}</h1>
-            <p style={{ color: '#6b7399' }}>Registrado por {diagnosis.vet_name} · {diagnosis.fecha}</p>
+            <h1 className="text-2xl font-semibold mb-2" style={{ color: PALETTE.text.dark }}>{diagnosis.diagnostico}</h1>
+            <p style={{ color: PALETTE.text.secondary }}>Registrado por {diagnosis.vet_name} · {diagnosis.fecha}</p>
           </div>
           {diagnosis.recomendar_vetlist && (
-            <Badge className="bg-orange-950 text-orange-400 border-orange-900 text-xs">
+            <Badge style={{ background: PALETTE.status.error, color: '#FFFFFF', border: 'none' }} className="text-xs">
               VetList Recomendado
             </Badge>
           )}
@@ -65,10 +70,10 @@ export default async function DiagnosisDetailPage({
         <div className="space-y-8">
           {/* Tipo */}
           <div>
-            <label className="text-xs font-semibold uppercase tracking-wider mb-3 block" style={{ color: '#4a5280' }}>
+            <label className="text-xs font-semibold uppercase tracking-wider mb-3 block" style={{ color: PALETTE.text.secondary }}>
               Tipo de Diagnóstico
             </label>
-            <p className="text-base" style={{ color: '#c0c8e0' }}>
+            <p className="text-base" style={{ color: PALETTE.text.primary }}>
               {diagnosis.tipo}
             </p>
           </div>
@@ -76,10 +81,10 @@ export default async function DiagnosisDetailPage({
           {/* Sistema Afectado */}
           {diagnosis.sistema_afectado && (
             <div>
-              <label className="text-xs font-semibold uppercase tracking-wider mb-3 block" style={{ color: '#4a5280' }}>
+              <label className="text-xs font-semibold uppercase tracking-wider mb-3 block" style={{ color: PALETTE.text.secondary }}>
                 Sistema Afectado
               </label>
-              <p className="text-base" style={{ color: '#c0c8e0' }}>
+              <p className="text-base" style={{ color: PALETTE.text.primary }}>
                 {diagnosis.sistema_afectado}
               </p>
             </div>
@@ -88,7 +93,7 @@ export default async function DiagnosisDetailPage({
           {/* Severidad */}
           {diagnosis.severidad && (
             <div>
-              <label className="text-xs font-semibold uppercase tracking-wider mb-3 block" style={{ color: '#4a5280' }}>
+              <label className="text-xs font-semibold uppercase tracking-wider mb-3 block" style={{ color: PALETTE.text.secondary }}>
                 Severidad
               </label>
               <Badge className="text-xs" style={{ background: '#7c3aed22', color: '#c084fc', border: 'none' }}>
@@ -99,10 +104,10 @@ export default async function DiagnosisDetailPage({
 
           {/* Fecha */}
           <div>
-            <label className="text-xs font-semibold uppercase tracking-wider mb-3 block" style={{ color: '#4a5280' }}>
+            <label className="text-xs font-semibold uppercase tracking-wider mb-3 block" style={{ color: PALETTE.text.secondary }}>
               Fecha de Registro
             </label>
-            <p className="text-base" style={{ color: '#c0c8e0' }}>
+            <p className="text-base" style={{ color: PALETTE.text.primary }}>
               {diagnosis.fecha}
             </p>
           </div>
@@ -112,17 +117,17 @@ export default async function DiagnosisDetailPage({
         <div className="space-y-8">
           {/* Veterinario */}
           <div>
-            <label className="text-xs font-semibold uppercase tracking-wider mb-3 block" style={{ color: '#4a5280' }}>
+            <label className="text-xs font-semibold uppercase tracking-wider mb-3 block" style={{ color: PALETTE.text.secondary }}>
               Veterinario Registrador
             </label>
-            <p className="text-base" style={{ color: '#c0c8e0' }}>
+            <p className="text-base" style={{ color: PALETTE.text.primary }}>
               {diagnosis.vet_name}
             </p>
           </div>
 
           {/* Estado de Recomendación */}
           <div>
-            <label className="text-xs font-semibold uppercase tracking-wider mb-3 block" style={{ color: '#4a5280' }}>
+            <label className="text-xs font-semibold uppercase tracking-wider mb-3 block" style={{ color: PALETTE.text.secondary }}>
               Estado
             </label>
             {diagnosis.recomendar_vetlist ? (
@@ -130,7 +135,7 @@ export default async function DiagnosisDetailPage({
                 Pendiente de Revisión - VetList
               </Badge>
             ) : (
-              <Badge className="bg-zinc-900 text-zinc-400 border-zinc-800 text-xs">
+              <Badge style={{ background: PALETTE.background.lightAlt, color: PALETTE.text.secondary, border: `1px solid ${PALETTE.ui.border}` }} className="text-xs">
                 Sin Recomendación
               </Badge>
             )}
@@ -139,12 +144,12 @@ export default async function DiagnosisDetailPage({
           {/* Archivo adjunto */}
           {diagnosis.attachment_url && (
             <div>
-              <label className="text-xs font-semibold uppercase tracking-wider mb-3 block" style={{ color: '#4a5280' }}>
+              <label className="text-xs font-semibold uppercase tracking-wider mb-3 block" style={{ color: PALETTE.text.secondary }}>
                 Documento Adjunto
               </label>
               <a href={diagnosis.attachment_url} target="_blank" rel="noopener noreferrer"
                 className="text-sm px-3 py-2 rounded-md transition-colors inline-block"
-                style={{ color: '#818cf8', background: '#818cf810', border: '1px solid #818cf830' }}>
+                style={{ color: PALETTE.primary.green, background: PALETTE.background.lightAlt, border: `1px solid ${PALETTE.ui.border}` }}>
                 📎 Ver Documento
               </a>
             </div>
@@ -153,16 +158,16 @@ export default async function DiagnosisDetailPage({
       </div>
 
       {/* Línea divisoria */}
-      <div style={{ borderTop: '1px solid #2a2d3e', marginBottom: '48px' }} />
+      <div style={{ borderTop: `1px solid ${PALETTE.ui.border}`, marginBottom: '48px' }} />
 
       {/* Tratamiento y Notas */}
       <div className="space-y-8 mb-12">
         {diagnosis.tratamiento_recomendado && (
           <div>
-            <label className="text-xs font-semibold uppercase tracking-wider mb-3 block" style={{ color: '#4a5280' }}>
+            <label className="text-xs font-semibold uppercase tracking-wider mb-3 block" style={{ color: PALETTE.text.secondary }}>
               Tratamiento Recomendado
             </label>
-            <p className="text-base leading-relaxed" style={{ color: '#c0c8e0', maxWidth: '65ch' }}>
+            <p className="text-base leading-relaxed" style={{ color: PALETTE.text.primary, maxWidth: '65ch' }}>
               {diagnosis.tratamiento_recomendado}
             </p>
           </div>
@@ -170,10 +175,10 @@ export default async function DiagnosisDetailPage({
 
         {diagnosis.notas && (
           <div>
-            <label className="text-xs font-semibold uppercase tracking-wider mb-3 block" style={{ color: '#4a5280' }}>
+            <label className="text-xs font-semibold uppercase tracking-wider mb-3 block" style={{ color: PALETTE.text.secondary }}>
               Notas Adicionales
             </label>
-            <p className="text-base leading-relaxed" style={{ color: '#c0c8e0', maxWidth: '65ch' }}>
+            <p className="text-base leading-relaxed" style={{ color: PALETTE.text.primary, maxWidth: '65ch' }}>
               {diagnosis.notas}
             </p>
           </div>
@@ -181,10 +186,10 @@ export default async function DiagnosisDetailPage({
       </div>
 
       {/* Acciones */}
-      <div className="flex gap-3 pt-8" style={{ borderTop: '1px solid #2a2d3e' }}>
+      <div className="flex gap-3 pt-8" style={{ borderTop: `1px solid ${PALETTE.ui.border}` }}>
         <Link href={`/horses/${horseId}`}
           className="px-4 py-2 rounded-md text-sm font-medium transition-colors"
-          style={{ background: '#2B55F4', color: '#ffffff' }}>
+          style={{ background: PALETTE.primary.green, color: '#FFFFFF' }}>
           Volver al Caballo
         </Link>
       </div>

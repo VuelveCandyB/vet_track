@@ -7,6 +7,7 @@ import VetlistModal from './vetlist-modal'
 import VetlistReleaseModal from './vetlist-release-modal'
 import EuthanasiaModal from './euthanasia-modal'
 import DiagnosisModal from './diagnosis-modal'
+import { PALETTE } from '@/lib/palette'
 import type { Horse, VetlistEntry, Drug } from '@/lib/types'
 
 type ModalType = 'medication' | 'vetlist' | 'release' | 'euthanasia' | 'diagnosis' | null
@@ -80,7 +81,7 @@ export default function HorseActions({
             )}
           </div>
           <Button onClick={() => setOpen('release')} className="flex-shrink-0 text-sm font-semibold"
-            style={{ background: 'linear-gradient(135deg, #16a34a, #15803d)' }}>
+            style={{ background: PALETTE.primary.green, color: '#FFFFFF' }}>
             Liberar de Vetlist
           </Button>
         </div>
@@ -95,7 +96,7 @@ export default function HorseActions({
           {!vetlistActiva && (
             <Button onClick={() => setOpen('vetlist')} size="sm"
               className="text-sm font-semibold"
-              style={{ background: '#2e0d0d', border: '1px solid #f8717150', color: '#f87171' }}>
+              style={{ background: PALETTE.primary.green, color: '#FFFFFF' }}>
               <svg className="mr-1.5" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                 <circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
               </svg>
@@ -106,20 +107,20 @@ export default function HorseActions({
           {/* Euthanasia button */}
           {canEuth && (
             <Button onClick={() => setOpen('euthanasia')} size="sm"
-              style={{ background: '#1a0a0a', border: '1px solid #7f1d1d80', color: '#fca5a5' }}>
+              style={{ background: PALETTE.primary.green, color: '#FFFFFF' }}>
               Eutanasia
             </Button>
           )}
 
           {/* Diagnosis button */}
           <Button onClick={() => setOpen('diagnosis')} size="sm"
-            style={{ background: '#7c3aed' }}>
+            style={{ background: PALETTE.primary.green, color: '#FFFFFF' }}>
             Diagnóstico
           </Button>
 
           {/* Medication button */}
           <Button onClick={() => setOpen('medication')} size="sm"
-            style={{ background: '#2B55F4' }}>
+            style={{ background: PALETTE.primary.green, color: '#FFFFFF' }}>
             + Registrar Medicamento
           </Button>
         </div>
