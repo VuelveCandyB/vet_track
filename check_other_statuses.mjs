@@ -5,17 +5,16 @@ const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-try {
-  const { data: horses } = await supabase
-    .from('horses')
-    .select('status')
-    .limit(100);
+const { data: horses } = await supabase
+  .from('horses')
+  .select('id, name, status')
+  .in('status', ['rest', 'injury']);
 
-  if (horses) {
-    const statuses = [...new Set(horses.map(h => h.status))];
-    console.log('Valores de status existentes en DB:');
-    statuses.forEach(s => console.log(`  - "${s}"`));
-  }
-} catch (err) {
-  console.error('Error:', err);
+if (horses && horses.length > 0) {
+  console.log(`Found ${horses.length} horses with status rest/injury:`);
+  horses.forEach(h => {
+    console.log(`  - "${h.name}" (${h.status})`);
+  });
+} else {
+  console.log('✓ No hay caballos con status rest o injury');
 }
