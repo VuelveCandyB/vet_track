@@ -22,10 +22,9 @@ export default async function DashboardPage() {
   const officialVet = await isOfficialVet(user.id, user.email!)
 
   const [
-    statsRes, attentionRes, recentMedsRes, vetlistRes, medsHoyRes, fallecidosRes, diagRes
+    statsRes, recentMedsRes, vetlistRes, medsHoyRes, fallecidosRes, diagRes
   ] = await Promise.all([
     supabase.rpc('get_horse_stats'),
-    supabase.from('horses').select('id, name, status').in('status', ['rest', 'injury']).limit(50),
     supabase.from('medications').select('id, drug, type, administered_at, vet_name, horse_id, horses(name)').order('administered_at', { ascending: false }).limit(8),
     supabase.from('vetlist').select('id, horse_id, motivo, fecha_ingreso, horses(name)').is('fecha_egreso', null).order('fecha_ingreso', { ascending: false }).limit(5),
     supabase.from('medications').select('id', { count: 'exact', head: true }).eq('administered_at', today),
@@ -34,7 +33,6 @@ export default async function DashboardPage() {
   ])
 
   const statsRaw = statsRes.data || {}
-  const attention = attentionRes.data || []
   const recentMeds = recentMedsRes.data || []
   const vetlistActiva = vetlistRes.data || []
   const medsHoy = medsHoyRes.count || 0
@@ -116,33 +114,7 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
 
-        {/* Atención */}
-        <Card style={{ background: PALETTE.background.white, border: `1px solid ${PALETTE.ui.border}` }}>
-          <CardHeader className="pb-3 px-0 -mx-2 px-2">
-            <CardTitle className="w-full text-sm font-semibold uppercase tracking-wider text-white px-4 py-2 rounded-md" style={{ background: PALETTE.primary.green }}>
-              Requieren Atención
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {attention.length === 0 ? (
-              <p className="text-sm" style={{ color: PALETTE.text.secondary }}>Ningún caballo requiere atención.</p>
-            ) : (
-              <div className="space-y-0 divide-y" style={{ borderColor: '#f0f5f9' }}>
-                {attention.map((h: any) => (
-                  <Link key={h.id} href={`/horses/${h.id}`}
-                    className={`flex items-center justify-between p-2.5 rounded-lg transition-colors hover:bg-[#05966920] ${STATUS_COLOR[h.status] ?? ''}`}>
-                    <span className="text-sm font-medium" style={{ color: PALETTE.text.primary }}>{h.name}</span>
-                    <Badge className={`text-xs ${STATUS_COLOR[h.status] ?? ''}`}>
-                      {STATUS_LABEL[h.status] ?? h.status}
-                    </Badge>
-                  </Link>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Recomendaciones pendientes (solo para official_vet o admin) */}
+{/* Recomendaciones pendientes (solo para official_vet o admin) */}
         {officialVet && (
           <Card style={{ background: PALETTE.background.white, border: `1px solid ${PALETTE.ui.border}` }}>
             <CardHeader className="pb-3 px-0">

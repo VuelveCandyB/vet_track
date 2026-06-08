@@ -138,11 +138,14 @@ export async function syncHorses(): Promise<{ total: number; inserted: number; u
   }
 
   // Un solo UPDATE por batch de IDs en vez de uno por caballo
+  // Pero solo actualizar status a 'active' si NO está 'deceased' (tiene eutanasia)
   for (let i = 0; i < toUpdateIds.length; i += 500) {
+    const batch = toUpdateIds.slice(i, i + 500)
     const { error } = await supabase
       .from('horses')
-      .update({ last_seen_at: now })
-      .in('id', toUpdateIds.slice(i, i + 500))
+      .update({ last_seen_at: now, status: 'active' })
+      .in('id', batch)
+      .neq('status', 'deceased')  // No sobrescribir si está marcado como fallecido
     if (error) errors.push(`UPDATE batch: ${error.message}`)
     else updated += Math.min(500, toUpdateIds.length - i)
   }
