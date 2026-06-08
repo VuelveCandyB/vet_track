@@ -4,12 +4,13 @@ import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { PALETTE } from '@/lib/palette'
 
 type Status = 'idle' | 'saving' | 'ok' | 'error'
 
 function StatusMsg({ status, ok, err }: { status: Status; ok: string; err?: string }) {
   if (status === 'ok') return (
-    <p className="text-xs mt-2" style={{ color: '#4ade80' }}>{ok}</p>
+    <p className="text-xs mt-2" style={{ color: PALETTE.primary.green }}>{ok}</p>
   )
   if (status === 'error') return (
     <p className="text-xs mt-2" style={{ color: '#f87171' }}>{err ?? 'Ocurrió un error.'}</p>
@@ -85,16 +86,16 @@ export default function PerfilPage() {
     }
   }
 
-  const sectionStyle = { background: '#131829', border: '1px solid #252d4a' }
-  const labelStyle = { color: '#6b7399' }
+  const sectionStyle = { background: PALETTE.background.white, border: `1px solid ${PALETTE.ui.border}` }
+  const labelStyle = { color: PALETTE.text.secondary }
 
   return (
     <div className="max-w-lg mx-auto space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-white" style={{ fontFamily: 'var(--font-dela)' }}>
+        <h1 className="text-2xl font-bold" style={{ fontFamily: 'var(--font-sans)', color: PALETTE.primary.green }}>
           Mi perfil
         </h1>
-        <p className="text-sm mt-1" style={{ color: '#4a5280' }}>
+        <p className="text-sm mt-1" style={{ color: PALETTE.text.secondary }}>
           Actualiza tu nombre y contraseña
         </p>
       </div>
@@ -109,7 +110,7 @@ export default function PerfilPage() {
             <Label className="text-xs font-semibold uppercase tracking-wider" style={labelStyle}>
               Correo electrónico
             </Label>
-            <Input value={email} readOnly style={{ color: '#4a5280', cursor: 'default' }} />
+            <Input value={email} readOnly style={{ color: PALETTE.text.secondary, cursor: 'default' }} />
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1.5">
@@ -134,7 +135,7 @@ export default function PerfilPage() {
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <Button type="submit" disabled={profileStatus === 'saving'} style={{ background: '#2B55F4' }}>
+            <Button type="submit" disabled={profileStatus === 'saving'} style={{ background: PALETTE.primary.green, color: '#FFFFFF' }}>
               {profileStatus === 'saving' ? 'Guardando...' : 'Guardar cambios'}
             </Button>
             <StatusMsg status={profileStatus} ok="Nombre actualizado." />
@@ -171,7 +172,7 @@ export default function PerfilPage() {
             />
           </div>
           <div className="flex items-center gap-3">
-            <Button type="submit" disabled={passStatus === 'saving'} style={{ background: '#2B55F4' }}>
+            <Button type="submit" disabled={passStatus === 'saving'} style={{ background: PALETTE.primary.green, color: '#FFFFFF' }}>
               {passStatus === 'saving' ? 'Actualizando...' : 'Cambiar contraseña'}
             </Button>
             <StatusMsg status={passStatus} ok="Contraseña actualizada." err={passError} />

@@ -7,6 +7,7 @@ import ConfirmDeleteButton from '@/components/admin/confirm-delete-button'
 import CreateUserModal from '@/components/admin/create-user-modal'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { PALETTE } from '@/lib/palette'
 
 export default async function AdminUsersPage() {
   const user = await requireUser()
@@ -37,15 +38,15 @@ export default async function AdminUsersPage() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-white" style={{ fontFamily: 'var(--font-dela)' }}>Admin</h1>
-        <p className="text-sm mt-1" style={{ color: '#4a5280' }}>Gestión del sistema</p>
+        <h1 className="text-2xl font-bold " style={{ fontFamily: 'var(--font-sans)', color: PALETTE.primary.green }}>Admin</h1>
+        <p className="text-sm mt-1" style={{ color: PALETTE.text.secondary }}>Gestión del sistema</p>
       </div>
       <AdminTabs active="users" />
 
       <div className="flex items-center justify-between mb-4">
         <div>
           <h2 className="text-sm font-semibold text-white">Usuarios del Sistema</h2>
-          <p className="text-xs mt-1" style={{ color: '#4a5280' }}>Gestiona nombre y permisos de cada veterinario</p>
+          <p className="text-xs mt-1" style={{ color: PALETTE.text.secondary }}>Gestiona nombre y permisos de cada veterinario</p>
         </div>
         <CreateUserModal />
       </div>
@@ -57,7 +58,7 @@ export default async function AdminUsersPage() {
               <tr style={{ borderBottom: '1px solid #252d4a' }}>
                 {['Email', 'Nombre', 'Apellido', 'Último acceso', '', 'Permisos'].map(h => (
                   <th key={h} className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider"
-                    style={{ color: '#4a5280' }}>{h}</th>
+                    style={{ color: PALETTE.text.secondary }}>{h}</th>
                 ))}
               </tr>
             </thead>
@@ -73,7 +74,7 @@ export default async function AdminUsersPage() {
                     <td className="px-5 py-2.5">
                       <Input name="last_name" defaultValue={u.last_name} placeholder="Apellido" className="h-8 text-sm w-36" />
                     </td>
-                    <td className="px-5 py-3 text-xs" style={{ color: '#4a5280' }}>
+                    <td className="px-5 py-3 text-xs" style={{ color: PALETTE.text.secondary }}>
                       {u.last_sign_in_at ? u.last_sign_in_at.slice(0, 10) : '—'}
                     </td>
                     <td className="px-5 py-3">
@@ -94,7 +95,7 @@ export default async function AdminUsersPage() {
                           action={revokeEuthanasiaRole.bind(null, u.id)}
                           message={`¿Revocar permiso de eutanasia a ${u.email}?`}
                           className="text-xs underline"
-                          style={{ background: 'none', border: 'none', color: '#4a5280', cursor: 'pointer' }}>
+                          style={{ background: 'none', border: 'none', color: PALETTE.text.secondary, cursor: 'pointer' }}>
                           Revocar
                         </ConfirmDeleteButton>
                       </div>
