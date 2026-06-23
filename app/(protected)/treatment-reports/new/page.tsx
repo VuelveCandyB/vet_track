@@ -42,9 +42,15 @@ export default async function NewTreatmentReportPage({
     <div className="max-w-5xl mx-auto">
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 mb-6">
-        <Link href="/treatment-reports">
-          <Button variant="ghost" size="sm">← Informes</Button>
-        </Link>
+        {preSelectedHorse ? (
+          <Link href={`/horses/${preSelectedHorse.id}`}>
+            <Button variant="ghost" size="sm">← Volver a {preSelectedHorse.name}</Button>
+          </Link>
+        ) : (
+          <Link href="/treatment-reports">
+            <Button variant="ghost" size="sm">← Informes</Button>
+          </Link>
+        )}
       </div>
 
       {/* Header */}
