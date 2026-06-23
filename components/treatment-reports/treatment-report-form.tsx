@@ -178,44 +178,6 @@ export default function TreatmentReportForm({
         </div>
       </div>
 
-      {/* SECCIÓN: MEDICAMENTO */}
-      <div className="p-6 rounded-lg" style={{ background: PALETTE.background.white, border: `1px solid #E2E8F0`, boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-        <h3 className="text-sm font-semibold uppercase tracking-wider mb-6" style={{ color: PALETTE.primary.green }}>
-          Medicamento
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <Label htmlFor="\1" style={{ color: PALETTE.text.primary }}>Medicamento *</Label>
-            <select
-              id="drug_id"
-              name="drug_id"
-              value={selectedDrugId}
-              onChange={handleDrugChange}
-              required
-              className="flex h-9 w-full rounded-md border px-3 py-1 text-sm mt-1"
-              style={{
-                borderColor: PALETTE.ui.border,
-                backgroundColor: '#FFFFFF',
-                color: PALETTE.text.primary,
-              }}
-            >
-              <option value="">Seleccionar medicamento...</option>
-              {drugs.map(d => (
-                <option key={d.id} value={d.id}>
-                  {d.nombre} {d.tipo_restriccion ? `[${d.tipo_restriccion}]` : ''}
-                </option>
-              ))}
-            </select>
-            {selectedDrug && (
-              <p className="text-xs mt-1" style={{ color: PALETTE.text.secondary }}>
-                Categoría: {selectedDrug.categoria}
-                {selectedDrug.tipo_restriccion && ` | Restricción: ${selectedDrug.tipo_restriccion}`}
-              </p>
-            )}
-          </div>
-        </div>
-      </div>
-
       {/* SECCIÓN: DIAGNÓSTICO Y TRATAMIENTO */}
       <div className="p-6 rounded-lg" style={{ background: PALETTE.background.white, border: `1px solid #E2E8F0`, boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
         <h3 className="text-sm font-semibold uppercase tracking-wider mb-6" style={{ color: PALETTE.primary.green }}>
@@ -253,6 +215,36 @@ export default function TreatmentReportForm({
           Administración del Medicamento
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          <div>
+            <Label htmlFor="drug_id" style={{ color: PALETTE.text.primary }}>Medicamento *</Label>
+            <select
+              id="drug_id"
+              name="drug_id"
+              value={selectedDrugId}
+              onChange={handleDrugChange}
+              required
+              className="flex h-9 w-full rounded-md border px-3 py-1 text-sm mt-1"
+              style={{
+                borderColor: PALETTE.ui.border,
+                backgroundColor: '#FFFFFF',
+                color: PALETTE.text.primary,
+              }}
+            >
+              <option value="">Seleccionar medicamento...</option>
+              {drugs.map(d => (
+                <option key={d.id} value={d.id}>
+                  {d.nombre} {d.tipo_restriccion ? `[${d.tipo_restriccion}]` : ''}
+                </option>
+              ))}
+            </select>
+            {selectedDrug && (
+              <p className="text-xs mt-1" style={{ color: PALETTE.text.secondary }}>
+                Categoría: {selectedDrug.categoria}
+                {selectedDrug.tipo_restriccion && ` | Restricción: ${selectedDrug.tipo_restriccion}`}
+              </p>
+            )}
+          </div>
+
           <div>
             <Label htmlFor="\1" style={{ color: PALETTE.text.primary }}>Fecha de Tratamiento *</Label>
             <Input
