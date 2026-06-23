@@ -5,7 +5,7 @@ import { deleteMedication } from '@/lib/actions/medications'
 import HorseActions from '@/components/horses/horse-actions'
 import { Badge } from '@/components/ui/badge'
 import Link from 'next/link'
-import type { Horse, Medication, VetlistEntry, EuthanasiaRecord, Drug, Diagnostico } from '@/lib/types'
+import type { Horse, Medication, VetlistEntry, EuthanasiaRecord, Drug, Diagnostico, TreatmentReport } from '@/lib/types'
 import { STATUS_LABEL } from '@/lib/constants'
 import { PALETTE } from '@/lib/palette'
 
@@ -66,7 +66,7 @@ export default async function HorseDetailPage({
 
   const [
     horseRes, medsRes, vetlistRes, euthRes,
-    drugsRes, diagRes, vetName,
+    drugsRes, diagRes, treatmentReportsRes, vetName,
     canEuth, officialVet,
   ] = await Promise.all([
     supabase.from('horses').select('*').eq('id', id).single(),
@@ -75,6 +75,7 @@ export default async function HorseDetailPage({
     supabase.from('euthanasia').select('*').eq('horse_id', id).maybeSingle(),
     supabase.from('drugs').select('*').eq('active', true).order('nombre'),
     supabase.from('diagnosticos').select('*').eq('horse_id', id).order('fecha', { ascending: false }),
+    supabase.from('treatment_reports').select('*, drug:drugs(nombre, categoria, tipo_restriccion)').eq('horse_id', id).order('fecha_tratamiento', { ascending: false }).limit(5),
     getVetName(supabase, user),
     canRegisterEuthanasia(user.id, user.email!),
     isOfficialVet(user.id, user.email!),
@@ -86,6 +87,7 @@ export default async function HorseDetailPage({
   const euthanasiaRecord = euthRes.data as EuthanasiaRecord | null
   const drugs = (drugsRes.data ?? []) as Drug[]
   const diagnosticos = (diagRes.data ?? []) as Diagnostico[]
+  const treatmentReports = (treatmentReportsRes.data ?? []) as (TreatmentReport & { drug?: { nombre: string; categoria?: string; tipo_restriccion?: string } })[]
 
   const vetlistActiva = vetlist.find(e => !e.fecha_egreso) ?? null
 
@@ -404,6 +406,64 @@ export default async function HorseDetailPage({
                       )}
                     </div>
                   </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Treatment Reports Section (Art. 811) */}
+        <div className="rounded-lg p-6 mt-5" style={{ background: PALETTE.background.white, border: `1px solid ${PALETTE.ui.border}` }}>
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-base font-semibold" style={{ color: PALETTE.text.dark }}>Informes de Tratamiento (Art. 811)</h2>
+              <p className="text-xs mt-1" style={{ color: PALETTE.text.secondary }}>Reglamento 8760 de Medicación Controlada</p>
+            </div>
+            {treatmentReports.length > 0 && (
+              <Link href={`/treatment-reports?horse_id=${horse.id}`}
+                className="text-xs px-3 py-1.5 rounded-md font-medium transition-colors"
+                style={{ color: PALETTE.primary.green, border: `1px solid ${PALETTE.primary.green}40` }}>
+                Ver todos →
+              </Link>
+            )}
+          </div>
+
+          {treatmentReports.length === 0 ? (
+            <div className="text-center py-8">
+              <div className="text-sm" style={{ color: PALETTE.text.primary }}>Sin informes de tratamiento registrados</div>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {treatmentReports.map(report => {
+                const estadoColorMap: Record<string, [string, string]> = {
+                  borrador: ['#9ca3af', '#f3f4f6'],
+                  sometido: ['#f59e0b', '#fffbeb'],
+                  radicado: ['#10b981', '#ecfdf5'],
+                }
+                const [textColor, bgColor] = estadoColorMap[report.estado] || ['#9ca3af', '#f3f4f6']
+                return (
+                  <Link key={report.id} href={`/treatment-reports/${report.id}`}
+                    className="flex items-center gap-4 p-4 rounded-lg transition-colors border"
+                    style={{ background: PALETTE.background.lightAlt, borderColor: PALETTE.ui.border, cursor: 'pointer' }}
+                    onMouseEnter={(e) => e.currentTarget.style.background = '#f1f5f920'}
+                    onMouseLeave={(e) => e.currentTarget.style.background = PALETTE.background.lightAlt}>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1 flex-wrap">
+                        <span className="text-sm font-semibold" style={{ color: PALETTE.text.primary }}>
+                          {report.drug?.nombre || 'Medicamento'}
+                        </span>
+                        <Badge className="text-xs" style={{ background: bgColor, color: textColor, border: 'none' }}>
+                          {report.estado.charAt(0).toUpperCase() + report.estado.slice(1)}
+                        </Badge>
+                      </div>
+                      <div className="text-xs" style={{ color: PALETTE.text.secondary }}>
+                        {report.dosis} {report.dosis_unidad} · {report.fecha_tratamiento} · {report.diagnostico.substring(0, 50)}...
+                      </div>
+                    </div>
+                    <div className="text-xs text-right flex-shrink-0" style={{ color: PALETTE.text.secondary }}>
+                      {report.fecha_tratamiento}
+                    </div>
+                  </Link>
                 )
               })}
             </div>

@@ -1,8 +1,8 @@
 'use client'
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { Button } from '@/components/ui/button'
-import MedicationModal from './medication-modal'
 import VetlistModal from './vetlist-modal'
 import VetlistReleaseModal from './vetlist-release-modal'
 import EuthanasiaModal from './euthanasia-modal'
@@ -10,7 +10,7 @@ import DiagnosisModal from './diagnosis-modal'
 import { PALETTE } from '@/lib/palette'
 import type { Horse, VetlistEntry, Drug } from '@/lib/types'
 
-type ModalType = 'medication' | 'vetlist' | 'release' | 'euthanasia' | 'diagnosis' | null
+type ModalType = 'vetlist' | 'release' | 'euthanasia' | 'diagnosis' | null
 
 interface Props {
   horse: Horse
@@ -118,20 +118,17 @@ export default function HorseActions({
             Diagnóstico
           </Button>
 
-          {/* Medication button */}
-          <Button onClick={() => setOpen('medication')} size="sm"
-            style={{ background: PALETTE.primary.green, color: '#FFFFFF' }}>
-            + Registrar Medicamento
-          </Button>
+          {/* Medication button — now uses treatment reports form */}
+          <Link href={`/treatment-reports/new?horse_id=${horse.id}`}>
+            <Button size="sm"
+              style={{ background: PALETTE.primary.green, color: '#FFFFFF' }}>
+              + Registrar Medicamento
+            </Button>
+          </Link>
         </div>
       )}
 
       {/* Modals */}
-      <MedicationModal
-        open={open === 'medication'} onClose={closeAndRefresh}
-        horseId={horse.id} horseName={horse.name}
-        drugs={drugs} vetName={vetName} today={today}
-      />
       <VetlistModal
         open={open === 'vetlist'} onClose={closeAndRefresh}
         horseId={horse.id} horseName={horse.name}
