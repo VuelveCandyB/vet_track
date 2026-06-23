@@ -443,10 +443,8 @@ export default async function HorseDetailPage({
                 const [textColor, bgColor] = estadoColorMap[report.estado] || ['#9ca3af', '#f3f4f6']
                 return (
                   <Link key={report.id} href={`/treatment-reports/${report.id}`}
-                    className="flex items-center gap-4 p-4 rounded-lg transition-colors border"
-                    style={{ background: PALETTE.background.lightAlt, borderColor: PALETTE.ui.border, cursor: 'pointer' }}
-                    onMouseEnter={(e) => e.currentTarget.style.background = '#f1f5f920'}
-                    onMouseLeave={(e) => e.currentTarget.style.background = PALETTE.background.lightAlt}>
+                    className="flex items-center gap-4 p-4 rounded-lg transition-colors border hover:bg-[#f1f5f920]"
+                    style={{ background: PALETTE.background.lightAlt, borderColor: PALETTE.ui.border, cursor: 'pointer' }}>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1 flex-wrap">
                         <span className="text-sm font-semibold" style={{ color: PALETTE.text.primary }}>
