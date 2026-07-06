@@ -28,23 +28,21 @@ export default function PMFForm({
   recordId,
 }: PMFFormProps) {
   const [pending, setPending] = useState(false)
+  const [selectedHorseId, setSelectedHorseId] = useState<string>(defaultValues?.horse_id || '')
   const [selectedMicrochip, setSelectedMicrochip] = useState<string>('')
 
   useEffect(() => {
-    if (defaultValues?.horse_id) {
-      const preSelectedHorse = horses.find(h => h.id === defaultValues.horse_id)
+    if (selectedHorseId) {
+      const preSelectedHorse = horses.find(h => h.id === selectedHorseId)
       setSelectedMicrochip(preSelectedHorse?.microchip || '')
-    }
-  }, [defaultValues?.horse_id, horses])
-
-  const handleHorseChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const horseId = e.target.value
-    if (horseId) {
-      const selectedHorse = horses.find(h => h.id === horseId)
-      setSelectedMicrochip(selectedHorse?.microchip || '')
     } else {
       setSelectedMicrochip('')
     }
+  }, [selectedHorseId, horses])
+
+  const handleHorseChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const horseId = e.target.value
+    setSelectedHorseId(horseId)
   }
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -83,7 +81,7 @@ export default function PMFForm({
             <select
               id="horse_id"
               name="horse_id"
-              defaultValue={defaultValues?.horse_id ?? ''}
+              value={selectedHorseId}
               onChange={handleHorseChange}
               required
               disabled={!!defaultValues?.horse_id}
