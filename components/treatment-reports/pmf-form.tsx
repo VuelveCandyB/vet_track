@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -28,6 +28,24 @@ export default function PMFForm({
   recordId,
 }: PMFFormProps) {
   const [pending, setPending] = useState(false)
+  const [selectedMicrochip, setSelectedMicrochip] = useState<string>('')
+
+  useEffect(() => {
+    if (defaultValues?.horse_id) {
+      const preSelectedHorse = horses.find(h => h.id === defaultValues.horse_id)
+      setSelectedMicrochip(preSelectedHorse?.microchip_id || '')
+    }
+  }, [defaultValues?.horse_id, horses])
+
+  const handleHorseChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const horseId = e.target.value
+    if (horseId) {
+      const selectedHorse = horses.find(h => h.id === horseId)
+      setSelectedMicrochip(selectedHorse?.microchip_id || '')
+    } else {
+      setSelectedMicrochip('')
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -66,6 +84,7 @@ export default function PMFForm({
               id="horse_id"
               name="horse_id"
               defaultValue={defaultValues?.horse_id ?? ''}
+              onChange={handleHorseChange}
               required
               disabled={!!defaultValues?.horse_id}
               className="flex h-9 w-full rounded-md border px-3 py-1 text-sm mt-1"
@@ -89,8 +108,11 @@ export default function PMFForm({
             <Input
               id="horse_id_oficial"
               name="horse_id_oficial"
-              placeholder="Ingresa el microchip"
+              value={selectedMicrochip}
+              placeholder="Se llenará automáticamente al seleccionar el caballo"
+              readOnly
               className="mt-1"
+              style={{ backgroundColor: selectedMicrochip ? '#F3F4F6' : '#FFFFFF' }}
             />
           </div>
         </div>
