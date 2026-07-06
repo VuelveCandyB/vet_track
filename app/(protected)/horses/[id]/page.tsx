@@ -4,6 +4,8 @@ import { createClient } from '@/lib/supabase/server'
 import { deleteMedication } from '@/lib/actions/medications'
 import HorseActions from '@/components/horses/horse-actions'
 import { Badge } from '@/components/ui/badge'
+import AnimatedCapsuleDot from '@/components/timeline/animated-capsule-dot'
+import AnimatedDiagnosticoDot from '@/components/timeline/animated-diagnostico-dot'
 import Link from 'next/link'
 import type { Horse, Medication, VetlistEntry, EuthanasiaRecord, Drug, Diagnostico, TreatmentReport } from '@/lib/types'
 import { STATUS_LABEL } from '@/lib/constants'
@@ -66,7 +68,7 @@ export default async function HorseDetailPage({
 
   const [
     horseRes, medsRes, vetlistRes, euthRes,
-    drugsRes, diagRes, treatmentReportsRes, vetName,
+    drugsRes, diagRes, treatmentReportsRes, pmfReportsRes, vetName,
     canEuth, officialVet,
   ] = await Promise.all([
     supabase.from('horses').select('*').eq('id', id).single(),
@@ -75,7 +77,8 @@ export default async function HorseDetailPage({
     supabase.from('euthanasia').select('*').eq('horse_id', id).maybeSingle(),
     supabase.from('drugs').select('*').eq('active', true).order('nombre'),
     supabase.from('diagnosticos').select('*').eq('horse_id', id).order('fecha', { ascending: false }),
-    supabase.from('treatment_reports').select('*, drug:drugs(nombre, categoria, tipo_restriccion)').eq('horse_id', id).order('fecha_tratamiento', { ascending: false }).limit(5),
+    supabase.from('treatment_reports').select('*, drug:drugs(nombre, categoria, tipo_restriccion)').eq('horse_id', id).order('fecha_tratamiento', { ascending: false }).limit(10),
+    supabase.from('pmf_records').select('*, drug:drugs(nombre, categoria, tipo_restriccion)').eq('horse_id', id).order('fecha_tratamiento', { ascending: false }).limit(5),
     getVetName(supabase, user),
     canRegisterEuthanasia(user.id, user.email!),
     isOfficialVet(user.id, user.email!),
@@ -88,6 +91,7 @@ export default async function HorseDetailPage({
   const drugs = (drugsRes.data ?? []) as Drug[]
   const diagnosticos = (diagRes.data ?? []) as Diagnostico[]
   const treatmentReports = (treatmentReportsRes.data ?? []) as (TreatmentReport & { drug?: { nombre: string; categoria?: string; tipo_restriccion?: string } })[]
+  const pmfReports = (pmfReportsRes.data ?? []) as (TreatmentReport & { drug?: { nombre: string; categoria?: string; tipo_restriccion?: string } })[]
 
   const vetlistActiva = vetlist.find(e => !e.fecha_egreso) ?? null
 
@@ -228,37 +232,6 @@ export default async function HorseDetailPage({
             </div>
           )}
 
-          {/* Diagnosis history */}
-          {diagnosticos.length > 0 && (
-            <div className="rounded-lg p-5" style={{ background: PALETTE.background.white, border: `1px solid ${PALETTE.ui.border}` }}>
-              <h3 className="text-xs font-semibold uppercase tracking-wider mb-4" style={{ color: PALETTE.text.primary }}>
-                Historial Diagnósticos
-              </h3>
-              {diagnosticos.map(diag => (
-                <Link key={diag.id} href={`/horses/${horse.id}/diagnosticos/${diag.id}`}
-                  className="block py-2.5 px-2 rounded-lg transition-colors hover:bg-[#05966920]"
-                  style={{ borderBottom: `1px solid ${PALETTE.ui.border}` }}>
-                  <div className="flex items-center gap-2 mb-1 flex-wrap">
-                    <span className="text-xs font-medium" style={{ color: 'PALETTE.text.primary' }}>{diag.diagnostico}</span>
-                    {diag.severidad && (
-                      <Badge className="text-xs" style={{ background: '#7c3aed22', color: '#c084fc', border: 'none' }}>
-                        {diag.severidad}
-                      </Badge>
-                    )}
-                    {diag.recomendar_vetlist && (
-                      <Badge className="text-xs" style={{ background: '#f8717122', color: '#f87171', border: 'none' }}>
-                        Recomendado
-                      </Badge>
-                    )}
-                  </div>
-                  <div className="text-xs" style={{ color: PALETTE.text.primary }}>
-                    {diag.fecha} · {diag.vet_name}
-                  </div>
-                </Link>
-              ))}
-            </div>
-          )}
-
           {/* Clinical summary */}
           <div className="rounded-lg p-5" style={{ background: PALETTE.background.white, border: `1px solid ${PALETTE.ui.border}` }}>
             <h3 className="text-xs font-semibold uppercase tracking-wider mb-4" style={{ color: PALETTE.text.primary }}>
@@ -266,7 +239,7 @@ export default async function HorseDetailPage({
             </h3>
             <div className="flex justify-between items-center py-2" style={{ borderBottom: `1px solid ${PALETTE.ui.border}` }}>
               <span className="text-xs" style={{ color: PALETTE.text.secondary }}>Total Registros</span>
-              <span className="text-2xl font-bold tabular-nums" style={{ color: PALETTE.primary.green }}>{medications.length}</span>
+              <span className="text-2xl font-bold tabular-nums" style={{ color: PALETTE.primary.green }}>{medications.length + treatmentReports.length + diagnosticos.length}</span>
             </div>
             {medications[0] && (
               <>
@@ -300,10 +273,10 @@ export default async function HorseDetailPage({
             </div>
           </div>
 
-          {medications.length === 0 ? (
+          {medications.length === 0 && treatmentReports.length === 0 && pmfReports.length === 0 ? (
             <div className="text-center py-14">
               <div className="text-base font-semibold mb-1" style={{ color: PALETTE.text.primary }}>Sin registros médicos</div>
-              <div className="text-sm" style={{ color: PALETTE.text.primary }}>Este caballo no tiene medicamentos registrados aún.</div>
+              <div className="text-sm" style={{ color: PALETTE.text.primary }}>Este caballo no tiene medicamentos ni informes de tratamiento registrados aún.</div>
             </div>
           ) : (
             <div className="relative pl-9">
@@ -311,14 +284,39 @@ export default async function HorseDetailPage({
               <div className="absolute left-[15px] top-4 bottom-4 w-0.5"
                 style={{ background: `linear-gradient(to bottom, ${PALETTE.primary.green} 0%, ${PALETTE.primary.green}30 100%)` }} />
 
-              {medications.map((m, i) => {
-                const color = TYPE_COLORS[m.type] ?? 'PALETTE.primary.green'
-                const [rfg, rbg] = m.tipo_restriccion ? (RESTRICTION_STYLE[m.tipo_restriccion] ?? ['#9ca3af', '#1e2235']) : ['#9ca3af', '#1e2235']
-                return (
-                  <div key={m.id} className={`relative ${i < medications.length - 1 ? 'mb-5' : ''}`}>
-                    {/* Dot */}
-                    <div className="absolute -left-6 top-3.5 w-4 h-4 rounded-full border-2 flex-shrink-0"
-                      style={{ background: `${color}20`, borderColor: color }} />
+              {(() => {
+                // Combine medications, treatment reports, PMF records, and diagnosticos
+                const combinedRecords = [
+                  ...medications.map((m: any) => ({ ...m, recordType: 'medication' })),
+                  ...treatmentReports.map((t: any) => ({ ...t, recordType: 'treatmentReport' })),
+                  ...pmfReports.map((p: any) => ({ ...p, recordType: 'pmfReport' })),
+                  ...diagnosticos.map((d: any) => ({ ...d, recordType: 'diagnostico' }))
+                ].sort((a: any, b: any) => {
+                  let dateA: number
+                  let dateB: number
+
+                  if (a.recordType === 'medication') dateA = new Date(a.administered_at).getTime()
+                  else if (a.recordType === 'treatmentReport' || a.recordType === 'pmfReport') dateA = new Date(a.fecha_tratamiento).getTime()
+                  else dateA = new Date(a.fecha).getTime()
+
+                  if (b.recordType === 'medication') dateB = new Date(b.administered_at).getTime()
+                  else if (b.recordType === 'treatmentReport' || b.recordType === 'pmfReport') dateB = new Date(b.fecha_tratamiento).getTime()
+                  else dateB = new Date(b.fecha).getTime()
+
+                  return dateB - dateA // Most recent first
+                })
+
+                return combinedRecords.map((item: any, i: number) => {
+                  if (item.recordType === 'medication') {
+                    const m = item
+                    const color = TYPE_COLORS[m.type] ?? 'PALETTE.primary.green'
+                    const [rfg, rbg] = m.tipo_restriccion ? (RESTRICTION_STYLE[m.tipo_restriccion] ?? ['#9ca3af', '#1e2235']) : ['#9ca3af', '#1e2235']
+                    return (
+                      <div key={`med-${m.id}`} className={`relative ${i < combinedRecords.length - 1 ? 'mb-5' : ''}`}>
+                        {/* Animated Capsule Dot */}
+                        <div className="absolute -left-6 top-1/2 -translate-y-1/2 flex-shrink-0">
+                          <AnimatedCapsuleDot />
+                        </div>
 
                     <div className="rounded-lg p-4"
                       style={{ background: '#F1F5F9', border: `1px solid ${PALETTE.ui.border}`, borderLeft: `3px solid ${color}` }}>
@@ -406,67 +404,106 @@ export default async function HorseDetailPage({
                       )}
                     </div>
                   </div>
-                )
-              })}
+                    )
+                  } else if (item.recordType === 'treatmentReport' || item.recordType === 'pmfReport') {
+                    // Treatment Report or PMF Record
+                    const t = item
+                    const estadoColorMap: Record<string, [string, string]> = {
+                      borrador: ['#9ca3af', '#f3f4f6'],
+                      sometido: ['#f59e0b', '#fffbeb'],
+                      radicado: ['#10b981', '#ecfdf5'],
+                    }
+                    const [textColor, bgColor] = estadoColorMap[t.estado] || ['#9ca3af', '#f3f4f6']
+                    const color = item.recordType === 'pmfReport' ? '#ec4899' : '#06b6d4'
+                    const artLabel = item.recordType === 'pmfReport' ? 'Art. 1412' : 'Art. 811'
+
+                    return (
+                      <div key={`report-${t.id}`} className={`relative ${i < combinedRecords.length - 1 ? 'mb-5' : ''}`}>
+                        {/* Animated Capsule Dot */}
+                        <div className="absolute -left-6 top-1/2 -translate-y-1/2 flex-shrink-0">
+                          <AnimatedCapsuleDot />
+                        </div>
+
+                        <div
+                          className="flex items-start gap-4 p-4 rounded-lg border"
+                          style={{ background: '#F1F5F9', borderColor: PALETTE.ui.border, borderLeftColor: color, borderLeftWidth: '3px', borderLeftStyle: 'solid' }}>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap mb-2">
+                              <span className="text-sm font-semibold" style={{ color: PALETTE.primary.green }}>
+                                {t.drug?.nombre || 'Medicamento'}
+                              </span>
+                              <Badge className="text-xs" style={{ background: bgColor, color: textColor, border: 'none' }}>
+                                {t.estado.charAt(0).toUpperCase() + t.estado.slice(1)}
+                              </Badge>
+                              {t.drug?.tipo_restriccion && (
+                                <Badge className="text-xs" style={{ background: '#fef3c722', color: '#92400e', border: 'none' }}>
+                                  {t.drug.tipo_restriccion}
+                                </Badge>
+                              )}
+                              <span className="text-xs" style={{ color: PALETTE.text.secondary }}>{artLabel}</span>
+                            </div>
+                            <div className="text-xs mb-2" style={{ color: PALETTE.text.primary }}>
+                              <span className="font-semibold">{t.dosis} {t.dosis_unidad}</span> · {t.vet_autorizado_nombre}
+                            </div>
+                            <div className="text-xs" style={{ color: PALETTE.text.secondary }}>
+                              <span className="font-medium" style={{ color: PALETTE.text.primary }}>Dx:</span> {t.diagnostico.substring(0, 80)}
+                              {t.diagnostico.length > 80 ? '...' : ''}
+                            </div>
+                          </div>
+                          <div className="text-xs text-right flex-shrink-0" style={{ color: PALETTE.text.primary }}>
+                            <div style={{ fontWeight: '600' }}>{t.fecha_tratamiento}</div>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  } else {
+                    // Diagnostico
+                    const d = item
+                    const color = '#8b5cf6'
+
+                    return (
+                      <div key={`diag-${d.id}`} className={`relative ${i < combinedRecords.length - 1 ? 'mb-5' : ''}`}>
+                        {/* Animated Diagnostico Dot */}
+                        <div className="absolute -left-6 top-1/2 -translate-y-1/2 flex-shrink-0">
+                          <AnimatedDiagnosticoDot />
+                        </div>
+
+                        <div
+                          className="flex items-start gap-4 p-4 rounded-lg border"
+                          style={{ background: '#F1F5F9', borderColor: PALETTE.ui.border, borderLeftColor: color, borderLeftWidth: '3px', borderLeftStyle: 'solid' }}>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap mb-2">
+                              <span className="text-sm font-semibold" style={{ color: color }}>
+                                {d.diagnostico}
+                              </span>
+                              {d.severidad && (
+                                <Badge className="text-xs" style={{ background: '#7c3aed22', color: '#c084fc', border: 'none' }}>
+                                  {d.severidad}
+                                </Badge>
+                              )}
+                              {d.recomendar_vetlist && (
+                                <Badge className="text-xs" style={{ background: '#f8717122', color: '#f87171', border: 'none' }}>
+                                  Recomendado
+                                </Badge>
+                              )}
+                            </div>
+                            <div className="text-xs" style={{ color: PALETTE.text.primary }}>
+                              <span className="font-medium">{d.vet_name}</span>
+                            </div>
+                          </div>
+                          <div className="text-xs text-right flex-shrink-0" style={{ color: PALETTE.text.primary }}>
+                            {d.fecha}
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  }
+                })
+              })()}
             </div>
           )}
         </div>
 
-        {/* Treatment Reports Section (Art. 811) */}
-        <div className="rounded-lg p-6 mt-5" style={{ background: PALETTE.background.white, border: `1px solid ${PALETTE.ui.border}` }}>
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h2 className="text-base font-semibold" style={{ color: PALETTE.text.dark }}>Informes de Tratamiento (Art. 811)</h2>
-              <p className="text-xs mt-1" style={{ color: PALETTE.text.secondary }}>Reglamento 8760 de Medicación Controlada</p>
-            </div>
-            {treatmentReports.length > 0 && (
-              <Link href={`/treatment-reports?horse_id=${horse.id}`}
-                className="text-xs px-3 py-1.5 rounded-md font-medium transition-colors"
-                style={{ color: PALETTE.primary.green, border: `1px solid ${PALETTE.primary.green}40` }}>
-                Ver todos →
-              </Link>
-            )}
-          </div>
-
-          {treatmentReports.length === 0 ? (
-            <div className="text-center py-8">
-              <div className="text-sm" style={{ color: PALETTE.text.primary }}>Sin informes de tratamiento registrados</div>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {treatmentReports.map(report => {
-                const estadoColorMap: Record<string, [string, string]> = {
-                  borrador: ['#9ca3af', '#f3f4f6'],
-                  sometido: ['#f59e0b', '#fffbeb'],
-                  radicado: ['#10b981', '#ecfdf5'],
-                }
-                const [textColor, bgColor] = estadoColorMap[report.estado] || ['#9ca3af', '#f3f4f6']
-                return (
-                  <Link key={report.id} href={`/treatment-reports/${report.id}`}
-                    className="flex items-center gap-4 p-4 rounded-lg transition-colors border hover:bg-[#f1f5f920]"
-                    style={{ background: PALETTE.background.lightAlt, borderColor: PALETTE.ui.border, cursor: 'pointer' }}>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1 flex-wrap">
-                        <span className="text-sm font-semibold" style={{ color: PALETTE.text.primary }}>
-                          {report.drug?.nombre || 'Medicamento'}
-                        </span>
-                        <Badge className="text-xs" style={{ background: bgColor, color: textColor, border: 'none' }}>
-                          {report.estado.charAt(0).toUpperCase() + report.estado.slice(1)}
-                        </Badge>
-                      </div>
-                      <div className="text-xs" style={{ color: PALETTE.text.secondary }}>
-                        {report.dosis} {report.dosis_unidad} · {report.fecha_tratamiento} · {report.diagnostico.substring(0, 50)}...
-                      </div>
-                    </div>
-                    <div className="text-xs text-right flex-shrink-0" style={{ color: PALETTE.text.secondary }}>
-                      {report.fecha_tratamiento}
-                    </div>
-                  </Link>
-                )
-              })}
-            </div>
-          )}
-        </div>
       </div>
     </div>
   )

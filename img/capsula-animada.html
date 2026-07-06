@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<title>Cápsula animada</title>
+<style>
+  /* ===== Icono cápsula animado ===== */
+  .med-capsule { display: inline-block; line-height: 0; }
+  .med-capsule svg {
+    transform-origin: 60px 60px;
+    animation: medCapFloat 3.4s ease-in-out infinite;
+  }
+  @keyframes medCapFloat {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    50%      { transform: translateY(-10px) rotate(4deg); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .med-capsule svg { animation: none; }
+  }
+</style>
+</head>
+<body style="margin:0;display:flex;min-height:100vh;align-items:center;justify-content:center;background:#f4f5f3">
+
+  <!-- ▼▼ COPIA DESDE AQUÍ ▼▼ -->
+  <span class="med-capsule" role="img" aria-label="medicina">
+    <svg width="120" height="120" viewBox="0 0 120 120" fill="none">
+      <defs>
+        <clipPath id="medCapClip">
+          <rect x="22" y="38" width="76" height="44" rx="22" transform="rotate(-30 60 60)"/>
+        </clipPath>
+      </defs>
+      <g clip-path="url(#medCapClip)">
+        <rect x="22" y="38" width="38" height="44" transform="rotate(-30 60 60)" fill="#1f9d6b"/>
+      </g>
+      <rect x="22" y="38" width="76" height="44" rx="22" transform="rotate(-30 60 60)" fill="none" stroke="#141414" stroke-width="6"/>
+      <line x1="60" y1="38" x2="60" y2="82" transform="rotate(-30 60 60)" stroke="#141414" stroke-width="6" stroke-linecap="round"/>
+    </svg>
+  </span>
+  <!-- ▲▲ COPIA HASTA AQUÍ (más el bloque <style> del <head>) ▲▲ -->
+
+</body>
+</html>

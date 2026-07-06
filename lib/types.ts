@@ -96,3 +96,30 @@ export interface Diagnostico {
   attachment_url?: string
   created_at?: string
 }
+
+export interface TreatmentReport {
+  id: string
+  horse_id: string
+  drug_id: string
+  numero_identificacion_caballo?: string
+  establo: string
+  tratamiento?: string
+  diagnostico: string
+  fecha_tratamiento: string
+  hora_tratamiento: string
+  dosis: number
+  dosis_unidad?: string
+  nivel_dosificacion?: string
+  tiempo_restriccion?: number | null
+  fecha_fin_tratamiento?: string | null
+  hasta_cuando?: string | null
+  es_auto_generado?: boolean
+  informe_padre_id?: string | null
+  notas?: string
+  vet_autorizado_nombre: string
+  estado: 'borrador' | 'sometido' | 'radicado'
+  sometido_en?: string | null
+  radicado_en?: string | null
+  created_by?: string
+  created_at?: string
+}

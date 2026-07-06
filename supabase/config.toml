@@ -1,0 +1,31 @@
+# Supabase Local Configuration
+[project]
+api_port = 54321
+db_port = 54322
+inbucket_port = 54324
+studio_port = 54325
+jwt_expiry = 3600
+max_batch_size = 20000
+
+[db]
+# Port to use for the local PostgreSQL database
+port = 54322
+# The database major version to use. This has to be the same as the remote database.
+major_version = 15
+
+[studio]
+# IP address to bind the Studio to. Setting this to localhost will only allow local connections
+ip = "127.0.0.1"
+# Development keys, used in development and testing
+default_organization = "Default Organization"
+default_project = "Default Project"
+
+[auth.jwt]
+# IMPORTANT: Update the secret with a random string
+secret = "super-secret-jwt-token-with-at-least-32-characters-long"
+
+[auth.external]
+enabled = true
+
+[analytics]
+enabled = false

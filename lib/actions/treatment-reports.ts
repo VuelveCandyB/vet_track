@@ -10,12 +10,21 @@ export async function createTreatmentReport(formData: FormData) {
 
   const horse_id = formData.get('horse_id') as string
   const drug_id = formData.get('drug_id') as string
+
+  // Validación de campos requeridos
+  if (!horse_id?.trim()) {
+    throw new Error('Debe seleccionar un caballo')
+  }
+  if (!drug_id?.trim()) {
+    throw new Error('Debe seleccionar un medicamento')
+  }
+
   const numero_identificacion_caballo = formData.get('numero_identificacion_caballo') as string | null
-  const establo = formData.get('establo') as string
+  const establo = (formData.get('establo') as string) || ''
   const tratamiento = formData.get('tratamiento') as string | null
   const diagnostico = formData.get('diagnostico') as string
   const fecha_tratamiento = formData.get('fecha_tratamiento') as string
-  const hora_tratamiento = formData.get('hora_tratamiento') as string
+  const hora_tratamiento = (formData.get('hora_tratamiento') as string) || '00:00'
   const dosis = parseFloat(formData.get('dosis') as string)
   const dosis_unidad = formData.get('dosis_unidad') as string | null
   const nivel_dosificacion = formData.get('nivel_dosificacion') as string | null
@@ -49,18 +58,20 @@ export async function createTreatmentReport(formData: FormData) {
     fecha_fin_tratamiento,
     notas,
     vet_autorizado_nombre,
-    estado: 'borrador',
+    estado: 'sometido',
+    sometido_en: new Date().toISOString(),
+    es_auto_generado: false,
   })
 
   if (error) throw new Error(error.message)
 
   revalidatePath('/treatment-reports')
-
-  if (from_horse) {
-    redirect(`/horses/${from_horse}`)
-  } else {
-    redirect('/treatment-reports')
+  if (from_horse && from_horse.trim()) {
+    revalidatePath(`/horses/${from_horse}`)
   }
+
+  // Devolver la URL para que el cliente haga el redirect
+  return from_horse && from_horse.trim() ? `/horses/${from_horse}` : '/treatment-reports'
 }
 
 export async function updateTreatmentReport(id: string, formData: FormData) {
@@ -80,11 +91,11 @@ export async function updateTreatmentReport(id: string, formData: FormData) {
   const horse_id = formData.get('horse_id') as string
   const drug_id = formData.get('drug_id') as string
   const numero_identificacion_caballo = formData.get('numero_identificacion_caballo') as string | null
-  const establo = formData.get('establo') as string
+  const establo = (formData.get('establo') as string) || ''
   const tratamiento = formData.get('tratamiento') as string | null
   const diagnostico = formData.get('diagnostico') as string
   const fecha_tratamiento = formData.get('fecha_tratamiento') as string
-  const hora_tratamiento = formData.get('hora_tratamiento') as string
+  const hora_tratamiento = (formData.get('hora_tratamiento') as string) || '00:00'
   const dosis = parseFloat(formData.get('dosis') as string)
   const dosis_unidad = formData.get('dosis_unidad') as string | null
   const nivel_dosificacion = formData.get('nivel_dosificacion') as string | null
@@ -193,4 +204,95 @@ export async function deleteTreatmentReport(id: string) {
   if (error) throw new Error(error.message)
 
   revalidatePath('/treatment-reports')
+}
+
+export async function radicateTreatmentReport(id: string) {
+  await requireUser()
+  const supabase = await createClient()
+
+  const { data: report } = await supabase
+    .from('treatment_reports')
+    .select('estado')
+    .eq('id', id)
+    .single()
+
+  if (!report) throw new Error('Informe no encontrado')
+  if (report.estado !== 'sometido') {
+    throw new Error('Solo se pueden radicar informes en estado sometido')
+  }
+
+  const { error } = await supabase
+    .from('treatment_reports')
+    .update({ estado: 'radicado', radicado_en: new Date().toISOString() })
+    .eq('id', id)
+
+  if (error) throw new Error(error.message)
+
+  revalidatePath('/treatment-reports')
+  revalidatePath(`/treatment-reports/${id}`)
+}
+
+export async function replicateDailyTreatmentReports() {
+  const supabase = await createClient()
+
+  const today = new Date().toISOString().split('T')[0]
+
+  // Buscar informes que están activos (en borrador) y cuya duración aún está vigente
+  const { data: activeReports } = await supabase
+    .from('treatment_reports')
+    .select('*')
+    .eq('estado', 'borrador')
+    .not('hasta_cuando', 'is', null)
+    .gte('hasta_cuando', today)
+    .eq('es_auto_generado', false)
+
+  if (!activeReports || activeReports.length === 0) return { replicated: 0 }
+
+  let replicated = 0
+
+  for (const report of activeReports) {
+    // Verificar si ya existe un informe para hoy para este caballo y medicamento
+    const { data: existingToday } = await supabase
+      .from('treatment_reports')
+      .select('id')
+      .eq('horse_id', report.horse_id)
+      .eq('drug_id', report.drug_id)
+      .eq('fecha_tratamiento', today)
+      .single()
+
+    if (existingToday) {
+      // Ya existe informe para hoy, skip
+      continue
+    }
+
+    // Crear copia del informe para hoy
+    const { error } = await supabase.from('treatment_reports').insert({
+      horse_id: report.horse_id,
+      drug_id: report.drug_id,
+      numero_identificacion_caballo: report.numero_identificacion_caballo,
+      establo: report.establo,
+      tratamiento: report.tratamiento,
+      diagnostico: report.diagnostico,
+      fecha_tratamiento: today,
+      hora_tratamiento: report.hora_tratamiento,
+      dosis: report.dosis,
+      dosis_unidad: report.dosis_unidad,
+      nivel_dosificacion: report.nivel_dosificacion,
+      tiempo_restriccion: report.tiempo_restriccion,
+      fecha_fin_tratamiento: report.fecha_fin_tratamiento,
+      hasta_cuando: report.hasta_cuando,
+      notas: report.notas,
+      vet_autorizado_nombre: report.vet_autorizado_nombre,
+      estado: 'sometido', // Auto-generado ya sale sometido
+      es_auto_generado: true,
+      informe_padre_id: report.id,
+      created_by: report.created_by,
+    })
+
+    if (!error) {
+      replicated++
+    }
+  }
+
+  return { replicated }
 }

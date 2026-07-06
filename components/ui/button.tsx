@@ -46,6 +46,7 @@ function Button({
   size = "default",
   ...props
 }: ButtonPrimitive.Props & VariantProps<typeof buttonVariants>) {
+  // Hook test: editing this file triggers auto-tests
   return (
     <ButtonPrimitive
       data-slot="button"

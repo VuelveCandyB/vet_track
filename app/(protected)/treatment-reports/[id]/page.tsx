@@ -1,9 +1,10 @@
-import { requireUser } from '@/lib/auth'
+import { requireUser, isAdmin, isSecretary } from '@/lib/auth'
 import { createClient } from '@/lib/supabase/server'
 import { updateTreatmentReportStatus, deleteTreatmentReport } from '@/lib/actions/treatment-reports'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import DownloadPdfButton from '@/components/treatment-reports/download-pdf-button'
 import { PALETTE } from '@/lib/palette'
 import type { TreatmentReport } from '@/lib/types'
 
@@ -29,9 +30,12 @@ export default async function TreatmentReportDetailPage({
 }: {
   params: Promise<{ id: string }>
 }) {
-  await requireUser()
+  const user = await requireUser()
   const { id } = await params
   const supabase = await createClient()
+
+  const isAdminUser = isAdmin(user.email!)
+  const isSecretaryUser = await isSecretary(user.id, user.email!)
 
   const { data: report, error } = await supabase
     .from('treatment_reports')
@@ -53,7 +57,7 @@ export default async function TreatmentReportDetailPage({
   }
 
   return (
-    <div className="max-w-3xl">
+    <div className="max-w-3xl mx-auto">
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 mb-6">
         <Link href="/treatment-reports">
@@ -71,9 +75,14 @@ export default async function TreatmentReportDetailPage({
             {typed.horse?.name} • {new Date(typed.fecha_tratamiento).toLocaleDateString('es-ES')}
           </p>
         </div>
-        <Badge className={`text-lg border ${ESTADO_COLOR[typed.estado] ?? ''}`}>
-          {ESTADO_LABEL[typed.estado] ?? typed.estado}
-        </Badge>
+        <div className="flex flex-col items-end gap-3">
+          <Badge className={`text-lg border ${ESTADO_COLOR[typed.estado] ?? ''}`}>
+            {ESTADO_LABEL[typed.estado] ?? typed.estado}
+          </Badge>
+          {typed.estado === 'radicado' && (isAdminUser || isSecretaryUser) && (
+            <DownloadPdfButton report={typed} />
+          )}
+        </div>
       </div>
 
       {/* Documento */}
@@ -168,6 +177,29 @@ export default async function TreatmentReportDetailPage({
           </div>
         )}
 
+        {/* Sección: Duración del Tratamiento (Art. 811d) */}
+        {typed.hasta_cuando && (
+          <div className="mb-8 pb-8 bg-blue-50 p-4 rounded-md" style={{ borderBottom: `1px solid ${PALETTE.ui.border}` }}>
+            <h2 className="text-sm font-semibold uppercase tracking-wider mb-4" style={{ color: PALETTE.text.secondary }}>
+              Duración del Tratamiento (Art. 811d)
+            </h2>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-xs" style={{ color: PALETTE.text.secondary }}>Hasta cuándo</p>
+                <p className="text-lg font-semibold">{new Date(typed.hasta_cuando).toLocaleDateString('es-ES')}</p>
+              </div>
+              {typed.es_auto_generado && (
+                <div>
+                  <p className="text-xs" style={{ color: PALETTE.text.secondary }}>Generación</p>
+                  <p className="text-lg font-semibold" style={{ color: '#0891b2' }}>
+                    ⚙️ Auto-generado
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Sección: Vet */}
         <div className="mb-8 pb-8" style={{ borderBottom: `1px solid ${PALETTE.ui.border}` }}>
           <h2 className="text-sm font-semibold uppercase tracking-wider mb-4" style={{ color: PALETTE.text.secondary }}>
@@ -217,24 +249,6 @@ export default async function TreatmentReportDetailPage({
 
       {/* Acciones */}
       <div className="flex gap-3 mt-8">
-        {typed.estado === 'borrador' && (
-          <>
-            <Link href={`/treatment-reports/${id}/edit`}>
-              <Button style={{ background: PALETTE.primary.green, color: '#fff' }}>
-                Editar
-              </Button>
-            </Link>
-            <form action={async () => {
-              'use server'
-              await updateTreatmentReportStatus(id, 'sometido')
-            }}>
-              <Button type="submit" variant="secondary">
-                Someter
-              </Button>
-            </form>
-          </>
-        )}
-
         {typed.estado === 'sometido' && (
           <form action={async () => {
             'use server'

@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { PALETTE } from '@/lib/palette'
 
 export default function ChangePasswordPage() {
   const router = useRouter()
@@ -67,20 +68,20 @@ export default function ChangePasswordPage() {
 
   return (
     <div className="min-h-[100dvh] flex items-center justify-center px-4"
-      style={{ background: 'linear-gradient(135deg, #0F172A 0%, #1E293B 100%)' }}>
+      style={{ background: PALETTE.background.light }}>
       <div className="w-full max-w-sm">
-        <h2 className="text-2xl font-bold text-white mb-1">Nueva contraseña</h2>
-        <p className="text-sm mb-7" style={{ color: '#4a5280' }}>
+        <h2 className="text-2xl font-bold mb-1" style={{ color: PALETTE.text.dark }}>Nueva contraseña</h2>
+        <p className="text-sm mb-7" style={{ color: PALETTE.text.secondary }}>
           Ingresa una nueva contraseña para tu cuenta.
         </p>
 
         {success ? (
           <div className="rounded-lg px-4 py-5 text-center"
-            style={{ background: '#0d2e1a', border: '1px solid #4ade8040' }}>
-            <div className="text-base font-semibold mb-1" style={{ color: '#4ade80' }}>
+            style={{ background: PALETTE.form.successBg, border: `1px solid ${PALETTE.primary.green}` }}>
+            <div className="text-base font-semibold mb-1" style={{ color: PALETTE.primary.green }}>
               ¡Contraseña actualizada!
             </div>
-            <p className="text-sm" style={{ color: '#9ca3af' }}>
+            <p className="text-sm" style={{ color: PALETTE.text.secondary }}>
               Redirigiendo al dashboard...
             </p>
           </div>
@@ -88,21 +89,21 @@ export default function ChangePasswordPage() {
           <>
             {error && (
               <div className="mb-5 rounded-lg px-4 py-3 text-sm"
-                style={{ background: '#2e0d0d', border: '1px solid #7f1d1d', color: '#f87171' }}>
+                style={{ background: PALETTE.form.errorBg, border: `1px solid ${PALETTE.status.error}`, color: PALETTE.status.error }}>
                 {error}
               </div>
             )}
 
             {!ready ? (
               <div className="rounded-lg px-4 py-3 text-sm"
-                style={{ background: '#1e3a5f', border: '1px solid #3b82f640', color: '#93c5fd' }}>
+                style={{ background: PALETTE.background.lightAlt, border: `1px solid ${PALETTE.ui.border}`, color: PALETTE.text.secondary }}>
                 Validando el link de reset... Si el link expiró, vuelve a solicitar un reset.
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-5">
                 <div className="space-y-1.5">
                   <Label htmlFor="password" className="text-xs font-semibold uppercase tracking-wider"
-                    style={{ color: '#6b7399' }}>
+                    style={{ color: PALETTE.text.secondary }}>
                     Nueva contraseña
                   </Label>
                   <div className="relative">
@@ -116,7 +117,7 @@ export default function ChangePasswordPage() {
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
                       className="absolute right-3 top-1/2 -translate-y-1/2 transition-colors hover:text-white"
-                      style={{ color: '#4a5280' }}
+                      style={{ color: PALETTE.text.secondary }}
                       tabIndex={-1}>
                       {showPassword ? <EyeSlash size={18} /> : <Eye size={18} />}
                     </button>
@@ -125,7 +126,7 @@ export default function ChangePasswordPage() {
 
                 <div className="space-y-1.5">
                   <Label htmlFor="passwordConfirm" className="text-xs font-semibold uppercase tracking-wider"
-                    style={{ color: '#6b7399' }}>
+                    style={{ color: PALETTE.text.secondary }}>
                     Confirmar contraseña
                   </Label>
                   <div className="relative">
@@ -139,7 +140,7 @@ export default function ChangePasswordPage() {
                       type="button"
                       onClick={() => setShowPasswordConfirm(!showPasswordConfirm)}
                       className="absolute right-3 top-1/2 -translate-y-1/2 transition-colors hover:text-white"
-                      style={{ color: '#4a5280' }}
+                      style={{ color: PALETTE.text.secondary }}
                       tabIndex={-1}>
                       {showPasswordConfirm ? <EyeSlash size={18} /> : <Eye size={18} />}
                     </button>
@@ -147,7 +148,7 @@ export default function ChangePasswordPage() {
                 </div>
 
                 <Button type="submit" className="w-full font-semibold" disabled={loading}
-                  style={{ background: '#2B55F4' }}>
+                  style={{ background: PALETTE.primary.green, color: '#FFFFFF' }}>
                   {loading ? 'Actualizando...' : 'Cambiar contraseña'}
                 </Button>
               </form>
@@ -155,7 +156,7 @@ export default function ChangePasswordPage() {
           </>
         )}
 
-        <div className="mt-8 pt-6 text-center text-xs" style={{ borderTop: '1px solid #252d4a', color: '#252d4a' }}>
+        <div className="mt-8 pt-6 text-center text-xs" style={{ borderTop: `1px solid ${PALETTE.ui.border}`, color: PALETTE.text.secondary }}>
           VetTrack © 2026 — Sistema interno Hipódromo Camarero
         </div>
       </div>

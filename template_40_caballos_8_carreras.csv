@@ -1,0 +1,41 @@
+horse_name,horse_id,race_number,post_time,trainer,owner
+Rayo de Luz,MIC001,1,14:00,Trainer 1,Owner A
+Viento Fuerte,MIC002,1,14:05,Trainer 2,Owner B
+Bella Noche,MIC003,1,14:10,Trainer 1,Owner C
+Trueno Veloz,MIC004,1,14:15,Trainer 3,Owner D
+Luna Plateada,MIC005,1,14:20,Trainer 2,Owner E
+Fuego Ardiente,MIC006,2,14:35,Trainer 1,Owner F
+Sombra Negra,MIC007,2,14:40,Trainer 4,Owner G
+Estrella Blanca,MIC008,2,14:45,Trainer 3,Owner H
+Galope Libre,MIC009,2,14:50,Trainer 2,Owner I
+Salto Alto,MIC010,2,14:55,Trainer 1,Owner J
+Corriente Rápida,MIC011,3,15:10,Trainer 5,Owner K
+Pista Dorada,MIC012,3,15:15,Trainer 3,Owner L
+Viento del Norte,MIC013,3,15:20,Trainer 2,Owner M
+Fuerte Corazón,MIC014,3,15:25,Trainer 4,Owner N
+Campeón Justo,MIC015,3,15:30,Trainer 1,Owner O
+Brisa Suave,MIC016,4,15:45,Trainer 5,Owner P
+Destello Rapido,MIC017,4,15:50,Trainer 3,Owner Q
+Victoria Segura,MIC018,4,15:55,Trainer 2,Owner R
+Orgullo del Turf,MIC019,4,16:00,Trainer 4,Owner S
+Gloria Eterna,MIC020,4,16:05,Trainer 1,Owner T
+Trueno Blanco,MIC021,5,16:20,Trainer 5,Owner U
+Relámpago Rojo,MIC022,5,16:25,Trainer 2,Owner V
+Sueño Cumplido,MIC023,5,16:30,Trainer 3,Owner W
+Arco Iris,MIC024,5,16:35,Trainer 1,Owner X
+Piedra Firme,MIC025,5,16:40,Trainer 4,Owner Y
+Nube Blanca,MIC026,6,16:55,Trainer 5,Owner Z
+Cristal Claro,MIC027,6,17:00,Trainer 2,Owner AA
+Diamante Puro,MIC028,6,17:05,Trainer 3,Owner AB
+Espíritu Libre,MIC029,6,17:10,Trainer 1,Owner AC
+Ala de Águila,MIC030,6,17:15,Trainer 4,Owner AD
+Caballería Real,MIC031,7,17:30,Trainer 5,Owner AE
+Monarca del Turf,MIC032,7,17:35,Trainer 2,Owner AF
+Príncipe Negro,MIC033,7,17:40,Trainer 3,Owner AG
+Duque Gris,MIC034,7,17:45,Trainer 1,Owner AH
+Conde de Oro,MIC035,7,17:50,Trainer 4,Owner AI
+Barón Veloz,MIC036,8,18:05,Trainer 5,Owner AJ
+Marqués del Galope,MIC037,8,18:10,Trainer 2,Owner AK
+Conde Oscuro,MIC038,8,18:15,Trainer 3,Owner AL
+Duquesa Blanca,MIC039,8,18:20,Trainer 1,Owner AM
+Reina del Turf,MIC040,8,18:25,Trainer 4,Owner AN

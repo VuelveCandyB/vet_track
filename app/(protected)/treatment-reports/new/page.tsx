@@ -28,7 +28,7 @@ export default async function NewTreatmentReportPage({
 
   const [{ data: horses }, { data: drugs }, vetName] = await Promise.all([
     supabase.from('horses').select('*').eq('status', 'active').order('name'),
-    supabase.from('drugs').select('*').eq('active', true).order('nombre'),
+    supabase.from('drugs').select('*').eq('active', true).not('nombre', 'ilike', '%furosemide%').not('nombre', 'ilike', '%salix%').order('nombre'),
     getVetName(supabase, user),
   ])
 

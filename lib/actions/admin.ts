@@ -100,6 +100,45 @@ export async function revokeEuthanasiaRole(userId: string) {
   revalidatePath('/admin/users')
 }
 
+export async function grantOfficialVetRole(userId: string) {
+  const user = await requireAdmin()
+  const supabase = await createClient()
+  await supabase.from('user_roles').insert({ user_id: userId, role: 'official_vet', granted_by: user.id })
+  revalidatePath('/admin/users')
+}
+
+export async function revokeOfficialVetRole(userId: string) {
+  await requireAdmin()
+  const supabase = await createClient()
+  await supabase.from('user_roles').delete().eq('user_id', userId).eq('role', 'official_vet')
+  revalidatePath('/admin/users')
+}
+
+// ── GESTIÓN DE ROLES (radio button — un rol por usuario) ────
+export async function setUserRole(userId: string, role: string) {
+  const user = await requireAdmin()
+  const supabase = await createClient()
+
+  const validRoles = ['authorized_vet', 'official_vet', 'secretary', 'euthanasia', 'admin']
+  if (!validRoles.includes(role)) {
+    throw new Error('Rol inválido')
+  }
+
+  // Eliminar roles anteriores
+  await supabase.from('user_roles').delete().eq('user_id', userId)
+
+  // Asignar nuevo rol
+  if (role && role !== 'none') {
+    await supabase.from('user_roles').insert({
+      user_id: userId,
+      role: role,
+      granted_by: user.id,
+    })
+  }
+
+  revalidatePath('/admin/users')
+}
+
 // ── CREAR USUARIO ────────────────────────────────────────────
 export async function createUser(formData: FormData): Promise<{ error?: string }> {
   await requireAdmin()

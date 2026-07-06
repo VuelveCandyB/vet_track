@@ -1,17 +1,21 @@
 'use client'
 import { useState } from 'react'
 import Link from 'next/link'
-import { usePathname, useRouter } from 'next/navigation'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import type { User } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/client'
 import { ADMIN_EMAIL } from '@/lib/constants'
 import { PALETTE } from '@/lib/palette'
 
-export default function Navbar({ user }: { user: User }) {
+export default function Navbar({ user, isOfficialVet }: { user: User; isOfficialVet: boolean }) {
   const pathname = usePathname()
+  const searchParams = useSearchParams()
   const router = useRouter()
   const isAdmin = user.email === ADMIN_EMAIL
   const [menuOpen, setMenuOpen] = useState(false)
+
+  // Detect if coming from horses page with pre-selected horse
+  const isFromHorses = searchParams.get('horse_id') !== null
 
   async function handleLogout() {
     const supabase = createClient()
@@ -20,14 +24,33 @@ export default function Navbar({ user }: { user: User }) {
     router.refresh()
   }
 
+  const canAccessRaceDay = isAdmin || isOfficialVet
+
   const navItems = [
     { href: '/dashboard', label: 'Dashboard' },
     { href: '/horses',    label: 'Caballos' },
+    ...(canAccessRaceDay ? [{ href: '/race-day', label: 'Carreras' }] : []),
+    { href: '/pmf-records', label: 'PMF' },
     { href: '/reports',   label: 'Reportes' },
     ...(isAdmin ? [{ href: '/admin', label: 'Admin' }] : []),
   ]
 
   function isActive(href: string) {
+    // If on treatment-reports/new with horse_id, mark Caballos as active instead
+    if (pathname === '/treatment-reports/new' && isFromHorses && href === '/horses') {
+      return true
+    }
+    if (pathname === '/treatment-reports/new' && isFromHorses && href === '/treatment-reports') {
+      return false
+    }
+    // If on pmf-records/new with horse_id, mark Caballos as active instead
+    if (pathname === '/pmf-records/new' && isFromHorses && href === '/horses') {
+      return true
+    }
+    if (pathname === '/pmf-records/new' && isFromHorses && href === '/pmf-records') {
+      return false
+    }
+
     return href === '/dashboard' ? pathname === '/dashboard' : pathname.startsWith(href)
   }
 

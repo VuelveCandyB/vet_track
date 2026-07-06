@@ -1,8 +1,10 @@
 'use client'
+import { useState, useTransition } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 import { PALETTE } from '@/lib/palette'
+import { radicateTreatmentReport } from '@/lib/actions/treatment-reports'
 import type { TreatmentReport } from '@/lib/types'
 
 const ESTADO_LABEL: Record<string, string> = {
@@ -23,12 +25,29 @@ interface TreatmentReportsPageClientProps {
     drug?: { nombre: string; tipo_restriccion?: string }
   })[]
   currentEstado?: string
+  isAdmin: boolean
 }
 
 export default function TreatmentReportsPageClient({
   reports,
   currentEstado,
+  isAdmin,
 }: TreatmentReportsPageClientProps) {
+  const [pendingId, setPendingId] = useState<string | null>(null)
+  const [, startTransition] = useTransition()
+
+  const handleRadicate = (id: string) => {
+    setPendingId(id)
+    startTransition(async () => {
+      try {
+        await radicateTreatmentReport(id)
+        setPendingId(null)
+      } catch (err) {
+        alert(`Error: ${err instanceof Error ? err.message : 'Unknown error'}`)
+        setPendingId(null)
+      }
+    })
+  }
 
   return (
     <div>
@@ -36,7 +55,7 @@ export default function TreatmentReportsPageClient({
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
         <div>
           <h1 className="text-2xl font-bold" style={{ fontFamily: 'var(--font-sans)', color: PALETTE.primary.green }}>
-            Informes de Tratamiento (Art. 811)
+            Registros de PMF (Art. 1412)
           </h1>
           <p className="text-sm mt-1" style={{ color: PALETTE.text.secondary }}>
             {reports.length} informe{reports.length !== 1 ? 's' : ''}
@@ -45,7 +64,7 @@ export default function TreatmentReportsPageClient({
         <Link href="/treatment-reports/new">
           <Button
             style={{ background: PALETTE.primary.green, color: '#fff' }}>
-            + Nuevo Informe
+            + Nuevo PMF
           </Button>
         </Link>
       </div>
@@ -81,7 +100,7 @@ export default function TreatmentReportsPageClient({
           <table className="w-full text-sm border-collapse">
             <thead>
               <tr style={{ borderBottom: `1px solid ${PALETTE.ui.border}` }}>
-                {['Caballo', 'Medicamento', 'Establo', 'Fecha', 'Vet', 'Estado', 'Acciones'].map(h => (
+                {['Caballo', 'Medicamento', 'Fecha fin restricción', 'Hasta cuándo', 'Establo', 'Fecha', 'Vet', 'Estado', ...(isAdmin ? ['Radicado en'] : []), 'Acciones'].map(h => (
                   <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider"
                     style={{ color: PALETTE.text.secondary }}>
                     {h}
@@ -92,33 +111,119 @@ export default function TreatmentReportsPageClient({
             <tbody>
               {!reports.length ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-12 text-center" style={{ color: PALETTE.text.secondary }}>
+                  <td colSpan={isAdmin ? 10 : 9} className="px-4 py-12 text-center" style={{ color: PALETTE.text.secondary }}>
                     Sin informes {currentEstado ? `en estado "${ESTADO_LABEL[currentEstado]}"` : ''}
                   </td>
                 </tr>
-              ) : reports.map(report => (
-                <tr key={report.id}
-                  className="transition-colors hover:bg-[#05966920]"
-                  style={{ borderBottom: `1px solid ${PALETTE.ui.border}` }}>
-                  <td className="px-4 py-3 font-semibold">{report.horse?.name || '—'}</td>
-                  <td className="px-4 py-3">{report.drug?.nombre || '—'}</td>
-                  <td className="px-4 py-3">{report.establo || '—'}</td>
-                  <td className="px-4 py-3 text-xs">{report.fecha_tratamiento}</td>
-                  <td className="px-4 py-3 text-xs">{report.vet_autorizado_nombre}</td>
-                  <td className="px-4 py-3">
-                    <Badge className={`text-xs border ${ESTADO_COLOR[report.estado] ?? ''}`}>
-                      {ESTADO_LABEL[report.estado] ?? report.estado}
-                    </Badge>
-                  </td>
-                  <td className="px-4 py-3">
-                    <Link href={`/treatment-reports/${report.id}`}>
-                      <Button variant="ghost" size="sm">
-                        Ver
-                      </Button>
-                    </Link>
-                  </td>
-                </tr>
-              ))}
+              ) : reports.map(report => {
+                const isExpired = report.fecha_fin_tratamiento && new Date(report.fecha_fin_tratamiento) < new Date()
+                const isUrgent = report.fecha_fin_tratamiento && new Date(report.fecha_fin_tratamiento).getTime() - new Date().getTime() < 24 * 60 * 60 * 1000
+
+                const formatDate = (dateStr: string | null) => {
+                  if (!dateStr) return '—'
+                  // Parse YYYY-MM-DD format and show as DD/MM/YYYY
+                  const [year, month, day] = dateStr.split('-')
+                  return `${day}/${month}/${year}`
+                }
+
+                const formatDateTime = (dateTimeStr: string | null) => {
+                  if (!dateTimeStr) return '—'
+                  // Parse ISO format and show as DD/MM/YYYY HH:MM AM/PM
+                  const date = new Date(dateTimeStr)
+                  const day = String(date.getDate()).padStart(2, '0')
+                  const month = String(date.getMonth() + 1).padStart(2, '0')
+                  const year = date.getFullYear()
+                  let hours = date.getHours()
+                  const minutes = String(date.getMinutes()).padStart(2, '0')
+                  const ampm = hours >= 12 ? 'PM' : 'AM'
+                  hours = hours % 12 || 12
+                  const hoursStr = String(hours).padStart(2, '0')
+                  return `${day}/${month}/${year} ${hoursStr}:${minutes} ${ampm}`
+                }
+
+                // Verificar si el informe es urgente (creado hace > 24 horas)
+                const isUrgentForRadication = report.estado === 'sometido' &&
+                  report.created_at &&
+                  new Date().getTime() - new Date(report.created_at).getTime() > 20 * 60 * 60 * 1000
+
+                return (
+                  <tr key={report.id}
+                    className="transition-colors hover:bg-[#05966920]"
+                    style={{
+                      borderBottom: `1px solid ${PALETTE.ui.border}`,
+                      backgroundColor: isUrgentForRadication ? 'rgba(239, 68, 68, 0.05)' : 'transparent'
+                    }}>
+                    <td className="px-4 py-3 font-semibold">
+                      {report.horse?.name || '—'}
+                      {isUrgentForRadication && (
+                        <span className="ml-2 text-xs px-2 py-1 rounded" style={{ background: '#fee2e2', color: '#dc2626' }}>
+                          ⚠ URGENTE
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span style={{ color: PALETTE.primary.green }}>{report.drug?.nombre || '—'}</span>
+                      {report.drug?.tipo_restriccion && (
+                        <span className="text-xs ml-1" style={{ color: PALETTE.text.secondary }}>
+                          [{report.drug.tipo_restriccion}]
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-xs">
+                      {report.fecha_fin_tratamiento ? (
+                        <span style={{
+                          color: isExpired ? '#10b981' : isUrgent ? '#f97316' : PALETTE.text.primary,
+                          fontWeight: isUrgent ? '600' : 'normal'
+                        }}>
+                          {formatDate(report.fecha_fin_tratamiento)}
+                          {isExpired && ' ✓'}
+                          {isUrgent && !isExpired && ' ⚠'}
+                        </span>
+                      ) : '—'}
+                    </td>
+                    <td className="px-4 py-3 text-xs">
+                      {report.hasta_cuando ? (
+                        <div>
+                          <div>{formatDate(report.hasta_cuando)}</div>
+                          {report.es_auto_generado && (
+                            <span style={{ color: '#0891b2', fontSize: '0.7rem' }}>⚙️ auto</span>
+                          )}
+                        </div>
+                      ) : '—'}
+                    </td>
+                    <td className="px-4 py-3">{report.establo || '—'}</td>
+                    <td className="px-4 py-3 text-xs">{formatDate(report.fecha_tratamiento)}</td>
+                    <td className="px-4 py-3 text-xs">{report.vet_autorizado_nombre}</td>
+                    <td className="px-4 py-3">
+                      <Badge className={`text-xs border ${ESTADO_COLOR[report.estado] ?? ''}`}>
+                        {ESTADO_LABEL[report.estado] ?? report.estado}
+                      </Badge>
+                    </td>
+                    {isAdmin && (
+                      <td className="px-4 py-3 text-xs">
+                        {formatDateTime(report.radicado_en || null)}
+                      </td>
+                    )}
+                    <td className="px-4 py-3 flex gap-2">
+                      {isAdmin && report.estado === 'sometido' && (
+                        <Button
+                          size="sm"
+                          disabled={pendingId === report.id}
+                          onClick={() => handleRadicate(report.id)}
+                          style={{ background: PALETTE.primary.green, color: '#fff' }}
+                        >
+                          {pendingId === report.id ? 'Radicando...' : 'Radicar'}
+                        </Button>
+                      )}
+                      <Link href={`/treatment-reports/${report.id}`}>
+                        <Button variant="ghost" size="sm">
+                          Ver
+                        </Button>
+                      </Link>
+                    </td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
         </div>

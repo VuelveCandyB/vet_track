@@ -37,3 +37,27 @@ export async function isOfficialVet(userId: string, email: string): Promise<bool
     .maybeSingle()
   return !!data
 }
+
+export async function isSecretary(userId: string, email: string): Promise<boolean> {
+  if (isAdmin(email)) return true
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from('user_roles')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('role', 'secretary')
+    .maybeSingle()
+  return !!data
+}
+
+export async function isAuthorizedVet(userId: string, email: string): Promise<boolean> {
+  if (isAdmin(email)) return true
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from('user_roles')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('role', 'authorized_vet')
+    .maybeSingle()
+  return !!data
+}

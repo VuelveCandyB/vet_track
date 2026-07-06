@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { PALETTE } from '@/lib/palette'
 
 const SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL ??
@@ -35,19 +36,19 @@ export default function ForgotPasswordPage() {
 
   return (
     <div className="w-full max-w-sm">
-      <h2 className="text-2xl font-bold text-white mb-1">Recuperar contraseña</h2>
-      <p className="text-sm mb-7" style={{ color: '#4a5280' }}>
+      <h2 className="text-2xl font-bold mb-1" style={{ color: PALETTE.text.dark }}>Recuperar contraseña</h2>
+      <p className="text-sm mb-7" style={{ color: PALETTE.text.secondary }}>
         Ingresa tu email y te enviamos un link para crear una nueva contraseña.
       </p>
 
       {status === 'sent' ? (
         <div className="rounded-lg px-4 py-5 text-center"
-          style={{ background: '#0d2e1a', border: '1px solid #4ade8040' }}>
-          <div className="text-base font-semibold mb-1" style={{ color: '#4ade80' }}>
+          style={{ background: PALETTE.form.successBg, border: `1px solid ${PALETTE.primary.green}` }}>
+          <div className="text-base font-semibold mb-1" style={{ color: PALETTE.primary.green }}>
             Revisa tu email
           </div>
-          <p className="text-sm" style={{ color: '#9ca3af' }}>
-            Te enviamos un link a <strong style={{ color: '#e2e8f0' }}>{email}</strong>.
+          <p className="text-sm" style={{ color: PALETTE.text.secondary }}>
+            Te enviamos un link a <strong style={{ color: PALETTE.text.dark }}>{email}</strong>.
             Puede tardar unos minutos.
           </p>
         </div>
@@ -55,7 +56,7 @@ export default function ForgotPasswordPage() {
         <>
           {status === 'error' && (
             <div className="mb-5 rounded-lg px-4 py-3 text-sm"
-              style={{ background: '#2e0d0d', border: '1px solid #7f1d1d', color: '#f87171' }}>
+              style={{ background: PALETTE.form.errorBg, border: `1px solid ${PALETTE.status.error}`, color: PALETTE.status.error }}>
               {errorMsg}
             </div>
           )}
@@ -63,7 +64,7 @@ export default function ForgotPasswordPage() {
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-1.5">
               <Label htmlFor="email" className="text-xs font-semibold uppercase tracking-wider"
-                style={{ color: '#6b7399' }}>
+                style={{ color: PALETTE.text.secondary }}>
                 Correo electrónico
               </Label>
               <Input
@@ -74,7 +75,7 @@ export default function ForgotPasswordPage() {
             </div>
 
             <Button type="submit" className="w-full font-semibold" disabled={status === 'loading'}
-              style={{ background: '#2B55F4' }}>
+              style={{ background: PALETTE.primary.green, color: '#FFFFFF' }}>
               {status === 'loading' ? 'Enviando...' : 'Enviar instrucciones'}
             </Button>
           </form>
@@ -82,8 +83,8 @@ export default function ForgotPasswordPage() {
       )}
 
       <div className="mt-6 text-center">
-        <Link href="/login" className="text-xs transition-colors hover:text-white"
-          style={{ color: '#4a5280' }}>
+        <Link href="/login" className="text-xs transition-colors"
+          style={{ color: PALETTE.primary.green }}>
           Volver al inicio de sesión
         </Link>
       </div>

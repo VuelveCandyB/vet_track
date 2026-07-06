@@ -1,4 +1,4 @@
-import { requireUser } from '@/lib/auth'
+import { requireUser, isAdmin } from '@/lib/auth'
 import { createClient } from '@/lib/supabase/server'
 import TreatmentReportsPageClient from './page-client'
 import type { TreatmentReport } from '@/lib/types'
@@ -8,7 +8,8 @@ export default async function TreatmentReportsPage({
 }: {
   searchParams: Promise<{ estado?: string }>
 }) {
-  await requireUser()
+  const user = await requireUser()
+  const admin = isAdmin(user.email!)
   const { estado } = await searchParams
   const supabase = await createClient()
 
@@ -32,6 +33,7 @@ export default async function TreatmentReportsPage({
     <TreatmentReportsPageClient
       reports={reports}
       currentEstado={estado}
+      isAdmin={admin}
     />
   )
 }

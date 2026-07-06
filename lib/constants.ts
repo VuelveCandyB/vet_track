@@ -1,4 +1,4 @@
-export const ADMIN_EMAIL = 'm.rivera@camareroracepr.com'
+export const ADMIN_EMAIL = 'admin@admin.com'
 
 export const STATUS_OPTIONS = ['active', 'rest', 'injury'] as const
 export const COLOR_OPTIONS = ['Bay', 'Dark Bay', 'Chestnut', 'Grey', 'Roan', 'Black'] as const

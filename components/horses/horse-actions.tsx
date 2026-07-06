@@ -95,34 +95,37 @@ export default function HorseActions({
           {/* Vetlist button */}
           {!vetlistActiva && (
             <Button onClick={() => setOpen('vetlist')} size="sm"
-              className="text-sm font-semibold"
+              className="text-sm font-semibold min-w-fit"
               style={{ background: PALETTE.primary.green, color: '#FFFFFF' }}>
               <svg className="mr-1.5" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                 <circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
               </svg>
-              Vetlist
+              Agregar a Vetlist
             </Button>
           )}
 
           {/* Euthanasia button */}
           {canEuth && (
             <Button onClick={() => setOpen('euthanasia')} size="sm"
+              className="text-sm font-semibold min-w-fit"
               style={{ background: PALETTE.primary.green, color: '#FFFFFF' }}>
-              Eutanasia
+              Registrar Eutanasia
             </Button>
           )}
 
           {/* Diagnosis button */}
           <Button onClick={() => setOpen('diagnosis')} size="sm"
+            className="text-sm font-semibold min-w-fit"
             style={{ background: PALETTE.primary.green, color: '#FFFFFF' }}>
-            Diagnóstico
+            Agregar Diagnóstico
           </Button>
 
           {/* Medication button — now uses treatment reports form */}
           <Link href={`/treatment-reports/new?horse_id=${horse.id}`}>
             <Button size="sm"
+              className="text-sm font-semibold min-w-fit"
               style={{ background: PALETTE.primary.green, color: '#FFFFFF' }}>
-              + Registrar Medicamento
+              Registrar Medicamento
             </Button>
           </Link>
         </div>
