@@ -33,7 +33,7 @@ export default function PMFForm({
   useEffect(() => {
     if (defaultValues?.horse_id) {
       const preSelectedHorse = horses.find(h => h.id === defaultValues.horse_id)
-      setSelectedMicrochip(preSelectedHorse?.microchip_id || '')
+      setSelectedMicrochip(preSelectedHorse?.microchip || '')
     }
   }, [defaultValues?.horse_id, horses])
 
@@ -41,7 +41,7 @@ export default function PMFForm({
     const horseId = e.target.value
     if (horseId) {
       const selectedHorse = horses.find(h => h.id === horseId)
-      setSelectedMicrochip(selectedHorse?.microchip_id || '')
+      setSelectedMicrochip(selectedHorse?.microchip || '')
     } else {
       setSelectedMicrochip('')
     }
