@@ -9,6 +9,7 @@ export interface Horse {
   birth_date?: string
   microchip?: string
   gender?: string
+  ubicacion?: string
 }
 
 export interface Medication {
@@ -66,9 +67,13 @@ export interface Drug {
   nombre_comercial?: string
   categoria: string
   dosis_ruta?: string
+  dosis_min?: number
+  dosis_max?: number
+  dosis_unidad?: string
   detection_time_horas?: number
   withdrawal_time_horas?: number
   tipo_restriccion?: string
+  nivel_maximo_permitido?: string
   notas?: string
   active: boolean
 }

@@ -37,14 +37,20 @@ export async function deleteCatalogItem(itemId: string) {
 export async function createDrug(formData: FormData) {
   await requireAdmin()
   const supabase = await createClient()
+  const dosis_min_str = (formData.get('dosis_min') as string)?.trim()
+  const dosis_max_str = (formData.get('dosis_max') as string)?.trim()
   await supabase.from('drugs').insert({
     nombre:                (formData.get('nombre') as string).trim(),
     nombre_comercial:      (formData.get('nombre_comercial') as string).trim() || null,
     categoria:             (formData.get('categoria') as string).trim(),
     dosis_ruta:            (formData.get('dosis_ruta') as string).trim() || null,
+    dosis_min:             dosis_min_str ? parseFloat(dosis_min_str) : null,
+    dosis_max:             dosis_max_str ? parseFloat(dosis_max_str) : null,
+    dosis_unidad:          (formData.get('dosis_unidad') as string).trim() || null,
     detection_time_horas:  intOrNull(formData.get('detection_time_horas') as string),
     withdrawal_time_horas: intOrNull(formData.get('withdrawal_time_horas') as string),
     tipo_restriccion:      (formData.get('tipo_restriccion') as string).trim() || null,
+    nivel_maximo_permitido: (formData.get('nivel_maximo_permitido') as string).trim() || null,
     notas:                 (formData.get('notas') as string).trim() || null,
   })
   revalidatePath('/admin/drugs')
@@ -53,14 +59,20 @@ export async function createDrug(formData: FormData) {
 export async function updateDrug(drugId: string, formData: FormData) {
   await requireAdmin()
   const supabase = await createClient()
+  const dosis_min_str = (formData.get('dosis_min') as string)?.trim()
+  const dosis_max_str = (formData.get('dosis_max') as string)?.trim()
   await supabase.from('drugs').update({
     nombre:                (formData.get('nombre') as string).trim(),
     nombre_comercial:      (formData.get('nombre_comercial') as string).trim() || null,
     categoria:             (formData.get('categoria') as string).trim(),
     dosis_ruta:            (formData.get('dosis_ruta') as string).trim() || null,
+    dosis_min:             dosis_min_str ? parseFloat(dosis_min_str) : null,
+    dosis_max:             dosis_max_str ? parseFloat(dosis_max_str) : null,
+    dosis_unidad:          (formData.get('dosis_unidad') as string).trim() || null,
     detection_time_horas:  intOrNull(formData.get('detection_time_horas') as string),
     withdrawal_time_horas: intOrNull(formData.get('withdrawal_time_horas') as string),
     tipo_restriccion:      (formData.get('tipo_restriccion') as string).trim() || null,
+    nivel_maximo_permitido: (formData.get('nivel_maximo_permitido') as string).trim() || null,
     notas:                 (formData.get('notas') as string).trim() || null,
   }).eq('id', drugId)
   revalidatePath('/admin/drugs')

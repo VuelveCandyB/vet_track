@@ -6,15 +6,17 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { createDrug, updateDrug, deleteDrug } from '@/lib/actions/admin'
 import { PALETTE } from '@/lib/palette'
 import type { Drug } from '@/lib/types'
 
 const DRUG_CATEGORIES = [
-  'Analgésico opioide','Anestésico local','Antifibrinolítico','Antiinflamatorio tópico',
-  'Antiulceroso','Broncodilatador','Corticosteroide','Expectorante/Relajante muscular',
-  'Intra-articular','NSAID','Relajante muscular','Sedante','Sedante/Tranquilizante',
+  'Analgésico opioide','Anestésico local','Antifibrinolítico','Antiinflamatorio','Antiinflamatorio tópico',
+  'Antiulceroso','Antihistamínico','Anticolinérgico','Antibiótico','Broncodilatador','Corticosteroide','Expectorante/Relajante muscular',
+  'Intra-articular','NSAID','Relajante muscular','Sedante','Sedante/Tranquilizante','Diurético','Expectorante',
 ]
+const UNIT_OPTIONS = ['mg', 'mg/kg', 'mcg/kg', 'g', 'g/kg', 'cc', 'IU/kg']
 const TIPOS_RESTRICCION = ['WDT', 'RAT', 'RAT+WDT', 'Stand Down']
 const RESTRICTION_STYLE: Record<string, [string, string]> = {
   'WDT':        ['#1e3a8a', '#dbeafe'],
@@ -61,9 +63,31 @@ export default function DrugManager({ drugs }: { drugs: Drug[] }) {
           <table className="w-full text-sm border-collapse">
             <thead>
               <tr style={{ borderBottom: `1px solid ${PALETTE.ui.border}` }}>
-                {['Medicamento', 'Categoría', 'Dosis / Ruta', 'Retiro', 'Restricción', ''].map(h => (
+                {['Medicamento', 'Categoría', 'Dosis', 'Retiro', 'Restricción', 'Nivel máximo', ''].map(h => (
                   <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider"
-                    style={{ color: PALETTE.text.secondary }}>{h}</th>
+                    style={{ color: PALETTE.text.secondary }}>
+                    {h === 'Restricción' ? (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="flex items-center gap-1 cursor-help">
+                              {h} <span className="text-xs">ⓘ</span>
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent side="right" className="max-w-xs">
+                            <div className="text-xs space-y-1">
+                              <div><span className="font-semibold">WDT:</span> Tiempo de retiro fijo post-administración</div>
+                              <div><span className="font-semibold">RAT:</span> Ventana restringida de administración antes de la carrera</div>
+                              <div><span className="font-semibold">RAT+WDT:</span> Combina ambas restricciones</div>
+                              <div><span className="font-semibold">Stand Down:</span> El caballo queda fuera de competencia por un período prolongado</div>
+                            </div>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    ) : (
+                      h
+                    )}
+                  </th>
                 ))}
               </tr>
             </thead>
@@ -78,7 +102,9 @@ export default function DrugManager({ drugs }: { drugs: Drug[] }) {
                     </td>
                     <td className="px-4 py-3 text-xs" style={{ color: PALETTE.text.primary }}>{d.categoria}</td>
                     <td className="px-4 py-3 text-xs max-w-48 overflow-hidden text-ellipsis whitespace-nowrap" style={{ color: PALETTE.text.secondary }}>
-                      {d.dosis_ruta || '—'}
+                      {d.dosis_min !== null && d.dosis_max !== null && d.dosis_unidad
+                        ? `${d.dosis_min}–${d.dosis_max} ${d.dosis_unidad}`
+                        : d.dosis_ruta || '—'}
                     </td>
                     <td className="px-4 py-3 text-center">
                       {d.withdrawal_time_horas
@@ -90,6 +116,9 @@ export default function DrugManager({ drugs }: { drugs: Drug[] }) {
                         ? <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full"
                             style={{ color: fg, background: bg }}>{d.tipo_restriccion}</span>
                         : <span style={{ color: PALETTE.text.secondary }}>—</span>}
+                    </td>
+                    <td className="px-4 py-3 text-xs max-w-48 overflow-hidden text-ellipsis whitespace-nowrap" style={{ color: PALETTE.text.secondary }}>
+                      {d.nivel_maximo_permitido || '—'}
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex gap-2 justify-end">
@@ -155,8 +184,27 @@ export default function DrugManager({ drugs }: { drugs: Drug[] }) {
                 </select>
               </div>
               <div className="col-span-2 space-y-1.5">
-                <Label className="text-xs font-semibold uppercase tracking-wider" style={{ color: PALETTE.text.secondary }}>Dosis / Ruta</Label>
-                <Input name="dosis_ruta" defaultValue={editing?.dosis_ruta ?? ''} placeholder="Ej. 4.4 mg/kg IV" />
+                <Label className="text-xs font-semibold uppercase tracking-wider" style={{ color: PALETTE.text.secondary }}>Dosis / Ruta (descripción completa)</Label>
+                <Input name="dosis_ruta" defaultValue={editing?.dosis_ruta ?? ''} placeholder="Ej. 4.4 mg/kg IV dos veces al día hasta 5 dosis" />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold uppercase tracking-wider" style={{ color: PALETTE.text.secondary }}>Dosis mínima</Label>
+                <Input type="number" step="0.01" name="dosis_min" defaultValue={editing?.dosis_min ?? ''} placeholder="Ej. 0.05" />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold uppercase tracking-wider" style={{ color: PALETTE.text.secondary }}>Dosis máxima</Label>
+                <Input type="number" step="0.01" name="dosis_max" defaultValue={editing?.dosis_max ?? ''} placeholder="Ej. 0.1" />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold uppercase tracking-wider" style={{ color: PALETTE.text.secondary }}>Unidad de dosis</Label>
+                <select name="dosis_unidad"
+                  className="flex h-9 w-full rounded-md border px-3 py-1 text-sm"
+                  style={{ background: PALETTE.background.white, borderColor: PALETTE.ui.border, color: PALETTE.text.primary }}>
+                  <option value="">Sin especificar</option>
+                  {UNIT_OPTIONS.map(u => (
+                    <option key={u} value={u} selected={editing?.dosis_unidad === u}>{u}</option>
+                  ))}
+                </select>
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs font-semibold uppercase tracking-wider" style={{ color: PALETTE.text.secondary }}>Tiempo retiro (h)</Label>
@@ -176,6 +224,13 @@ export default function DrugManager({ drugs }: { drugs: Drug[] }) {
                     <option key={t} value={t} selected={editing?.tipo_restriccion === t}>{t}</option>
                   ))}
                 </select>
+                <p className="text-xs" style={{ color: PALETTE.text.secondary }}>
+                  WDT = retiro post-administración · RAT = ventana antes de carrera · RAT+WDT = ambos · Stand Down = fuera de competencia prolongada
+                </p>
+              </div>
+              <div className="col-span-2 space-y-1.5">
+                <Label className="text-xs font-semibold uppercase tracking-wider" style={{ color: PALETTE.text.secondary }}>Nivel máximo permitido</Label>
+                <Input name="nivel_maximo_permitido" defaultValue={editing?.nivel_maximo_permitido ?? ''} placeholder="Ej. 10 ng/mL en plasma o suero" />
               </div>
               <div className="col-span-2 space-y-1.5">
                 <Label className="text-xs font-semibold uppercase tracking-wider" style={{ color: PALETTE.text.secondary }}>Notas regulatorias</Label>
