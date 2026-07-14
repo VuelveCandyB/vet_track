@@ -98,7 +98,7 @@ export default async function HorsesPage({
             <tbody>
               {!horses?.length ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-12 text-center" style={{ color: PALETTE.text.secondary }}>
+                  <td colSpan={5} className="px-4 py-12 text-center" style={{ color: PALETTE.text.secondary }}>
                     Sin resultados
                   </td>
                 </tr>

@@ -29,8 +29,10 @@ export default function Navbar({ user, isOfficialVet }: { user: User; isOfficial
   const navItems = [
     { href: '/dashboard', label: 'Dashboard' },
     { href: '/horses',    label: 'Caballos' },
-    ...(canAccessRaceDay ? [{ href: '/race-day', label: 'Carreras' }] : []),
-    { href: '/pmf-records', label: 'PMF' },
+    // TODO: Carreras ocultas por ahora - requiere más trabajo en race-day
+    // ...(canAccessRaceDay ? [{ href: '/race-day', label: 'Carreras' }] : []),
+    // TODO: PMF oculto por ahora - en desarrollo
+    // { href: '/pmf-records', label: 'PMF' },
     { href: '/reports',   label: 'Reportes' },
     ...(isAdmin ? [{ href: '/admin', label: 'Admin' }] : []),
   ]

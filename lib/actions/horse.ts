@@ -1,8 +1,10 @@
 'use server'
 
-import { createClient } from '@supabase/supabase-js'
+import { createClient as createAdminClient } from '@supabase/supabase-js'
+import { createClient } from '@/lib/supabase/server'
+import { requireUser } from '@/lib/auth'
 
-const supabase = createClient(
+const supabase = createAdminClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
@@ -55,3 +57,4 @@ export async function removeAllHorsesFromLOES() {
     }
   }
 }
+
