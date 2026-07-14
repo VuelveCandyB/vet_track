@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { PALETTE } from '@/lib/palette'
 import type { Horse, Drug, TreatmentReport } from '@/lib/types'
+import type { CatalogItem } from '@/components/treatment-reports/item-codes-select'
 
 async function getVetName(supabase: any, user: any): Promise<string> {
   try {
@@ -26,10 +27,12 @@ export default async function EditTreatmentReportPage({
   const { id } = await params
   const supabase = await createClient()
 
-  const [reportRes, { data: horses }, { data: drugs }, vetName] = await Promise.all([
+  const [reportRes, { data: horses }, { data: drugs }, { data: itemCodes }, { data: selectedCodes }, vetName] = await Promise.all([
     supabase.from('treatment_reports').select('*').eq('id', id).single(),
     supabase.from('horses').select('*').eq('status', 'active').order('name'),
     supabase.from('drugs').select('*').eq('active', true).order('nombre'),
+    supabase.from('catalog_items').select('id, name').eq('category', 'item_code').eq('active', true).order('name'),
+    supabase.from('treatment_report_item_codes').select('catalog_item_id').eq('treatment_report_id', id),
     getVetName(supabase, user),
   ])
 
@@ -44,6 +47,8 @@ export default async function EditTreatmentReportPage({
   const report = reportRes.data as TreatmentReport
   const typedHorses = (horses ?? []) as Horse[]
   const typedDrugs = (drugs ?? []) as Drug[]
+  const typedItemCodes = (itemCodes ?? []) as CatalogItem[]
+  const selectedItemCodeIds = (selectedCodes ?? []).map(s => s.catalog_item_id)
 
   // Only allow editing if status is 'borrador'
   if (report.estado !== 'borrador') {
@@ -88,6 +93,8 @@ export default async function EditTreatmentReportPage({
           horses={typedHorses}
           drugs={typedDrugs}
           vetName={vetName}
+          itemCodes={typedItemCodes}
+          initialSelectedItemCodeIds={selectedItemCodeIds}
           defaultValues={{
             id: report.id,
             horse_id: report.horse_id,

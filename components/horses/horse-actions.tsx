@@ -6,11 +6,10 @@ import { Button } from '@/components/ui/button'
 import VetlistModal from './vetlist-modal'
 import VetlistReleaseModal from './vetlist-release-modal'
 import EuthanasiaModal from './euthanasia-modal'
-import DiagnosisModal from './diagnosis-modal'
 import { PALETTE } from '@/lib/palette'
 import type { Horse, VetlistEntry, Drug } from '@/lib/types'
 
-type ModalType = 'vetlist' | 'release' | 'euthanasia' | 'diagnosis' | null
+type ModalType = 'vetlist' | 'release' | 'euthanasia' | null
 
 interface Props {
   horse: Horse
@@ -113,13 +112,6 @@ export default function HorseActions({
             </Button>
           )}
 
-          {/* Diagnosis button */}
-          <Button onClick={() => setOpen('diagnosis')} size="sm"
-            className="text-sm font-semibold min-w-fit"
-            style={{ background: PALETTE.primary.green, color: '#FFFFFF' }}>
-            Agregar Diagnóstico
-          </Button>
-
           {/* Medication button — now uses treatment reports form */}
           <Link href={`/treatment-reports/new?horse_id=${horse.id}`}>
             <Button size="sm"
@@ -146,11 +138,6 @@ export default function HorseActions({
       )}
       <EuthanasiaModal
         open={open === 'euthanasia'} onClose={closeAndRefresh}
-        horseId={horse.id} horseName={horse.name}
-        vetName={vetName} today={today}
-      />
-      <DiagnosisModal
-        open={open === 'diagnosis'} onClose={closeAndRefresh}
         horseId={horse.id} horseName={horse.name}
         vetName={vetName} today={today}
       />

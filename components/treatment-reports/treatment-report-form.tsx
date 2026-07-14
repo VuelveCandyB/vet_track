@@ -7,9 +7,11 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import ItemCodesSelect from './item-codes-select'
 import { TreatmentReportFormSkeleton } from './treatment-report-form-skeleton'
 import { PALETTE } from '@/lib/palette'
 import type { Horse, Drug } from '@/lib/types'
+import type { CatalogItem } from './item-codes-select'
 
 const ConfirmationModal = ({
   isOpen,
@@ -87,6 +89,8 @@ interface TreatmentReportFormProps {
   horses: Horse[]
   drugs: Drug[]
   vetName: string
+  itemCodes?: CatalogItem[]
+  initialSelectedItemCodeIds?: string[]
   defaultValues?: {
     id?: string
     horse_id?: string
@@ -115,6 +119,8 @@ export default function TreatmentReportForm({
   horses,
   drugs,
   vetName,
+  itemCodes = [],
+  initialSelectedItemCodeIds = [],
   defaultValues,
   mode = 'create',
   onSuccess,
@@ -330,26 +336,14 @@ export default function TreatmentReportForm({
         </h3>
         <div className="space-y-4">
           <div>
-            <Label htmlFor="\1" style={{ color: PALETTE.text.primary }}>Diagnóstico *</Label>
-            <Textarea
-              id="diagnostico"
-              name="diagnostico"
-              placeholder="Descripción del diagnóstico..."
-              defaultValue={defaultValues?.diagnostico ?? ''}
-              required
-              className="mt-1"
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="\1" style={{ color: PALETTE.text.primary }}>Tratamiento</Label>
-            <Textarea
-              id="tratamiento"
-              name="tratamiento"
-              placeholder="Descripción del tratamiento realizado..."
-              defaultValue={defaultValues?.tratamiento ?? ''}
-              className="mt-1"
-            />
+            <Label htmlFor="item_codes" style={{ color: PALETTE.text.primary }}>Códigos de Diagnóstico / Procedimientos *</Label>
+            <div className="mt-2">
+              <ItemCodesSelect
+                items={itemCodes}
+                selected={initialSelectedItemCodeIds}
+                required={true}
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -442,7 +436,9 @@ export default function TreatmentReportForm({
               step="0.01"
               defaultValue={defaultValues?.dosis ?? ''}
               required
-              placeholder="Ej: 500"
+              placeholder={selectedDrug && selectedDrug.dosis_min !== null && selectedDrug.dosis_max !== null
+                ? `Ej: ${selectedDrug.dosis_min}–${selectedDrug.dosis_max}`
+                : 'Ej: 500'}
               className="mt-1"
             />
           </div>
@@ -452,7 +448,7 @@ export default function TreatmentReportForm({
             <select
               id="dosis_unidad"
               name="dosis_unidad"
-              defaultValue={defaultValues?.dosis_unidad ?? 'mg'}
+              defaultValue={defaultValues?.dosis_unidad ?? (selectedDrug?.dosis_unidad || 'mg')}
               required
               className="flex h-9 w-full rounded-md border px-3 py-1 text-sm mt-1"
               style={{
@@ -461,11 +457,21 @@ export default function TreatmentReportForm({
                 color: PALETTE.text.primary,
               }}
             >
-              <option value="mg">mg</option>
-              <option value="ml">ml</option>
-              <option value="cc">cc</option>
-              <option value="g">g</option>
-              <option value="IU">IU</option>
+              {selectedDrug?.dosis_unidad ? (
+                <option value={selectedDrug.dosis_unidad}>{selectedDrug.dosis_unidad}</option>
+              ) : (
+                <>
+                  <option value="mg">mg</option>
+                  <option value="ml">ml</option>
+                  <option value="cc">cc</option>
+                  <option value="g">g</option>
+                  <option value="IU">IU</option>
+                  <option value="mg/kg">mg/kg</option>
+                  <option value="mcg/kg">mcg/kg</option>
+                  <option value="g/kg">g/kg</option>
+                  <option value="IU/kg">IU/kg</option>
+                </>
+              )}
             </select>
           </div>
 
@@ -512,11 +518,11 @@ export default function TreatmentReportForm({
           Información Adicional
         </h3>
         <div>
-          <Label htmlFor="notas">Notas</Label>
+          <Label htmlFor="notas">Notas / Tratamiento Adicional</Label>
           <Textarea
             id="notas"
             name="notas"
-            placeholder="Cualquier información adicional requerida..."
+            placeholder="Cualquier información adicional requerida o notas sobre el tratamiento..."
             defaultValue={defaultValues?.notas ?? ''}
             className="mt-1"
           />

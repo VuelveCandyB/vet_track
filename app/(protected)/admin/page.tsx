@@ -9,8 +9,9 @@ import ConfirmDeleteButton from '@/components/admin/confirm-delete-button'
 import { PALETTE } from '@/lib/palette'
 
 const CATEGORIES: Record<string, string> = {
-  med_type: 'Tipos de Medicamento',
-  dose:     'Tipos de Dosis',
+  med_type:  'Tipos de Medicamento',
+  dose:      'Tipos de Dosis',
+  item_code: 'Códigos de Diagnóstico y Procedimientos',
 }
 
 export default async function AdminCatalogPage() {
@@ -20,7 +21,7 @@ export default async function AdminCatalogPage() {
   const supabase = await createClient()
   const { data: rows } = await supabase.from('catalog_items').select('*').eq('active', true).order('sort_order')
 
-  const grouped: Record<string, any[]> = { med_type: [], dose: [] }
+  const grouped: Record<string, any[]> = { med_type: [], dose: [], item_code: [] }
   for (const row of rows ?? []) {
     if (row.category in grouped) grouped[row.category].push(row)
   }

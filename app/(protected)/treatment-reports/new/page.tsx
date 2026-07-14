@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { PALETTE } from '@/lib/palette'
 import type { Horse, Drug } from '@/lib/types'
+import type { CatalogItem } from '@/components/treatment-reports/item-codes-select'
 
 async function getVetName(supabase: any, user: any): Promise<string> {
   try {
@@ -26,14 +27,16 @@ export default async function NewTreatmentReportPage({
   const { horse_id } = await searchParams
   const supabase = await createClient()
 
-  const [{ data: horses }, { data: drugs }, vetName] = await Promise.all([
+  const [{ data: horses }, { data: drugs }, { data: itemCodes }, vetName] = await Promise.all([
     supabase.from('horses').select('*').eq('status', 'active').order('name'),
     supabase.from('drugs').select('*').eq('active', true).not('nombre', 'ilike', '%furosemide%').not('nombre', 'ilike', '%salix%').order('nombre'),
+    supabase.from('catalog_items').select('id, name').eq('category', 'item_code').eq('active', true).order('name'),
     getVetName(supabase, user),
   ])
 
   const typedHorses = (horses ?? []) as Horse[]
   const typedDrugs = (drugs ?? []) as Drug[]
+  const typedItemCodes = (itemCodes ?? []) as CatalogItem[]
 
   // Pre-select horse if provided
   const preSelectedHorse = horse_id ? typedHorses.find(h => h.id === horse_id) : null
@@ -69,6 +72,8 @@ export default async function NewTreatmentReportPage({
           horses={typedHorses}
           drugs={typedDrugs}
           vetName={vetName}
+          itemCodes={typedItemCodes}
+          initialSelectedItemCodeIds={[]}
           defaultValues={preSelectedHorse ? { horse_id: preSelectedHorse.id } : undefined}
           mode="create"
         />

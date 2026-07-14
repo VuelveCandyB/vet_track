@@ -10,6 +10,7 @@ export async function createTreatmentReport(formData: FormData) {
 
   const horse_id = formData.get('horse_id') as string
   const drug_id = formData.get('drug_id') as string
+  const itemCodeIds = formData.getAll('item_code_ids') as string[]
 
   // Validación de campos requeridos
   if (!horse_id?.trim()) {
@@ -18,11 +19,12 @@ export async function createTreatmentReport(formData: FormData) {
   if (!drug_id?.trim()) {
     throw new Error('Debe seleccionar un medicamento')
   }
+  if (itemCodeIds.length === 0) {
+    throw new Error('Debe seleccionar al menos un código de diagnóstico o procedimiento')
+  }
 
   const numero_identificacion_caballo = formData.get('numero_identificacion_caballo') as string | null
   const establo = (formData.get('establo') as string) || ''
-  const tratamiento = formData.get('tratamiento') as string | null
-  const diagnostico = formData.get('diagnostico') as string
   const fecha_tratamiento = formData.get('fecha_tratamiento') as string
   const hora_tratamiento = (formData.get('hora_tratamiento') as string) || '00:00'
   const dosis = parseFloat(formData.get('dosis') as string)
@@ -42,12 +44,20 @@ export async function createTreatmentReport(formData: FormData) {
     fecha_fin_tratamiento = fecha.toISOString().split('T')[0]
   }
 
-  const { error } = await supabase.from('treatment_reports').insert({
+  // Obtener nombres de los códigos seleccionados para concatenar en diagnostico
+  const { data: codeItems } = await supabase
+    .from('catalog_items')
+    .select('id, name')
+    .in('id', itemCodeIds)
+
+  const diagnostico = codeItems?.map(item => item.name).join(', ') || ''
+
+  const { data: insertedReport, error } = await supabase.from('treatment_reports').insert({
     horse_id,
     drug_id,
     numero_identificacion_caballo,
     establo,
-    tratamiento,
+    tratamiento: null,
     diagnostico,
     fecha_tratamiento,
     hora_tratamiento,
@@ -61,9 +71,22 @@ export async function createTreatmentReport(formData: FormData) {
     estado: 'sometido',
     sometido_en: new Date().toISOString(),
     es_auto_generado: false,
-  })
+  }).select('id').single()
 
   if (error) throw new Error(error.message)
+  if (!insertedReport) throw new Error('No se pudo crear el informe')
+
+  // Insertar enlaces en la tabla de junction
+  const junctionData = itemCodeIds.map(catalogItemId => ({
+    treatment_report_id: insertedReport.id,
+    catalog_item_id: catalogItemId,
+  }))
+
+  const { error: junctionError } = await supabase
+    .from('treatment_report_item_codes')
+    .insert(junctionData)
+
+  if (junctionError) throw new Error(junctionError.message)
 
   revalidatePath('/treatment-reports')
   if (from_horse && from_horse.trim()) {
@@ -90,10 +113,9 @@ export async function updateTreatmentReport(id: string, formData: FormData) {
 
   const horse_id = formData.get('horse_id') as string
   const drug_id = formData.get('drug_id') as string
+  const itemCodeIds = formData.getAll('item_code_ids') as string[]
   const numero_identificacion_caballo = formData.get('numero_identificacion_caballo') as string | null
   const establo = (formData.get('establo') as string) || ''
-  const tratamiento = formData.get('tratamiento') as string | null
-  const diagnostico = formData.get('diagnostico') as string
   const fecha_tratamiento = formData.get('fecha_tratamiento') as string
   const hora_tratamiento = (formData.get('hora_tratamiento') as string) || '00:00'
   const dosis = parseFloat(formData.get('dosis') as string)
@@ -112,6 +134,14 @@ export async function updateTreatmentReport(id: string, formData: FormData) {
     fecha_fin_tratamiento = fecha.toISOString().split('T')[0]
   }
 
+  // Obtener nombres de los códigos seleccionados para concatenar en diagnostico
+  const { data: codeItems } = await supabase
+    .from('catalog_items')
+    .select('id, name')
+    .in('id', itemCodeIds)
+
+  const diagnostico = codeItems?.map(item => item.name).join(', ') || ''
+
   const { error } = await supabase
     .from('treatment_reports')
     .update({
@@ -119,7 +149,7 @@ export async function updateTreatmentReport(id: string, formData: FormData) {
       drug_id,
       numero_identificacion_caballo,
       establo,
-      tratamiento,
+      tratamiento: null,
       diagnostico,
       fecha_tratamiento,
       hora_tratamiento,
@@ -134,6 +164,25 @@ export async function updateTreatmentReport(id: string, formData: FormData) {
     .eq('id', id)
 
   if (error) throw new Error(error.message)
+
+  // Borrar y recrear enlaces de códigos en la tabla de junction
+  await supabase
+    .from('treatment_report_item_codes')
+    .delete()
+    .eq('treatment_report_id', id)
+
+  if (itemCodeIds.length > 0) {
+    const junctionData = itemCodeIds.map(catalogItemId => ({
+      treatment_report_id: id,
+      catalog_item_id: catalogItemId,
+    }))
+
+    const { error: junctionError } = await supabase
+      .from('treatment_report_item_codes')
+      .insert(junctionData)
+
+    if (junctionError) throw new Error(junctionError.message)
+  }
 
   revalidatePath('/treatment-reports')
 }
@@ -266,12 +315,12 @@ export async function replicateDailyTreatmentReports() {
     }
 
     // Crear copia del informe para hoy
-    const { error } = await supabase.from('treatment_reports').insert({
+    const { data: newReport, error } = await supabase.from('treatment_reports').insert({
       horse_id: report.horse_id,
       drug_id: report.drug_id,
       numero_identificacion_caballo: report.numero_identificacion_caballo,
       establo: report.establo,
-      tratamiento: report.tratamiento,
+      tratamiento: null,
       diagnostico: report.diagnostico,
       fecha_tratamiento: today,
       hora_tratamiento: report.hora_tratamiento,
@@ -287,9 +336,26 @@ export async function replicateDailyTreatmentReports() {
       es_auto_generado: true,
       informe_padre_id: report.id,
       created_by: report.created_by,
-    })
+    }).select('id').single()
 
-    if (!error) {
+    if (!error && newReport) {
+      // Copiar también los enlaces de códigos del informe original
+      const { data: originalCodes } = await supabase
+        .from('treatment_report_item_codes')
+        .select('catalog_item_id')
+        .eq('treatment_report_id', report.id)
+
+      if (originalCodes && originalCodes.length > 0) {
+        const newCodes = originalCodes.map(item => ({
+          treatment_report_id: newReport.id,
+          catalog_item_id: item.catalog_item_id,
+        }))
+
+        await supabase
+          .from('treatment_report_item_codes')
+          .insert(newCodes)
+      }
+
       replicated++
     }
   }
