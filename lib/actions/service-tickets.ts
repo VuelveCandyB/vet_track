@@ -10,7 +10,7 @@ const SUPPORT_EMAILS = ['m.rivera@camareroracepr.com', 'miguelriveracanales@outl
 async function sendSupportEmail(vetName: string, vetEmail: string, situacion: string, detalle: string) {
   try {
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/send-email`,
+      `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/resend-email`,
       {
         method: 'POST',
         headers: {
