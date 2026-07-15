@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 import { requireUser } from '@/lib/auth'
 import { getVetName } from './shared'
 
-const SUPPORT_EMAILS = ['m.rivera@camareroracepr.com', 'miguelriveracanales@outlook.com']
+const SUPPORT_EMAILS = ['m.rivera@camareroracepr.com']
 
 async function sendSupportEmail(vetName: string, vetEmail: string, situacion: string, detalle: string) {
   try {
