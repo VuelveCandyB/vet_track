@@ -56,6 +56,7 @@ export interface EuthanasiaRecord {
   horse_id: string
   vet_name: string
   fecha: string
+  fecha_ultima_carrera?: string
   motivo: string
   propietario_notificado: boolean
   attachment_url?: string

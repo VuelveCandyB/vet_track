@@ -45,9 +45,15 @@ export default function EuthanasiaModal({ open, onClose, horseId, horseName, vet
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label className="text-xs font-semibold uppercase tracking-wider" style={{ color: PALETTE.text.secondary }}>
-                Fecha *
+                Fecha de muerte *
               </Label>
               <Input type="date" name="fecha" required defaultValue={today} />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold uppercase tracking-wider" style={{ color: PALETTE.text.secondary }}>
+                Fecha de última carrera
+              </Label>
+              <Input type="date" name="fecha_ultima_carrera" />
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs font-semibold uppercase tracking-wider" style={{ color: PALETTE.text.secondary }}>

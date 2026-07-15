@@ -35,6 +35,7 @@ export async function createEuthanasia(horseId: string, formData: FormData) {
     horse_id:                horseId,
     vet_name:                vetName,
     fecha:                   formData.get('fecha'),
+    fecha_ultima_carrera:    (formData.get('fecha_ultima_carrera') as string) || null,
     motivo:                  formData.get('motivo'),
     propietario_notificado:  formData.get('propietario_notificado') === 'on',
     attachment_url:          attachmentUrl,
