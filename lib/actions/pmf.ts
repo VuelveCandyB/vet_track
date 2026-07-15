@@ -392,7 +392,8 @@ export async function getPMFStatusBatch(raceEntryIds: string[]) {
       .from('pmf_records')
       .select('id, estado, race_entry_id, created_at')
       .in('race_entry_id', raceEntryIds)
-      .order('race_entry_id, created_at', { ascending: [true, false] })
+      .order('race_entry_id', { ascending: true })
+      .order('created_at', { ascending: false })
 
     if (error) {
       return { success: true, statuses: {} }
@@ -419,5 +420,34 @@ export async function getPMFStatusBatch(raceEntryIds: string[]) {
     return { success: true, statuses }
   } catch (err) {
     return { success: true, statuses: {} }
+  }
+}
+
+export async function updatePMFAdministration(input: {
+  pmfRecordId: string
+  dosis_administrada: number
+  hora_admin: string
+  fecha_admin: string
+}) {
+  try {
+    const { data, error } = await supabase
+      .from('pmf_records')
+      .update({
+        dosis_administrada: input.dosis_administrada,
+        hora_admin: input.hora_admin,
+        fecha_admin: input.fecha_admin,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', input.pmfRecordId)
+      .select()
+      .single()
+
+    if (error) {
+      throw new Error(error.message)
+    }
+
+    return { success: true, record: data }
+  } catch (err) {
+    throw err instanceof Error ? new Error(err.message) : new Error('Unknown error updating PMF')
   }
 }

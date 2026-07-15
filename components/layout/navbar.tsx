@@ -6,13 +6,15 @@ import type { User } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/client'
 import { ADMIN_EMAIL } from '@/lib/constants'
 import { PALETTE } from '@/lib/palette'
+import { ServiceTicketModal } from '@/components/service/service-ticket-modal'
 
-export default function Navbar({ user, isOfficialVet }: { user: User; isOfficialVet: boolean }) {
+export default function Navbar({ user, isOfficialVet, vetName }: { user: User; isOfficialVet: boolean; vetName: string }) {
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const router = useRouter()
   const isAdmin = user.email === ADMIN_EMAIL
   const [menuOpen, setMenuOpen] = useState(false)
+  const [serviceModalOpen, setServiceModalOpen] = useState(false)
 
   // Detect if coming from horses page with pre-selected horse
   const isFromHorses = searchParams.get('horse_id') !== null
@@ -80,6 +82,12 @@ export default function Navbar({ user, isOfficialVet }: { user: User; isOfficial
               {label}
             </Link>
           ))}
+          <button
+            onClick={() => setServiceModalOpen(true)}
+            className="px-4 py-1.5 text-sm font-medium rounded-md transition-colors -mb-px border-b-2"
+            style={{ color: '#FFFFFF', borderColor: 'transparent' }}>
+            SOS
+          </button>
         </nav>
 
         {/* Desktop user */}
@@ -147,6 +155,15 @@ export default function Navbar({ user, isOfficialVet }: { user: User; isOfficial
               {label}
             </Link>
           ))}
+          <button
+            onClick={() => {
+              setServiceModalOpen(true)
+              setMenuOpen(false)
+            }}
+            className="w-full text-left px-4 py-3 rounded-lg text-sm transition-colors"
+            style={{ color: '#9ca3af' }}>
+            SOS
+          </button>
           <div className="pt-2 mt-2" style={{ borderTop: '1px solid #1e2235' }}>
             <div className="px-4 py-2 text-xs" style={{ color: '#4a5280' }}>{user.email}</div>
             <Link href="/perfil" onClick={() => setMenuOpen(false)}
@@ -162,6 +179,14 @@ export default function Navbar({ user, isOfficialVet }: { user: User; isOfficial
           </div>
         </div>
       </div>
+
+      {/* Service Ticket Modal */}
+      <ServiceTicketModal
+        open={serviceModalOpen}
+        onClose={() => setServiceModalOpen(false)}
+        vetName={vetName}
+        vetEmail={user.email || ''}
+      />
     </header>
   )
 }

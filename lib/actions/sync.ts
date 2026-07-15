@@ -29,7 +29,7 @@ function parsePage(html: string): any[] {
   const horses: any[] = []
   $('tbody tr').each((_, tr) => {
     const tds = $(tr).find('td')
-    if (tds.length < 7) return
+    if (tds.length < 9) return
     const name = $(tds[1]).text().trim()
     if (!name) return
     const colorRaw = $(tds[2]).text().trim().toUpperCase()
@@ -38,8 +38,9 @@ function parsePage(html: string): any[] {
       name,
       color:        COLOR_MAP[colorRaw] ?? (colorRaw ? colorRaw.charAt(0) + colorRaw.slice(1).toLowerCase() : null),
       registration: $(tds[4]).text().trim() || null,
-      microchip:    $(tds[5]).text().trim().replace(/^\*/, '') || null,
-      birth_date:   parseDate($(tds[6]).text().trim()),
+      microchip:    $(tds[6]).text().trim().replace(/^\*/, '') || null,
+      birth_date:   parseDate($(tds[7]).text().trim()),
+      ubicacion:    $(tds[8]).text().trim() || null,
       gender:       genderTag ? (GENDER_MAP[genderTag] ?? null) : null,
       status:       'active',
     })
@@ -59,9 +60,23 @@ function stableKey(h: any): string {
 
 async function fetchPage(page: number): Promise<string | null> {
   try {
-    const res = await fetch(`${BASE_URL}?page=${page}`, { cache: 'no-store' })
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 15000)
+
+    const res = await fetch(`${BASE_URL}?page=${page}`, {
+      cache: 'no-store',
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'es-ES,es;q=0.9',
+      },
+      signal: controller.signal,
+    })
+    clearTimeout(timeout)
+
+    if (!res.ok) return null
     return await res.text()
-  } catch {
+  } catch (err) {
     return null
   }
 }

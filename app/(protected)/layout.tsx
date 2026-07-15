@@ -1,13 +1,32 @@
 import { requireUser, isOfficialVet } from '@/lib/auth'
 import Navbar from '@/components/layout/navbar'
+import { createClient } from '@/lib/supabase/server'
+
+async function getVetName(userId: string) {
+  const supabase = await createClient()
+  try {
+    const { data } = await supabase
+      .from('profiles')
+      .select('first_name, last_name')
+      .eq('id', userId)
+      .single()
+
+    if (data) {
+      const full = `${data.first_name ?? ''} ${data.last_name ?? ''}`.trim()
+      if (full) return full
+    }
+  } catch {}
+  return 'Veterinario'
+}
 
 export default async function ProtectedLayout({ children }: { children: React.ReactNode }) {
   const user = await requireUser()
   const officialVet = await isOfficialVet(user.id, user.email || '')
+  const vetName = await getVetName(user.id)
 
   return (
     <div className="min-h-[100dvh] flex flex-col w-full">
-      <Navbar user={user} isOfficialVet={officialVet} />
+      <Navbar user={user} isOfficialVet={officialVet} vetName={vetName} />
       <main className="flex-1 w-full min-w-0 px-4 sm:px-6 py-6 sm:py-8 overflow-x-hidden">
         {children}
       </main>

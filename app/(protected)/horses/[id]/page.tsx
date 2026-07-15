@@ -194,6 +194,7 @@ export default async function HorseDetailPage({
             {[
               ['Propietario', horse.owner],
               ['Entrenador',  horse.trainer],
+              ['Ubicación',   (horse as any).ubicacion],
               ['Nacimiento',  horse.birth_date],
               ['Género',      horse.gender],
               ['Color',       horse.color],

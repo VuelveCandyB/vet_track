@@ -64,11 +64,11 @@ export default function PMFSignaturesModal({
     setSigningAs('vet')
 
     try {
-      const result = await signPMFAsVetOficial({
+      const result = await signPMFAsVetOficial(
         pmfRecordId,
-        userId: user.id,
-        userName: user.email || 'Unknown',
-      })
+        user.id,
+        user.email || 'Unknown'
+      )
 
       if (!result.success) {
         setError(result.error || 'Failed to sign')
@@ -95,11 +95,10 @@ export default function PMFSignaturesModal({
     setSigningAs('rep')
 
     try {
-      const result = await signPMFAsRepresentante({
+      const result = await signPMFAsRepresentante(
         pmfRecordId,
-        repName,
-        userId: user?.id,
-      })
+        repName
+      )
 
       if (!result.success) {
         setError(result.error || 'Failed to sign')

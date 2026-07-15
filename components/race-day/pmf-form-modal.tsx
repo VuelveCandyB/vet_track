@@ -65,9 +65,15 @@ export default function PMFFormModal({
     try {
       const result = await createPMFRecord({
         raceEntryId,
-        dosis_recetada: recetaForm.dosis_recetada,
-        hora_entrega_receta: recetaForm.hora_entrega_receta,
-        vet_autorizado_nombre: recetaForm.vet_autorizado_nombre,
+        dosisRecetada: recetaForm.dosis_recetada,
+        horaEntregaReceta: recetaForm.hora_entrega_receta,
+        vetOficialNombre: recetaForm.vet_autorizado_nombre,
+        fechaAdmin: adminForm.fecha_admin,
+        horaAdmin: adminForm.hora_admin,
+        dosisAdministrada: adminForm.dosis_administrada,
+        viaAdmin: 'IV',
+        agujaCorporea: adminForm.aguja_confirmada,
+        vetOficialId: '',
       })
 
       if (!result.success) {
@@ -99,11 +105,10 @@ export default function PMFFormModal({
         fecha_admin: adminForm.fecha_admin,
         hora_admin: adminForm.hora_admin,
         dosis_administrada: adminForm.dosis_administrada,
-        aguja_confirmada: adminForm.aguja_confirmada,
       })
 
       if (!result.success) {
-        setError(result.error || 'Failed to update administration')
+        setError('Failed to update administration')
         return
       }
 
