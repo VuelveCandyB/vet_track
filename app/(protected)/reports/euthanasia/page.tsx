@@ -110,7 +110,7 @@ export default async function EuthanasiaReportPage({
             <table className="w-full text-sm border-collapse">
               <thead>
                 <tr style={{ borderBottom: `1px solid ${PALETTE.ui.border}` }}>
-                  {['Caballo', 'Fecha de muerte', 'Última carrera', 'Veterinario', 'Motivo', 'Propietario', 'Documento'].map(h => (
+                  {['Caballo', 'Fecha de muerte', 'Última Carrera', 'Veterinario', 'Motivo', 'Propietario', 'Documento'].map(h => (
                     <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider"
                       style={{ color: PALETTE.text.secondary }}>{h}</th>
                   ))}

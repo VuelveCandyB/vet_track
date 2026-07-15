@@ -51,7 +51,7 @@ export default function EuthanasiaModal({ open, onClose, horseId, horseName, vet
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs font-semibold uppercase tracking-wider" style={{ color: PALETTE.text.secondary }}>
-                Fecha de última carrera
+                Última carrera
               </Label>
               <Input type="date" name="fecha_ultima_carrera" />
             </div>
