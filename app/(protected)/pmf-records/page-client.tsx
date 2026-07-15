@@ -100,7 +100,7 @@ export default function TreatmentReportsPageClient({
           <table className="w-full text-sm border-collapse">
             <thead>
               <tr style={{ borderBottom: `1px solid ${PALETTE.ui.border}` }}>
-                {['Caballo', 'Dosis Recetada', 'Hora Entrega', 'Fecha Admin', 'Estado', 'Acciones'].map(h => (
+                {['Caballo', 'Fecha Creación', 'Estado', 'Acciones'].map(h => (
                   <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider"
                     style={{ color: PALETTE.text.secondary }}>
                     {h}
@@ -111,7 +111,7 @@ export default function TreatmentReportsPageClient({
             <tbody>
               {!reports.length ? (
                 <tr>
-                  <td colSpan={isAdmin ? 10 : 9} className="px-4 py-12 text-center" style={{ color: PALETTE.text.secondary }}>
+                  <td colSpan={4} className="px-4 py-12 text-center" style={{ color: PALETTE.text.secondary }}>
                     Sin informes {currentEstado ? `en estado "${ESTADO_LABEL[currentEstado]}"` : ''}
                   </td>
                 </tr>
@@ -156,14 +156,8 @@ export default function TreatmentReportsPageClient({
                     <td className="px-4 py-3 font-semibold">
                       {report.horses?.name || '—'}
                     </td>
-                    <td className="px-4 py-3 text-sm">
-                      {report.dosis_recetada ? `${report.dosis_recetada} mg` : '—'}
-                    </td>
                     <td className="px-4 py-3 text-xs">
-                      {report.hora_entrega_receta ? formatDateTime(report.hora_entrega_receta) : '—'}
-                    </td>
-                    <td className="px-4 py-3 text-xs">
-                      {report.fecha_admin ? formatDate(report.fecha_admin) : '—'}
+                      {report.created_at ? formatDate(report.created_at) : '—'}
                     </td>
                     <td className="px-4 py-3">
                       <Badge className={`text-xs border ${ESTADO_COLOR[report.estado] ?? ''}`}>
