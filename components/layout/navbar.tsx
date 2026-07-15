@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/client'
 import { ADMIN_EMAIL } from '@/lib/constants'
 import { PALETTE } from '@/lib/palette'
 import { ServiceTicketModal } from '@/components/service/service-ticket-modal'
+import SosLogo from '@/components/SosLogo'
 
 export default function Navbar({ user, isOfficialVet, vetName }: { user: User; isOfficialVet: boolean; vetName: string }) {
   const pathname = usePathname()
@@ -82,12 +83,7 @@ export default function Navbar({ user, isOfficialVet, vetName }: { user: User; i
               {label}
             </Link>
           ))}
-          <button
-            onClick={() => setServiceModalOpen(true)}
-            className="px-4 py-1.5 text-sm font-medium rounded-md transition-colors -mb-px border-b-2"
-            style={{ color: '#FFFFFF', borderColor: 'transparent' }}>
-            SOS
-          </button>
+          <SosLogo onClick={() => setServiceModalOpen(true)} />
         </nav>
 
         {/* Desktop user */}
@@ -155,15 +151,12 @@ export default function Navbar({ user, isOfficialVet, vetName }: { user: User; i
               {label}
             </Link>
           ))}
-          <button
-            onClick={() => {
+          <div className="px-4 py-3">
+            <SosLogo onClick={() => {
               setServiceModalOpen(true)
               setMenuOpen(false)
-            }}
-            className="w-full text-left px-4 py-3 rounded-lg text-sm transition-colors"
-            style={{ color: '#9ca3af' }}>
-            SOS
-          </button>
+            }} />
+          </div>
           <div className="pt-2 mt-2" style={{ borderTop: '1px solid #1e2235' }}>
             <div className="px-4 py-2 text-xs" style={{ color: '#4a5280' }}>{user.email}</div>
             <Link href="/perfil" onClick={() => setMenuOpen(false)}

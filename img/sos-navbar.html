@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Handoff — SOS navbar animado</title>
+<style>
+  :root { --ink:#1a1a1a; --muted:#6b6f6a; --green:#63b39a; --accent:#1f9d6b; --line:#e6e7e4; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:#f4f5f3; color:var(--ink); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; line-height:1.6; }
+  .wrap { max-width:820px; margin:0 auto; padding:56px 24px 96px; }
+  h1 { font-size:30px; margin:0 0 6px; letter-spacing:-.01em; }
+  .sub { color:var(--muted); font-size:15px; margin:0 0 40px; }
+  h2 { font-size:15px; text-transform:uppercase; letter-spacing:.08em; color:var(--accent); margin:44px 0 14px; }
+  p { margin:0 0 12px; }
+  ul { margin:0 0 12px; padding-left:20px; }
+  li { margin:4px 0; }
+  code { background:#eceeea; padding:1px 6px; border-radius:4px; font-family:"SF Mono",Menlo,Consolas,monospace; font-size:13px; }
+  .card { background:#fff; border:1px solid var(--line); border-radius:14px; padding:24px; margin:0 0 20px; }
+  /* demo navbar */
+  .demo-bar { background:var(--green); border-radius:8px; display:flex; align-items:center; gap:24px; padding:14px 22px; box-shadow:0 2px 6px rgba(0,0,0,.12); }
+  .demo-bar span.link { color:#fff; font-weight:700; font-size:15px; }
+  .demo-bar span.active { border-bottom:2px solid #fff; padding-bottom:3px; }
+  .demo-note { color:var(--muted); font-size:13px; margin-top:12px; }
+  /* code block */
+  .codehead { display:flex; align-items:center; justify-content:space-between; margin:22px 0 8px; }
+  .codehead h3 { margin:0; font-size:14px; }
+  pre { background:#1e2220; color:#e8e8e3; border-radius:12px; padding:18px 20px; overflow:auto; font-family:"SF Mono",Menlo,Consolas,monospace; font-size:12.5px; line-height:1.55; margin:0; }
+  pre .c { color:#7f9c8f; }
+  button.copy { font:inherit; font-size:12px; border:1px solid var(--line); background:#fff; border-radius:7px; padding:5px 12px; cursor:pointer; }
+  button.copy:hover { background:#f2f3f0; }
+  table { width:100%; border-collapse:collapse; font-size:14px; }
+  td { padding:7px 0; border-bottom:1px solid var(--line); vertical-align:top; }
+  td:first-child { color:var(--muted); width:42%; padding-right:16px; }
+
+  /* ===== EL LOGO SOS (idéntico al de producción) ===== */
+  .sos-logo { position:relative; display:inline-flex; align-items:center; gap:6px; text-decoration:none; font-family:Arial,Helvetica,sans-serif; color:inherit; }
+  .sos-logo .sos-dot { position:relative; display:inline-flex; align-items:center; justify-content:center; width:9px; height:9px; }
+  .sos-logo .ring { position:absolute; width:9px; height:9px; border-radius:50%; background:currentColor; animation:sosNavRing 1.8s ease-out infinite; }
+  .sos-logo .core { position:relative; width:7px; height:7px; border-radius:50%; background:currentColor; }
+  .sos-logo .sos-text { font-weight:700; font-size:15px; letter-spacing:.08em; transform-origin:center; display:inline-block; animation:sosNavBeat 1.8s ease-in-out infinite; }
+  @keyframes sosNavRing { 0%{transform:scale(.6);opacity:.7;} 80%{transform:scale(2.1);opacity:0;} 100%{transform:scale(2.1);opacity:0;} }
+  @keyframes sosNavBeat { 0%,100%{transform:scale(1);} 12%{transform:scale(1.12);} 24%{transform:scale(1);} 36%{transform:scale(1.12);} 48%{transform:scale(1);} }
+  @media (prefers-reduced-motion: reduce) { .sos-logo .ring, .sos-logo .sos-text { animation:none; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>SOS — ítem de navbar animado</h1>
+  <p class="sub">Handoff de diseño · Next.js + TypeScript · alta fidelidad</p>
+
+  <h2>Vista previa</h2>
+  <div class="card">
+    <div class="demo-bar">
+      <span class="link active">Dashboard</span>
+      <span class="link">Caballos</span>
+      <span class="link">Reportes</span>
+      <span class="link">Admin</span>
+      <a href="#" class="sos-logo" style="color:#fff">
+        <span class="sos-dot"><span class="ring"></span><span class="core"></span></span>
+        <span class="sos-text">SOS</span>
+      </a>
+    </div>
+    <p class="demo-note">El logo hereda el color del texto (<code>currentColor</code>): en la barra verde sale blanco automáticamente.</p>
+  </div>
+
+  <h2>Qué es</h2>
+  <p>Ítem de navegación "SOS" para el navbar (contexto médico/veterinario). Enlace de texto blanco con una microanimación de emergencia: un punto que emite ondas concéntricas y el texto con un doble latido. Llama la atención como acceso de emergencia sin romper el estilo de la barra. No usa imágenes ni librerías — solo texto y CSS.</p>
+
+  <h2>Especificaciones</h2>
+  <div class="card">
+    <table>
+      <tr><td>Color texto / animación</td><td>heredado (<code>currentColor</code>) — en navbar <code>#ffffff</code></td></tr>
+      <tr><td>Verde del navbar (contexto)</td><td><code>#63b39a</code></td></tr>
+      <tr><td>Tipografía</td><td>Arial/Helvetica · 700 · 15px · letter-spacing .08em</td></tr>
+      <tr><td>Punto exterior / interior</td><td>9px / 7px · gap 6px</td></tr>
+      <tr><td>Ondas (<code>sosNavRing</code>)</td><td>scale .6→2.1, opacidad .7→0 · 1.8s ease-out infinite</td></tr>
+      <tr><td>Latido (<code>sosNavBeat</code>)</td><td>doble pico scale 1.12 (12% y 36%) · 1.8s ease-in-out infinite</td></tr>
+      <tr><td>Accesibilidad</td><td>animaciones off con <code>prefers-reduced-motion</code></td></tr>
+      <tr><td>Estado</td><td>ninguno — presentacional, prop opcional <code>href</code></td></tr>
+    </table>
+  </div>
+
+  <h2>Código — SosLogo.tsx</h2>
+  <div class="codehead">
+    <h3>App Router · incluye "use client"</h3>
+    <button class="copy" data-target="tsx">Copiar</button>
+  </div>
+  <pre id="tsx"><span class="c">"use client";</span>
+
+import Link from "next/link";
+import styles from "./SosLogo.module.css";
+
+type SosLogoProps = {
+  href?: string;
+};
+
+export default function SosLogo({ href = "/sos" }: SosLogoProps) {
+  return (
+    &lt;Link href={href} className={styles.sosLogo}&gt;
+      &lt;span className={styles.sosDot}&gt;
+        &lt;span className={styles.ring} /&gt;
+        &lt;span className={styles.core} /&gt;
+      &lt;/span&gt;
+      &lt;span className={styles.sosText}&gt;SOS&lt;/span&gt;
+    &lt;/Link&gt;
+  );
+}</pre>
+
+  <h2>Código — SosLogo.module.css</h2>
+  <div class="codehead">
+    <h3>Estilos y keyframes</h3>
+    <button class="copy" data-target="css">Copiar</button>
+  </div>
+  <pre id="css">.sosLogo {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  text-decoration: none;
+  font-family: Arial, Helvetica, sans-serif;
+  color: inherit;
+}
+.sosDot {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 9px;
+  height: 9px;
+}
+.ring {
+  position: absolute;
+  width: 9px; height: 9px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: sosNavRing 1.8s ease-out infinite;
+}
+.core {
+  position: relative;
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.sosText {
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: .08em;
+  transform-origin: center;
+  display: inline-block;
+  animation: sosNavBeat 1.8s ease-in-out infinite;
+}
+@keyframes sosNavRing {
+  0%   { transform: scale(.6); opacity: .7; }
+  80%  { transform: scale(2.1); opacity: 0; }
+  100% { transform: scale(2.1); opacity: 0; }
+}
+@keyframes sosNavBeat {
+  0%, 100% { transform: scale(1); }
+  12%      { transform: scale(1.12); }
+  24%      { transform: scale(1); }
+  36%      { transform: scale(1.12); }
+  48%      { transform: scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ring, .sosText { animation: none; }
+}</pre>
+
+  <h2>Cómo integrarlo</h2>
+  <ul>
+    <li>Crea <code>components/SosLogo.tsx</code> y <code>components/SosLogo.module.css</code> con el código de arriba.</li>
+    <li>Móntalo como último ítem del navbar, después de "Admin":
+      <br /><code>&lt;SosLogo href="/sos" /&gt;</code></li>
+    <li>Mantén <code>color: inherit</code> para que herede el blanco del navbar; no fijes el color a mano.</li>
+    <li>Pages Router: quita <code>"use client"</code>. Si usas Tailwind/styled-components, adapta conservando los mismos valores y keyframes.</li>
+  </ul>
+
+</div>
+
+<script>
+  document.querySelectorAll("button.copy").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var el = document.getElementById(btn.dataset.target);
+      var text = el.textContent;
+      navigator.clipboard.writeText(text).then(function () {
+        var old = btn.textContent;
+        btn.textContent = "¡Copiado!";
+        setTimeout(function () { btn.textContent = old; }, 1400);
+      });
+    });
+  });
+</script>
+</body>
+</html>
