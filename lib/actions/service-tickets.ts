@@ -9,37 +9,41 @@ const SUPPORT_EMAILS = ['m.rivera@camareroracepr.com', 'miguelriveracanales@outl
 
 async function sendSupportEmail(vetName: string, vetEmail: string, situacion: string, detalle: string) {
   try {
-    const response = await fetch(
-      `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/resend-email`,
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          to: SUPPORT_EMAILS,
-          subject: `VetTrack - Ticket de Soporte: ${situacion}`,
-          html: `
-            <h2>Nuevo ticket de soporte</h2>
-            <p><strong>Veterinario:</strong> ${vetName}</p>
-            <p><strong>Email:</strong> ${vetEmail}</p>
-            <p><strong>Situación:</strong> ${situacion}</p>
-            <hr />
-            <p><strong>Detalle:</strong></p>
-            <p>${detalle.replace(/\n/g, '<br>')}</p>
-          `,
-        }),
-      }
-    )
+    const url = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/resend-email`
+    console.log('[SOS] Calling Edge Function:', url)
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        to: SUPPORT_EMAILS,
+        subject: `VetTrack - Ticket de Soporte: ${situacion}`,
+        html: `
+          <h2>Nuevo ticket de soporte</h2>
+          <p><strong>Veterinario:</strong> ${vetName}</p>
+          <p><strong>Email:</strong> ${vetEmail}</p>
+          <p><strong>Situación:</strong> ${situacion}</p>
+          <hr />
+          <p><strong>Detalle:</strong></p>
+          <p>${detalle.replace(/\n/g, '<br>')}</p>
+        `,
+      }),
+    })
+
+    const responseText = await response.text()
+    console.log('[SOS] Response status:', response.status)
+    console.log('[SOS] Response body:', responseText)
 
     if (!response.ok) {
-      console.error('Error sending email:', await response.text())
-      // No throws — el ticket ya está guardado en BD
+      console.error('[SOS] Email sending failed:', response.status, responseText)
+    } else {
+      console.log('[SOS] Email sent successfully')
     }
   } catch (error) {
-    console.error('Failed to send support email:', error)
-    // No throws — el ticket ya está guardado en BD
+    console.error('[SOS] Failed to call Edge Function:', error)
   }
 }
 
