@@ -1,5 +1,5 @@
 'use client'
-import { useState, useRef, useMemo } from 'react'
+import { useState, useRef, useMemo, useEffect } from 'react'
 import { PALETTE } from '@/lib/palette'
 
 export interface CatalogItem {
@@ -24,6 +24,32 @@ export default function ItemCodesSelect({
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set(selected))
   const [showDropdown, setShowDropdown] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  // Close dropdown on click outside or Escape key
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowDropdown(false)
+      }
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && showDropdown) {
+        setShowDropdown(false)
+        inputRef.current?.blur()
+      }
+    }
+
+    if (showDropdown) {
+      document.addEventListener('mousedown', handleClickOutside)
+      document.addEventListener('keydown', handleKeyDown)
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside)
+        document.removeEventListener('keydown', handleKeyDown)
+      }
+    }
+  }, [showDropdown])
 
   // Filter items based on search term (search in both code and description)
   const filteredItems = useMemo(() => {
@@ -59,6 +85,7 @@ export default function ItemCodesSelect({
       {/* Search input */}
       <div className="relative" ref={dropdownRef}>
         <input
+          ref={inputRef}
           type="text"
           value={searchTerm}
           onChange={(e) => {
@@ -81,6 +108,21 @@ export default function ItemCodesSelect({
             className="absolute top-full left-0 right-0 mt-1 bg-white border rounded-md shadow-lg z-50 max-h-64 overflow-y-auto"
             style={{ borderColor: PALETTE.ui.border }}
           >
+            {/* "Listo" button — top bar with minimal styling */}
+            <div className="flex items-center justify-between px-3 py-1.5 border-b" style={{ borderColor: PALETTE.ui.border, backgroundColor: '#fafafa' }}>
+              <span className="text-xs font-medium" style={{ color: PALETTE.text.secondary }}>
+                {selectedIds.size} seleccionado{selectedIds.size !== 1 ? 's' : ''}
+              </span>
+              <button
+                type="button"
+                onClick={() => setShowDropdown(false)}
+                className="text-xs font-semibold px-2 py-0.5 rounded-sm hover:bg-gray-100 transition-colors"
+                style={{ color: PALETTE.primary.green }}
+              >
+                Listo ✓
+              </button>
+            </div>
+
             {filteredItems.slice(0, 20).map(item => (
               <button
                 key={item.id}
