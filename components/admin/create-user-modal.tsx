@@ -79,6 +79,30 @@ export default function CreateUserModal() {
                 </Label>
                 <Input name="password" type="password" required placeholder="Mínimo 6 caracteres" />
               </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold uppercase tracking-wider" style={{ color: PALETTE.text.secondary }}>
+                  Licencia
+                </Label>
+                <Input name="license_number" placeholder="Número de licencia" />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold uppercase tracking-wider" style={{ color: PALETTE.text.secondary }}>
+                  Renovación
+                </Label>
+                <Input name="license_renewal_date" type="date" />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold uppercase tracking-wider" style={{ color: PALETTE.text.secondary }}>
+                  Teléfono 1
+                </Label>
+                <Input name="phone1" placeholder="Teléfono 1" />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold uppercase tracking-wider" style={{ color: PALETTE.text.secondary }}>
+                  Teléfono 2
+                </Label>
+                <Input name="phone2" placeholder="Teléfono 2" />
+              </div>
               <div className="col-span-2">
                 <label className="flex items-center gap-3 rounded-lg px-3 py-2.5 cursor-pointer"
                   style={{ background: PALETTE.background.lightAlt, border: `1px solid ${PALETTE.ui.border}` }}>

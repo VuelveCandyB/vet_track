@@ -1,19 +1,8 @@
-import { requireUser, isAdmin, isOfficialVet } from '@/lib/auth'
+import { requireUser, isOfficialVet } from '@/lib/auth'
 import { createClient } from '@/lib/supabase/server'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
 import { PALETTE } from '@/lib/palette'
 import Link from 'next/link'
 
-const STATUS_LABEL: Record<string, string> = {
-  active: 'Activo', rest: 'Descanso', injury: 'Lesionado', deceased: 'Fallecido',
-}
-const STATUS_COLOR: Record<string, string> = {
-  active:   'border-l-4 border-green-600 bg-green-50',
-  rest:     'border-l-4 border-yellow-600 bg-yellow-50',
-  injury:   'border-l-4 border-red-600 bg-red-50',
-  deceased: 'border-l-4 border-gray-400 bg-gray-50',
-}
 
 export default async function DashboardPage() {
   const user = await requireUser()
@@ -25,9 +14,9 @@ export default async function DashboardPage() {
     statsRes, recentMedsRes, vetlistRes, medsHoyRes, fallecidosRes, diagRes
   ] = await Promise.all([
     supabase.rpc('get_horse_stats'),
-    supabase.from('medications').select('id, drug, type, administered_at, vet_name, horse_id, horses(name)').order('administered_at', { ascending: false }).limit(8),
+    supabase.from('treatment_reports').select('id, drug:drugs(nombre), fecha_tratamiento, hora_tratamiento, vet_autorizado_nombre, horse_id, horses(name)').order('fecha_tratamiento', { ascending: false }).limit(8),
     supabase.from('vetlist').select('id, horse_id, motivo, fecha_ingreso, horses(name)').is('fecha_egreso', null).order('fecha_ingreso', { ascending: false }).limit(5),
-    supabase.from('medications').select('id', { count: 'exact', head: true }).eq('administered_at', today),
+    supabase.from('treatment_reports').select('id', { count: 'exact', head: true }).eq('fecha_tratamiento', today),
     supabase.from('horses').select('id', { count: 'exact', head: true }).eq('status', 'deceased'),
     officialVet ? supabase.from('diagnosticos').select('id, horse_id, diagnostico, vet_name, fecha, horses(name)').eq('recomendar_vetlist', true).order('fecha', { ascending: false }).limit(10) : Promise.resolve({ data: [] }),
   ])
@@ -50,9 +39,9 @@ export default async function DashboardPage() {
   }
 
   return (
-    <div>
+    <div className="max-w-7xl mx-auto">
       <div className="mb-8">
-        <h1 className="text-2xl" style={{ color: PALETTE.text.primary, fontFamily: 'var(--font-sans)' }}>
+        <h1 className="text-2xl" style={{ color: PALETTE.primary.green, fontFamily: 'var(--font-sans)' }}>
           Dashboard
         </h1>
         <p className="text-sm mt-1" style={{ color: PALETTE.text.secondary }}>
@@ -60,8 +49,8 @@ export default async function DashboardPage() {
         </p>
       </div>
 
-      {/* Stat cards */}
-      <div className="grid grid-cols-2 md:grid-cols-6 gap-2 mb-4">
+      {/* Stats Strip — Grid Distribution */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-6 md:gap-8 py-6 md:py-8 border-b" style={{ borderColor: PALETTE.ui.border }}>
         {[
           { label: 'Total Caballos',   value: stats.total,    color: PALETTE.primary.green },
           { label: 'Activos',          value: stats.active,   color: '#059669' },
@@ -70,116 +59,158 @@ export default async function DashboardPage() {
           { label: 'Meds. Hoy',        value: stats.meds_hoy, color: '#0ea5e9' },
           { label: 'Fallecidos',       value: stats.deceased, color: '#6b7280' },
         ].map(({ label, value, color }) => (
-          <Card key={label} style={{ background: PALETTE.background.white, border: `1px solid ${PALETTE.ui.border}` }}>
-            <CardContent className="pt-5 pb-4">
-              <div className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: PALETTE.text.secondary }}>
-                {label}
-              </div>
-              <div className="text-3xl font-bold tabular-nums" style={{ color }}>
-                {value}
-              </div>
-            </CardContent>
-          </Card>
+          <div key={label} className="text-center">
+            <div className="text-3xl md:text-4xl font-bold tabular-nums mb-1" style={{ color }}>
+              {value}
+            </div>
+            <div className="text-xs font-semibold uppercase tracking-wider" style={{ color: PALETTE.text.secondary }}>
+              {label}
+            </div>
+          </div>
         ))}
       </div>
 
-      <div className="grid md:grid-cols-3 gap-6">
+      {/* Sections Stack */}
+      <div className="space-y-8 mt-8">
 
         {/* Vetlist activa */}
-        <Card style={{ background: PALETTE.background.white, border: `1px solid ${PALETTE.ui.border}` }}>
-          <CardHeader className="pb-3 px-0 -mx-2 px-2">
-            <CardTitle className="w-full text-sm font-semibold uppercase tracking-wider text-white px-4 py-2 rounded-md" style={{ background: PALETTE.primary.green }}>
-              En Vetlist
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+        <div className="section">
+          <span className="text-sm font-semibold uppercase tracking-wider mb-3 block" style={{ color: PALETTE.text.secondary }}>
+            En Vetlist
+          </span>
+          <div className="rounded-lg border overflow-hidden" style={{ background: PALETTE.background.white, borderColor: PALETTE.ui.border }}>
+            {/* Header */}
+            <div className="grid gap-4 px-4 py-2.5" style={{ gridTemplateColumns: '140px 200px 1fr 120px', background: '#f8fafc', borderBottom: `1px solid ${PALETTE.ui.border}` }}>
+              <div className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: PALETTE.text.secondary }}>Caballo</div>
+              <div className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: PALETTE.text.secondary }}>Motivo</div>
+              <div></div>
+              <div className="text-[11px] font-semibold uppercase tracking-wider text-right" style={{ color: PALETTE.text.secondary }}>Ingreso</div>
+            </div>
+            {/* Body */}
             {vetlistActiva.length === 0 ? (
-              <p className="text-sm" style={{ color: PALETTE.text.secondary }}>Sin caballos en vetlist.</p>
+              <div className="py-8 text-center text-sm" style={{ color: PALETTE.text.secondary }}>
+                No existen datos
+              </div>
             ) : (
-              <div className="space-y-0 divide-y" style={{ borderColor: '#f0f5f9' }}>
-                {vetlistActiva.map((v: any) => (
+              <>
+                {vetlistActiva.map((v: any, idx: number) => (
                   <Link key={v.id} href={`/horses/${v.horse_id}`}
-                    className="flex items-center justify-between p-2.5 rounded-lg transition-colors hover:bg-[#05966920]">
-                    <div>
-                      <div className="text-sm font-medium" style={{ color: PALETTE.text.primary }}>{v.horses?.name ?? '—'}</div>
-                      <div className="text-xs mt-0.5" style={{ color: PALETTE.text.secondary }}>
-                        {v.motivo} · {v.fecha_ingreso}
-                      </div>
+                    className="grid gap-4 px-4 py-3 transition-colors hover:bg-slate-50"
+                    style={{
+                      gridTemplateColumns: '140px 200px 1fr 120px',
+                      borderBottom: idx < vetlistActiva.length - 1 ? `1px solid ${PALETTE.ui.border}` : 'none'
+                    }}>
+                    <div className="text-sm font-medium truncate" style={{ color: PALETTE.text.primary }}>
+                      {v.horses?.name ?? '—'}
                     </div>
-                    <Badge style={{ background: '#fee2e2', border: '1px solid #dc2626', color: '#991B1B' }} className="text-xs">Vetlist</Badge>
+                    <div className="text-sm truncate" style={{ color: PALETTE.text.secondary }}>
+                      {v.motivo ?? '—'}
+                    </div>
+                    <div></div>
+                    <div className="text-sm text-right" style={{ color: PALETTE.text.primary }}>
+                      {v.fecha_ingreso ?? '—'}
+                    </div>
                   </Link>
                 ))}
-              </div>
+              </>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
-{/* Recomendaciones pendientes (solo para official_vet o admin) */}
+        {/* Recomendaciones pendientes (solo para official_vet) */}
         {officialVet && (
-          <Card style={{ background: PALETTE.background.white, border: `1px solid ${PALETTE.ui.border}` }}>
-            <CardHeader className="pb-3 px-0">
-              <CardTitle className="w-screen text-sm font-semibold uppercase tracking-wider text-white px-4 py-2 rounded-md" style={{ background: PALETTE.primary.green, marginLeft: 'calc(-50vw + 50%)', marginRight: 'calc(-50vw + 50%)' }}>
-                Recomendaciones Pendientes
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
+          <div className="section">
+            <span className="text-sm font-semibold uppercase tracking-wider mb-3 block" style={{ color: PALETTE.text.secondary }}>
+              Recomendaciones Pendientes
+            </span>
+            <div className="rounded-lg border overflow-hidden" style={{ background: PALETTE.background.white, borderColor: PALETTE.ui.border }}>
+              {/* Header */}
+              <div className="grid gap-4 px-4 py-2.5" style={{ gridTemplateColumns: '140px 200px 1fr 120px', background: '#f8fafc', borderBottom: `1px solid ${PALETTE.ui.border}` }}>
+                <div className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: PALETTE.text.secondary }}>Caballo</div>
+                <div className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: PALETTE.text.secondary }}>Diagnóstico</div>
+                <div className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: PALETTE.text.secondary }}>Vet</div>
+                <div className="text-[11px] font-semibold uppercase tracking-wider text-right" style={{ color: PALETTE.text.secondary }}>Fecha</div>
+              </div>
+              {/* Body */}
               {diagPendientes.length === 0 ? (
-                <p className="text-sm" style={{ color: PALETTE.text.secondary }}>Sin recomendaciones pendientes.</p>
+                <div className="py-8 text-center text-sm" style={{ color: PALETTE.text.secondary }}>
+                  No existen datos
+                </div>
               ) : (
-                <div className="space-y-0 divide-y" style={{ borderColor: '#f0f5f9' }}>
-                  {diagPendientes.map((d: any) => (
+                <>
+                  {diagPendientes.map((d: any, idx: number) => (
                     <Link key={d.id} href={`/horses/${d.horse_id}`}
-                      className="flex items-center justify-between p-2.5 rounded-lg transition-colors hover:bg-[#05966920]">
-                      <div>
-                        <div className="text-sm font-medium" style={{ color: PALETTE.text.primary }}>{d.horses?.name ?? '—'}</div>
-                        <div className="text-xs mt-0.5" style={{ color: PALETTE.text.secondary }}>
-                          {d.diagnostico} · {d.vet_name}
-                        </div>
+                      className="grid gap-4 px-4 py-3 transition-colors hover:bg-slate-50"
+                      style={{
+                        gridTemplateColumns: '140px 200px 1fr 120px',
+                        borderBottom: idx < diagPendientes.length - 1 ? `1px solid ${PALETTE.ui.border}` : 'none'
+                      }}>
+                      <div className="text-sm font-medium truncate" style={{ color: PALETTE.text.primary }}>
+                        {d.horses?.name ?? '—'}
                       </div>
-                      <Badge style={{ background: '#fef3c7', border: '1px solid #f59e0b', color: '#92400e' }} className="text-xs">
-                        VetList Recomendado
-                      </Badge>
+                      <div className="text-sm truncate" style={{ color: PALETTE.text.secondary }}>
+                        {d.diagnostico ?? '—'}
+                      </div>
+                      <div className="text-sm truncate" style={{ color: PALETTE.text.secondary }}>
+                        {d.vet_name ?? '—'}
+                      </div>
+                      <div className="text-sm text-right" style={{ color: PALETTE.text.primary }}>
+                        {d.fecha ?? '—'}
+                      </div>
                     </Link>
                   ))}
-                </div>
+                </>
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         )}
 
         {/* Medicaciones recientes */}
-        <Card className="md:col-span-3" style={{ background: PALETTE.background.white, border: `1px solid ${PALETTE.ui.border}` }}>
-          <CardHeader className="pb-3 px-0 -mx-2 px-2">
-            <CardTitle className="w-full text-sm font-semibold uppercase tracking-wider text-white px-4 py-2 rounded-md" style={{ background: PALETTE.primary.green }}>
-              Medicaciones Recientes
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+        <div className="section">
+          <span className="text-sm font-semibold uppercase tracking-wider mb-3 block" style={{ color: PALETTE.text.secondary }}>
+            Medicaciones Recientes
+          </span>
+          <div className="rounded-lg border overflow-hidden" style={{ background: PALETTE.background.white, borderColor: PALETTE.ui.border }}>
+            {/* Header */}
+            <div className="grid gap-4 px-4 py-2.5" style={{ gridTemplateColumns: '140px 200px 1fr 160px', background: '#f8fafc', borderBottom: `1px solid ${PALETTE.ui.border}` }}>
+              <div className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: PALETTE.text.secondary }}>Caballo</div>
+              <div className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: PALETTE.text.secondary }}>Medicamento</div>
+              <div className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: PALETTE.text.secondary }}>Vet</div>
+              <div className="text-[11px] font-semibold uppercase tracking-wider text-right" style={{ color: PALETTE.text.secondary }}>Fecha/Hora</div>
+            </div>
+            {/* Body */}
             {recentMeds.length === 0 ? (
-              <p className="text-sm" style={{ color: PALETTE.text.secondary }}>Sin medicaciones registradas.</p>
+              <div className="py-8 text-center text-sm" style={{ color: PALETTE.text.secondary }}>
+                Sin medicaciones registradas.
+              </div>
             ) : (
-              <div className="space-y-0 divide-y" style={{ borderColor: '#f0f5f9' }}>
-                {recentMeds.map((m: any) => (
+              <>
+                {recentMeds.map((m: any, idx: number) => (
                   <Link key={m.id} href={`/horses/${m.horse_id}`}
-                    className="flex items-center justify-between p-2.5 rounded-lg transition-colors hover:bg-[#05966920]">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src="https://res.cloudinary.com/dee0x7p16/image/upload/v1780762906/HC_Icono-Cabeza_Azul-Oscuro_jvimak.png" alt="caballo" className="h-5 w-5" />
-                        <span className="text-sm font-medium" style={{ color: PALETTE.text.primary }}>{(m.horses as any)?.name ?? '—'}</span>
-                      </div>
-                      <span className="text-sm ml-2" style={{ color: PALETTE.text.secondary }}>— {m.drug}</span>
+                    className="grid gap-4 px-4 py-3 transition-colors hover:bg-slate-50"
+                    style={{
+                      gridTemplateColumns: '140px 200px 1fr 160px',
+                      borderBottom: idx < recentMeds.length - 1 ? `1px solid ${PALETTE.ui.border}` : 'none',
+                      alignItems: 'center'
+                    }}>
+                    <div className="text-sm font-medium truncate" style={{ color: PALETTE.text.primary }}>
+                      {(m.horses as any)?.name ?? '—'}
                     </div>
-                    <div className="text-xs text-right" style={{ color: PALETTE.text.secondary }}>
-                      <div>{m.type}</div>
-                      <div>{m.administered_at}</div>
+                    <div className="text-sm truncate" style={{ color: PALETTE.text.secondary }}>
+                      {m.drug?.nombre ?? '—'}
+                    </div>
+                    <div className="text-sm truncate" style={{ color: PALETTE.text.secondary }}>
+                      {m.vet_autorizado_nombre ?? '—'}
+                    </div>
+                    <div className="text-sm text-right" style={{ color: PALETTE.text.primary }}>
+                      {m.fecha_tratamiento} {m.hora_tratamiento}
                     </div>
                   </Link>
                 ))}
-              </div>
+              </>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
       </div>
     </div>

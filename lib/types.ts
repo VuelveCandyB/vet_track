@@ -103,6 +103,16 @@ export interface Diagnostico {
   created_at?: string
 }
 
+export interface Vaccination {
+  id: string
+  horse_id: string
+  vet_name: string
+  fecha: string
+  notas?: string
+  created_by?: string
+  created_at?: string
+}
+
 export interface TreatmentReport {
   id: string
   horse_id: string

@@ -1,28 +1,16 @@
-import { requireUser, isAdmin } from '@/lib/auth'
+import { requirePageAccess } from '@/lib/auth'
 import { createClient } from '@/lib/supabase/server'
 import TreatmentReportsPageClient from './page-client'
 import type { TreatmentReport } from '@/lib/types'
 
-export default async function TreatmentReportsPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ estado?: string }>
-}) {
-  const user = await requireUser()
-  const admin = isAdmin(user.email!)
-  const { estado } = await searchParams
+export default async function TreatmentReportsPage() {
+  await requirePageAccess('page.treatment_reports')
   const supabase = await createClient()
 
-  let query = supabase
+  const { data: reportData } = await supabase
     .from('treatment_reports')
     .select('*, horse:horses(name, registration), drug:drugs(nombre, tipo_restriccion)')
     .order('created_at', { ascending: false })
-
-  if (estado) {
-    query = query.eq('estado', estado)
-  }
-
-  const { data: reportData } = await query
 
   const reports = (reportData ?? []) as (TreatmentReport & {
     horse?: { name: string; registration?: string }
@@ -30,10 +18,6 @@ export default async function TreatmentReportsPage({
   })[]
 
   return (
-    <TreatmentReportsPageClient
-      reports={reports}
-      currentEstado={estado}
-      isAdmin={admin}
-    />
+    <TreatmentReportsPageClient reports={reports} />
   )
 }

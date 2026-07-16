@@ -2,10 +2,12 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { requireUser } from '@/lib/auth'
+import { requireUser, can } from '@/lib/auth'
 
 export async function createHorse(formData: FormData) {
-  await requireUser()
+  const user = await requireUser()
+  const allowed = await can(user, 'horses.create', 'full')
+  if (!allowed) throw new Error('Acceso denegado')
   const supabase = await createClient()
 
   const payload = {

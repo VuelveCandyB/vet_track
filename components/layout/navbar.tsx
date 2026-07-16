@@ -9,11 +9,10 @@ import { PALETTE } from '@/lib/palette'
 import { ServiceTicketModal } from '@/components/service/service-ticket-modal'
 import SosLogo from '@/components/SosLogo'
 
-export default function Navbar({ user, isOfficialVet, vetName }: { user: User; isOfficialVet: boolean; vetName: string }) {
+export default function Navbar({ user, isAdmin, isOfficialVet, vetName, canAccessAdmin, canAccessRaceDay }: { user: User; isAdmin: boolean; isOfficialVet: boolean; vetName: string; canAccessAdmin: boolean; canAccessRaceDay: boolean }) {
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const router = useRouter()
-  const isAdmin = user.email === ADMIN_EMAIL
   const [menuOpen, setMenuOpen] = useState(false)
   const [serviceModalOpen, setServiceModalOpen] = useState(false)
 
@@ -27,7 +26,7 @@ export default function Navbar({ user, isOfficialVet, vetName }: { user: User; i
     router.refresh()
   }
 
-  const canAccessRaceDay = isAdmin || isOfficialVet
+  const userRole = isAdmin ? 'Administrador' : isOfficialVet ? 'Veterinario Oficial' : 'Veterinario'
 
   const navItems = [
     { href: '/dashboard', label: 'Dashboard' },
@@ -37,7 +36,7 @@ export default function Navbar({ user, isOfficialVet, vetName }: { user: User; i
     // TODO: PMF oculto por ahora - en desarrollo
     // { href: '/pmf-records', label: 'PMF' },
     { href: '/reports',   label: 'Reportes' },
-    ...(isAdmin ? [{ href: '/admin', label: 'Admin' }] : []),
+    ...(canAccessAdmin ? [{ href: '/admin', label: 'Admin' }] : []),
   ]
 
   function isActive(href: string) {
@@ -76,7 +75,7 @@ export default function Navbar({ user, isOfficialVet, vetName }: { user: User; i
         <nav className="hidden md:flex gap-0.5">
           {navItems.map(({ href, label }) => (
             <Link key={href} href={href}
-              className="px-4 py-1.5 text-sm font-medium rounded-md transition-colors -mb-px border-b-2"
+              className="px-4 py-1.5 text-sm font-medium rounded-md transition-colors -mb-px border-b-2 hover:bg-white/10"
               style={isActive(href)
                 ? { background: `${PALETTE.primary.green}20`, color: '#FFFFFF', borderColor: '#FFFFFF', borderRadius: '6px 6px 0 0' }
                 : { color: '#FFFFFF', borderColor: 'transparent' }}>
@@ -94,7 +93,7 @@ export default function Navbar({ user, isOfficialVet, vetName }: { user: User; i
           </div>
           <div className="hidden lg:block">
             <div className="text-sm font-medium" style={{ color: PALETTE.text.primary }}>{user.email}</div>
-            <div className="text-xs" style={{ color: PALETTE.text.secondary }}>Veterinario</div>
+            <div className="text-xs" style={{ color: PALETTE.text.secondary }}>{userRole}</div>
           </div>
           <Link href="/perfil"
             className="text-xs px-3 py-1.5 rounded-md border transition-colors"
@@ -102,7 +101,7 @@ export default function Navbar({ user, isOfficialVet, vetName }: { user: User; i
             Mi perfil
           </Link>
           <button onClick={handleLogout}
-            className="text-xs px-3 py-1.5 rounded-md border transition-colors"
+            className="text-xs px-3 py-1.5 rounded-md border transition-colors cursor-pointer"
             style={{ borderColor: PALETTE.primary.green, color: '#FFFFFF' }}>
             Salir
           </button>
@@ -115,7 +114,7 @@ export default function Navbar({ user, isOfficialVet, vetName }: { user: User; i
             {user.email?.[0].toUpperCase() ?? '?'}
           </div>
           <button onClick={() => setMenuOpen(!menuOpen)}
-            className="p-2 rounded-md transition-colors"
+            className="p-2 rounded-md transition-colors cursor-pointer"
             style={{ color: '#9ca3af' }}
             aria-label="Menú">
             {menuOpen ? (
@@ -144,7 +143,7 @@ export default function Navbar({ user, isOfficialVet, vetName }: { user: User; i
           {navItems.map(({ href, label }) => (
             <Link key={href} href={href}
               onClick={() => setMenuOpen(false)}
-              className="flex items-center px-4 py-3 rounded-lg text-sm font-medium transition-colors"
+              className="flex items-center px-4 py-3 rounded-lg text-sm font-medium transition-colors hover:bg-white/5"
               style={isActive(href)
                 ? { background: '#2B55F420', color: '#fff', borderLeft: '3px solid #C8F135' }
                 : { color: '#9ca3af' }}>
@@ -158,14 +157,14 @@ export default function Navbar({ user, isOfficialVet, vetName }: { user: User; i
             }} />
           </div>
           <div className="pt-2 mt-2" style={{ borderTop: '1px solid #1e2235' }}>
-            <div className="px-4 py-2 text-xs" style={{ color: '#4a5280' }}>{user.email}</div>
+            <div className="px-4 py-2 text-xs" style={{ color: '#4a5280' }}>{user.email} · {userRole}</div>
             <Link href="/perfil" onClick={() => setMenuOpen(false)}
               className="flex items-center px-4 py-3 rounded-lg text-sm transition-colors"
               style={{ color: '#9ca3af' }}>
               Mi perfil
             </Link>
             <button onClick={handleLogout}
-              className="w-full text-left px-4 py-3 rounded-lg text-sm transition-colors"
+              className="w-full text-left px-4 py-3 rounded-lg text-sm transition-colors cursor-pointer"
               style={{ color: '#f87171' }}>
               Cerrar sesión
             </button>

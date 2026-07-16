@@ -1,6 +1,5 @@
-import { requireUser, isAdmin } from '@/lib/auth'
+import { requirePageAccess } from '@/lib/auth'
 import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
 import { addCatalogItem, deleteCatalogItem } from '@/lib/actions/admin'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -15,8 +14,7 @@ const CATEGORIES: Record<string, string> = {
 }
 
 export default async function AdminCatalogPage() {
-  const user = await requireUser()
-  if (!isAdmin(user.email!)) redirect('/dashboard')
+  await requirePageAccess('page.admin')
 
   const supabase = await createClient()
   const { data: rows } = await supabase.from('catalog_items').select('*').eq('active', true).order('sort_order')

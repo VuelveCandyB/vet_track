@@ -1,4 +1,4 @@
-import { requireUser } from '@/lib/auth'
+import { requirePageAccess } from '@/lib/auth'
 import { createClient } from '@/lib/supabase/server'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
@@ -18,7 +18,7 @@ export default async function MedicationsReportPage({
 }: {
   searchParams: Promise<{ horse?: string; drug?: string; vet?: string; date_from?: string; date_to?: string; categoria?: string; proposito?: string }>
 }) {
-  await requireUser()
+  await requirePageAccess('page.reports')
   const filters = await searchParams
   const supabase = await createClient()
 

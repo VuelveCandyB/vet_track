@@ -143,50 +143,6 @@ export async function updatePMFRecord(id: string, formData: FormData) {
   revalidatePath('/pmf-records')
 }
 
-export async function updatePMFRecordStatus(id: string, nuevoEstado: string) {
-  await requireUser()
-  const supabase = await createClient()
-
-  const { data: report } = await supabase
-    .from('pmf_records')
-    .select('estado')
-    .eq('id', id)
-    .single()
-
-  if (!report) throw new Error('PMF no encontrado')
-
-  const estadoActual = report.estado as string
-  const transicionesValidas: Record<string, string[]> = {
-    borrador: ['sometido'],
-    sometido: ['radicado'],
-    radicado: [],
-  }
-
-  if (!transicionesValidas[estadoActual]?.includes(nuevoEstado)) {
-    throw new Error(
-      `No se puede cambiar de ${estadoActual} a ${nuevoEstado}`
-    )
-  }
-
-  const updateData: Record<string, unknown> = { estado: nuevoEstado }
-
-  // Registrar timestamps de audit
-  if (nuevoEstado === 'sometido') {
-    updateData.sometido_en = new Date().toISOString()
-  } else if (nuevoEstado === 'radicado') {
-    updateData.radicado_en = new Date().toISOString()
-  }
-
-  const { error } = await supabase
-    .from('pmf_records')
-    .update(updateData)
-    .eq('id', id)
-
-  if (error) throw new Error(error.message)
-
-  revalidatePath('/pmf-records')
-}
-
 export async function deletePMFRecord(id: string) {
   await requireUser()
   const supabase = await createClient()
@@ -211,28 +167,3 @@ export async function deletePMFRecord(id: string) {
   revalidatePath('/pmf-records')
 }
 
-export async function radicatePMFRecord(id: string) {
-  await requireUser()
-  const supabase = await createClient()
-
-  const { data: report } = await supabase
-    .from('pmf_records')
-    .select('estado')
-    .eq('id', id)
-    .single()
-
-  if (!report) throw new Error('PMF no encontrado')
-  if (report.estado !== 'sometido') {
-    throw new Error('Solo se pueden radicar PMF en estado sometido')
-  }
-
-  const { error } = await supabase
-    .from('pmf_records')
-    .update({ estado: 'radicado', radicado_en: new Date().toISOString() })
-    .eq('id', id)
-
-  if (error) throw new Error(error.message)
-
-  revalidatePath('/pmf-records')
-  revalidatePath(`/pmf-records/${id}`)
-}

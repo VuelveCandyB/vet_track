@@ -2,84 +2,60 @@
   position: relative;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   text-decoration: none;
   font-family: Arial, Helvetica, sans-serif;
   color: inherit;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
 }
 
-.sosDot {
+.sosLogo:hover {
+  opacity: 0.8;
+}
+
+.buoyWrap {
   position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 9px;
-  height: 9px;
+  width: 22px;
+  height: 22px;
 }
 
-.ring {
+.sonar {
   position: absolute;
-  width: 9px;
-  height: 9px;
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
-  background: currentColor;
-  animation: sosNavRing 1.8s ease-out infinite;
-}
-
-.core {
-  position: relative;
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: currentColor;
+  border: 2px solid #ff6b6b;
+  opacity: 0.55;
+  animation: sosSonar 2.2s ease-out infinite;
 }
 
 .sosText {
-  font-weight: 700;
-  font-size: 15px;
+  font-weight: 600;
+  font-size: 13px;
   letter-spacing: 0.08em;
-  transform-origin: center;
-  display: inline-block;
-  animation: sosNavBeat 1.8s ease-in-out infinite;
 }
 
-@keyframes sosNavRing {
+@keyframes sosSonar {
   0% {
-    transform: scale(0.6);
+    transform: scale(0.55);
     opacity: 0.7;
   }
   80% {
-    transform: scale(2.1);
+    transform: scale(2);
     opacity: 0;
   }
   100% {
-    transform: scale(2.1);
+    transform: scale(2);
     opacity: 0;
-  }
-}
-
-@keyframes sosNavBeat {
-  0%,
-  100% {
-    transform: scale(1);
-  }
-  12% {
-    transform: scale(1.12);
-  }
-  24% {
-    transform: scale(1);
-  }
-  36% {
-    transform: scale(1.12);
-  }
-  48% {
-    transform: scale(1);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .ring,
-  .sosText {
+  .sonar {
     animation: none;
   }
 }

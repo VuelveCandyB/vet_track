@@ -2,32 +2,40 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { PALETTE } from '@/lib/palette'
-import { setUserRole } from '@/lib/actions/admin'
+import { setUserRoles } from '@/lib/actions/admin'
 
 interface RoleManagementModalProps {
   userId: string
   userEmail: string
-  currentRole: string | null
+  currentRoles: string[]
 }
 
 const ROLES = [
   { id: 'authorized_vet', label: 'Veterinario Autorizado', description: 'Crea informes de tratamiento' },
-  { id: 'official_vet', label: 'Veterinario Oficial', description: 'Radica informes de tratamiento' },
-  { id: 'secretary', label: 'Secretaría', description: 'Ve informes radicados' },
+  { id: 'official_vet', label: 'Veterinario Oficial', description: 'Radica y supervisa informes' },
+  { id: 'director', label: 'Director', description: 'Gestor de usuarios y auditoría' },
   { id: 'euthanasia', label: 'Personal de Eutanasia', description: 'Gestiona eutanasias' },
-  { id: 'admin', label: 'Administrador', description: 'Acceso completo al sistema' },
 ]
 
-export default function RoleManagementModal({ userId, userEmail, currentRole }: RoleManagementModalProps) {
+export default function RoleManagementModal({ userId, userEmail, currentRoles }: RoleManagementModalProps) {
   const [isOpen, setIsOpen] = useState(false)
-  const [selectedRole, setSelectedRole] = useState<string | null>(currentRole || null)
+  const [selectedRoles, setSelectedRoles] = useState<Set<string>>(new Set(currentRoles))
   const [isLoading, setIsLoading] = useState(false)
 
+  const handleToggleRole = (roleId: string) => {
+    const newSet = new Set(selectedRoles)
+    if (newSet.has(roleId)) {
+      newSet.delete(roleId)
+    } else {
+      newSet.add(roleId)
+    }
+    setSelectedRoles(newSet)
+  }
+
   const handleSave = async () => {
-    if (!selectedRole) return
     setIsLoading(true)
     try {
-      await setUserRole(userId, selectedRole)
+      await setUserRoles(userId, Array.from(selectedRoles))
       setIsOpen(false)
     } catch (err) {
       alert(`Error: ${err instanceof Error ? err.message : 'Error desconocido'}`)
@@ -35,6 +43,11 @@ export default function RoleManagementModal({ userId, userEmail, currentRole }: 
       setIsLoading(false)
     }
   }
+
+  const roleLabels = Array.from(selectedRoles)
+    .map(id => ROLES.find(r => r.id === id)?.label)
+    .filter(Boolean)
+    .join(', ')
 
   return (
     <>
@@ -48,7 +61,7 @@ export default function RoleManagementModal({ userId, userEmail, currentRole }: 
           color: PALETTE.text.secondary,
           cursor: 'pointer',
         }}>
-        {currentRole ? ROLES.find(r => r.id === currentRole)?.label || 'Sin rol' : 'Asignar rol'}
+        {roleLabels || 'Sin rol'}
       </button>
 
       {/* Modal */}
@@ -61,29 +74,27 @@ export default function RoleManagementModal({ userId, userEmail, currentRole }: 
             {/* Header */}
             <div className="mb-6">
               <h2 className="text-lg font-semibold" style={{ color: PALETTE.text.dark }}>
-                Gestionar Rol
+                Gestionar Roles
               </h2>
               <p className="text-sm mt-1" style={{ color: PALETTE.text.secondary }}>
                 {userEmail}
               </p>
             </div>
 
-            {/* Radio Buttons */}
+            {/* Checkboxes */}
             <div className="space-y-3 mb-6">
               {ROLES.map(role => (
                 <label
                   key={role.id}
                   className="flex items-start gap-3 p-3 rounded-lg cursor-pointer transition-colors"
                   style={{
-                    background: selectedRole === role.id ? PALETTE.primary.green + '10' : 'transparent',
-                    border: `1px solid ${selectedRole === role.id ? PALETTE.primary.green : PALETTE.ui.border}`,
+                    background: selectedRoles.has(role.id) ? PALETTE.primary.green + '10' : 'transparent',
+                    border: `1px solid ${selectedRoles.has(role.id) ? PALETTE.primary.green : PALETTE.ui.border}`,
                   }}>
                   <input
-                    type="radio"
-                    name="role"
-                    value={role.id}
-                    checked={selectedRole === role.id}
-                    onChange={() => setSelectedRole(role.id)}
+                    type="checkbox"
+                    checked={selectedRoles.has(role.id)}
+                    onChange={() => handleToggleRole(role.id)}
                     style={{ marginTop: '4px' }}
                   />
                   <div className="flex-1">
@@ -109,9 +120,9 @@ export default function RoleManagementModal({ userId, userEmail, currentRole }: 
               </Button>
               <Button
                 onClick={handleSave}
-                disabled={isLoading || !selectedRole}
+                disabled={isLoading}
                 style={{
-                  background: selectedRole ? PALETTE.primary.green : PALETTE.text.secondary,
+                  background: selectedRoles.size > 0 ? PALETTE.primary.green : PALETTE.text.secondary,
                   color: '#FFFFFF',
                 }}
                 className="flex-1">

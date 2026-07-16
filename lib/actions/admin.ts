@@ -90,10 +90,14 @@ export async function updateUserProfile(userId: string, formData: FormData) {
   await requireAdmin()
   const supabase = await createClient()
   await supabase.from('profiles').upsert({
-    id:         userId,
-    first_name: (formData.get('first_name') as string).trim(),
-    last_name:  (formData.get('last_name') as string).trim(),
-    updated_at: new Date().toISOString(),
+    id:                     userId,
+    first_name:             (formData.get('first_name') as string).trim(),
+    last_name:              (formData.get('last_name') as string).trim(),
+    license_number:         (formData.get('license_number') as string || '').trim() || null,
+    license_renewal_date:   (formData.get('license_renewal_date') as string || '').trim() || null,
+    phone1:                 (formData.get('phone1') as string || '').trim() || null,
+    phone2:                 (formData.get('phone2') as string || '').trim() || null,
+    updated_at:             new Date().toISOString(),
   }, { onConflict: 'id' })
   revalidatePath('/admin/users')
 }
@@ -126,26 +130,54 @@ export async function revokeOfficialVetRole(userId: string) {
   revalidatePath('/admin/users')
 }
 
-// ── GESTIÓN DE ROLES (radio button — un rol por usuario) ────
-export async function setUserRole(userId: string, role: string) {
+export async function setVaccinationNotifications(userId: string, enabled: boolean) {
+  await requireAdmin()
+  const supabase = await createClient()
+  await supabase.from('profiles').upsert({ id: userId, notify_vaccinations: enabled }, { onConflict: 'id' })
+  revalidatePath('/admin/users')
+}
+
+// ── GESTIÓN DE ROLES (multi-rol) ────
+export async function setUserRoles(userId: string, roles: string[]) {
   const user = await requireAdmin()
   const supabase = await createClient()
 
-  const validRoles = ['authorized_vet', 'official_vet', 'secretary', 'euthanasia', 'admin']
-  if (!validRoles.includes(role)) {
-    throw new Error('Rol inválido')
+  const validRoles = ['authorized_vet', 'official_vet', 'euthanasia', 'director']
+  for (const role of roles) {
+    if (!validRoles.includes(role)) {
+      throw new Error(`Rol inválido: ${role}`)
+    }
   }
 
-  // Eliminar roles anteriores
-  await supabase.from('user_roles').delete().eq('user_id', userId)
+  // Get current roles
+  const { data: currentRoles } = await supabase
+    .from('user_roles')
+    .select('role')
+    .eq('user_id', userId)
 
-  // Asignar nuevo rol
-  if (role && role !== 'none') {
-    await supabase.from('user_roles').insert({
-      user_id: userId,
-      role: role,
-      granted_by: user.id,
-    })
+  const currentRoleSet = new Set((currentRoles ?? []).map(r => r.role))
+  const newRoleSet = new Set(roles)
+
+  // Delete roles that are no longer needed
+  const rolesToDelete = [...currentRoleSet].filter(r => !newRoleSet.has(r))
+  if (rolesToDelete.length > 0) {
+    await supabase
+      .from('user_roles')
+      .delete()
+      .eq('user_id', userId)
+      .in('role', rolesToDelete)
+  }
+
+  // Insert new roles
+  const rolesToInsert = [...newRoleSet].filter(r => !currentRoleSet.has(r))
+  if (rolesToInsert.length > 0) {
+    await supabase.from('user_roles').insert(
+      rolesToInsert.map(role => ({
+        user_id: userId,
+        role: role,
+        granted_by: user.id,
+      }))
+    )
   }
 
   revalidatePath('/admin/users')
@@ -155,11 +187,15 @@ export async function setUserRole(userId: string, role: string) {
 export async function createUser(formData: FormData): Promise<{ error?: string }> {
   await requireAdmin()
 
-  const email      = (formData.get('email') as string).trim()
-  const password   = (formData.get('password') as string).trim()
-  const firstName  = (formData.get('first_name') as string).trim()
-  const lastName   = (formData.get('last_name') as string).trim()
-  const grantEuth  = formData.get('euthanasia') === 'on'
+  const email                = (formData.get('email') as string).trim()
+  const password             = (formData.get('password') as string).trim()
+  const firstName            = (formData.get('first_name') as string).trim()
+  const lastName             = (formData.get('last_name') as string).trim()
+  const licenseNumber        = (formData.get('license_number') as string || '').trim() || null
+  const licenseRenewalDate   = (formData.get('license_renewal_date') as string || '').trim() || null
+  const phone1               = (formData.get('phone1') as string || '').trim() || null
+  const phone2               = (formData.get('phone2') as string || '').trim() || null
+  const grantEuth            = formData.get('euthanasia') === 'on'
 
   if (!email || !password) return { error: 'Email y contraseña son requeridos' }
   if (password.length < 6)  return { error: 'La contraseña debe tener al menos 6 caracteres' }
@@ -180,7 +216,13 @@ export async function createUser(formData: FormData): Promise<{ error?: string }
 
   await Promise.all([
     supabase.from('profiles').upsert({
-      id: userId, first_name: firstName, last_name: lastName,
+      id: userId,
+      first_name: firstName,
+      last_name: lastName,
+      license_number: licenseNumber,
+      license_renewal_date: licenseRenewalDate,
+      phone1: phone1,
+      phone2: phone2,
     }, { onConflict: 'id' }),
     ...(grantEuth ? [supabase.from('user_roles').insert({
       user_id: userId, role: 'euthanasia',

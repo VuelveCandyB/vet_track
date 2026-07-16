@@ -1,5 +1,4 @@
 import { Metadata } from 'next'
-import { redirect } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -12,7 +11,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { AlertCircle, Plus, Calendar } from 'lucide-react'
 import { DownloadCSVTemplate } from '@/components/race-day/download-csv-template'
 import { RaceDaysList } from '@/components/race-day/race-days-list'
-import { requireUser, isOfficialVet } from '@/lib/auth'
+import { requirePageAccess } from '@/lib/auth'
 import Link from 'next/link'
 
 export const metadata: Metadata = {
@@ -21,12 +20,7 @@ export const metadata: Metadata = {
 }
 
 export default async function RaceDayPage() {
-  const user = await requireUser()
-  const officialVet = await isOfficialVet(user.id, user.email || '')
-
-  if (!officialVet) {
-    redirect('/dashboard')
-  }
+  await requirePageAccess('page.race_day')
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6">

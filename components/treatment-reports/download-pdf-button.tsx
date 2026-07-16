@@ -159,15 +159,7 @@ export default function DownloadPdfButton({ report }: DownloadPdfButtonProps) {
         </div>
 
         <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #ddd; font-size: 10px; color: #666;">
-          <table style="width: 100%;">
-            <tr>
-              <td><strong>Creado:</strong> ${formatDateTime(report.created_at || null)}</td>
-              <td style="text-align: right;"><strong>Sometido:</strong> ${formatDateTime(report.sometido_en || null)}</td>
-            </tr>
-            <tr>
-              <td colspan="2"><strong>Radicado:</strong> ${formatDateTime(report.radicado_en || null)}</td>
-            </tr>
-          </table>
+          <p><strong>Creado:</strong> ${formatDateTime(report.created_at || null)}</p>
           <p style="margin-top: 15px; color: #999; text-align: center;">
             Este documento ha sido generado digitalmente y tiene validez legal conforme al Reglamento 8760.
           </p>

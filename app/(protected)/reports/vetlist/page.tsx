@@ -1,4 +1,4 @@
-import { requireUser } from '@/lib/auth'
+import { requirePageAccess } from '@/lib/auth'
 import { createClient } from '@/lib/supabase/server'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -10,7 +10,7 @@ export default async function VetlistReportPage({
 }: {
   searchParams: Promise<{ horse?: string; vet?: string; date_from?: string; date_to?: string; estado?: string }>
 }) {
-  await requireUser()
+  await requirePageAccess('page.reports')
   const filters = await searchParams
   const supabase = await createClient()
   const today = new Date().toISOString().split('T')[0]

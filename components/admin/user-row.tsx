@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import RoleManagementModal from '@/components/admin/role-management-modal'
-import { updateUserProfile } from '@/lib/actions/admin'
+import { updateUserProfile, setVaccinationNotifications } from '@/lib/actions/admin'
 import { PALETTE } from '@/lib/palette'
 
 interface UserRowProps {
@@ -14,13 +14,24 @@ interface UserRowProps {
     last_name: string
     last_sign_in_at: string | null
     roles: string[]
+    notify_vaccinations: boolean
+    license_number: string
+    license_renewal_date: string
+    phone1: string
+    phone2: string
   }
 }
 
 export default function UserRow({ user: u }: UserRowProps) {
   const [firstName, setFirstName] = useState(u.first_name)
   const [lastName, setLastName] = useState(u.last_name)
+  const [notifyVaccinations, setNotifyVaccinations] = useState(u.notify_vaccinations)
+  const [licenseNumber, setLicenseNumber] = useState(u.license_number)
+  const [licenseRenewalDate, setLicenseRenewalDate] = useState(u.license_renewal_date)
+  const [phone1, setPhone1] = useState(u.phone1)
+  const [phone2, setPhone2] = useState(u.phone2)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [notifyPending, setNotifyPending] = useState(false)
 
   const handleSave = async () => {
     setIsSubmitting(true)
@@ -28,12 +39,28 @@ export default function UserRow({ user: u }: UserRowProps) {
       const formData = new FormData()
       formData.append('first_name', firstName)
       formData.append('last_name', lastName)
+      formData.append('license_number', licenseNumber)
+      formData.append('license_renewal_date', licenseRenewalDate)
+      formData.append('phone1', phone1)
+      formData.append('phone2', phone2)
       await updateUserProfile(u.id, formData)
     } catch (err) {
       console.error('Error:', err)
       alert('Error al guardar')
     } finally {
       setIsSubmitting(false)
+    }
+  }
+
+  const handleToggleNotify = async (checked: boolean) => {
+    setNotifyVaccinations(checked)
+    setNotifyPending(true)
+    try {
+      await setVaccinationNotifications(u.id, checked)
+    } catch {
+      setNotifyVaccinations(!checked)
+    } finally {
+      setNotifyPending(false)
     }
   }
 
@@ -58,10 +85,59 @@ export default function UserRow({ user: u }: UserRowProps) {
           className="h-8 text-sm w-36"
         />
       </td>
+      <td className="px-5 py-2.5">
+        <Input
+          value={licenseNumber}
+          onChange={(e) => setLicenseNumber(e.target.value)}
+          placeholder="Licencia"
+          className="h-8 text-sm w-32"
+        />
+      </td>
+      <td className="px-5 py-2.5">
+        <Input
+          type="date"
+          value={licenseRenewalDate}
+          onChange={(e) => setLicenseRenewalDate(e.target.value)}
+          className="h-8 text-sm w-40"
+        />
+      </td>
+      <td className="px-5 py-2.5">
+        <Input
+          value={phone1}
+          onChange={(e) => setPhone1(e.target.value)}
+          placeholder="Tel 1"
+          className="h-8 text-sm w-32"
+        />
+      </td>
+      <td className="px-5 py-2.5">
+        <Input
+          value={phone2}
+          onChange={(e) => setPhone2(e.target.value)}
+          placeholder="Tel 2"
+          className="h-8 text-sm w-32"
+        />
+      </td>
       <td className="px-5 py-3 text-xs" style={{ color: PALETTE.text.secondary }}>
         {u.last_sign_in_at ? u.last_sign_in_at.slice(0, 10) : '—'}
       </td>
-      <td className="px-5 py-3 flex gap-2 items-center justify-between">
+      <td className="px-5 py-3">
+        <RoleManagementModal
+          userId={u.id}
+          userEmail={u.email}
+          currentRoles={u.roles}
+        />
+      </td>
+      <td className="px-5 py-3 text-center">
+        <input
+          type="checkbox"
+          checked={notifyVaccinations}
+          disabled={notifyPending}
+          onChange={e => handleToggleNotify(e.target.checked)}
+          className="w-4 h-4"
+          style={{ accentColor: PALETTE.primary.green }}
+        />
+      </td>
+      <td className="px-5 py-3">
         <Button
           onClick={handleSave}
           size="sm"
@@ -70,11 +146,6 @@ export default function UserRow({ user: u }: UserRowProps) {
           className="text-xs">
           {isSubmitting ? 'Guardando...' : 'Guardar'}
         </Button>
-        <RoleManagementModal
-          userId={u.id}
-          userEmail={u.email}
-          currentRole={u.roles[0] || null}
-        />
       </td>
     </tr>
   )

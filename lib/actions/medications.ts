@@ -1,7 +1,7 @@
 'use server'
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
-import { requireUser, isAdmin } from '@/lib/auth'
+import { requireUser, isAdmin, can } from '@/lib/auth'
 import { getVetName } from './shared'
 
 const ALLOWED_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf'])
@@ -25,6 +25,8 @@ async function uploadAttachment(supabase: any, horseId: string, file: File, pref
 
 export async function createMedication(horseId: string, formData: FormData) {
   const user = await requireUser()
+  const allowed = await can(user, 'horses.medication_modal', 'full')
+  if (!allowed) throw new Error('Acceso denegado')
   const supabase = await createClient()
   const vetName = await getVetName(supabase, user)
 

@@ -1,7 +1,7 @@
 'use server'
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
-import { requireUser } from '@/lib/auth'
+import { requireUser, can } from '@/lib/auth'
 
 const ALLOWED_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf'])
 const MAX_SIZE = 10 * 1024 * 1024
@@ -36,6 +36,8 @@ async function getVetName(supabase: any, user: any): Promise<string> {
 export async function createDiagnostico(horseId: string, formData: FormData) {
   try {
     const user = await requireUser()
+    const allowed = await can(user, 'horses.diagnosis_modal', 'full')
+    if (!allowed) throw new Error('Acceso denegado')
     const supabase = await createClient()
     const vetName = await getVetName(supabase, user)
 

@@ -6,10 +6,11 @@ import { Button } from '@/components/ui/button'
 import VetlistModal from './vetlist-modal'
 import VetlistReleaseModal from './vetlist-release-modal'
 import EuthanasiaModal from './euthanasia-modal'
+import VaccinationModal from './vaccination-modal'
 import { PALETTE } from '@/lib/palette'
 import type { Horse, VetlistEntry, Drug } from '@/lib/types'
 
-type ModalType = 'vetlist' | 'release' | 'euthanasia' | null
+type ModalType = 'vetlist' | 'release' | 'euthanasia' | 'vaccination' | null
 
 interface Props {
   horse: Horse
@@ -120,6 +121,13 @@ export default function HorseActions({
               Registrar Medicamento
             </Button>
           </Link>
+
+          {/* Vaccination button */}
+          <Button onClick={() => setOpen('vaccination')} size="sm"
+            className="text-sm font-semibold min-w-fit"
+            style={{ background: PALETTE.primary.green, color: '#FFFFFF' }}>
+            Registrar Vacuna
+          </Button>
         </div>
       )}
 
@@ -138,6 +146,11 @@ export default function HorseActions({
       )}
       <EuthanasiaModal
         open={open === 'euthanasia'} onClose={closeAndRefresh}
+        horseId={horse.id} horseName={horse.name}
+        vetName={vetName} today={today}
+      />
+      <VaccinationModal
+        open={open === 'vaccination'} onClose={closeAndRefresh}
         horseId={horse.id} horseName={horse.name}
         vetName={vetName} today={today}
       />

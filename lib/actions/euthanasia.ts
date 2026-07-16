@@ -1,7 +1,7 @@
 'use server'
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
-import { requireUser, canRegisterEuthanasia } from '@/lib/auth'
+import { requireUser, can } from '@/lib/auth'
 import { getVetName } from './shared'
 
 const ALLOWED_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf'])
@@ -9,7 +9,7 @@ const MAX_SIZE = 10 * 1024 * 1024
 
 export async function createEuthanasia(horseId: string, formData: FormData) {
   const user = await requireUser()
-  const allowed = await canRegisterEuthanasia(user.id, user.email!)
+  const allowed = await can(user, 'horses.euthanasia_modal', 'special')
   if (!allowed) throw new Error('Acceso denegado')
 
   const supabase = await createClient()

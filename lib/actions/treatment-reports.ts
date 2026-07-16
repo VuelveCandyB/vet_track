@@ -187,50 +187,6 @@ export async function updateTreatmentReport(id: string, formData: FormData) {
   revalidatePath('/treatment-reports')
 }
 
-export async function updateTreatmentReportStatus(id: string, nuevoEstado: string) {
-  await requireUser()
-  const supabase = await createClient()
-
-  const { data: report } = await supabase
-    .from('treatment_reports')
-    .select('estado')
-    .eq('id', id)
-    .single()
-
-  if (!report) throw new Error('Informe no encontrado')
-
-  const estadoActual = report.estado as string
-  const transicionesValidas: Record<string, string[]> = {
-    borrador: ['sometido'],
-    sometido: ['radicado'],
-    radicado: [],
-  }
-
-  if (!transicionesValidas[estadoActual]?.includes(nuevoEstado)) {
-    throw new Error(
-      `No se puede cambiar de ${estadoActual} a ${nuevoEstado}`
-    )
-  }
-
-  const updateData: Record<string, unknown> = { estado: nuevoEstado }
-
-  // Registrar timestamps de audit
-  if (nuevoEstado === 'sometido') {
-    updateData.sometido_en = new Date().toISOString()
-  } else if (nuevoEstado === 'radicado') {
-    updateData.radicado_en = new Date().toISOString()
-  }
-
-  const { error } = await supabase
-    .from('treatment_reports')
-    .update(updateData)
-    .eq('id', id)
-
-  if (error) throw new Error(error.message)
-
-  revalidatePath('/treatment-reports')
-}
-
 export async function deleteTreatmentReport(id: string) {
   await requireUser()
   const supabase = await createClient()
@@ -253,32 +209,6 @@ export async function deleteTreatmentReport(id: string) {
   if (error) throw new Error(error.message)
 
   revalidatePath('/treatment-reports')
-}
-
-export async function radicateTreatmentReport(id: string) {
-  await requireUser()
-  const supabase = await createClient()
-
-  const { data: report } = await supabase
-    .from('treatment_reports')
-    .select('estado')
-    .eq('id', id)
-    .single()
-
-  if (!report) throw new Error('Informe no encontrado')
-  if (report.estado !== 'sometido') {
-    throw new Error('Solo se pueden radicar informes en estado sometido')
-  }
-
-  const { error } = await supabase
-    .from('treatment_reports')
-    .update({ estado: 'radicado', radicado_en: new Date().toISOString() })
-    .eq('id', id)
-
-  if (error) throw new Error(error.message)
-
-  revalidatePath('/treatment-reports')
-  revalidatePath(`/treatment-reports/${id}`)
 }
 
 export async function replicateDailyTreatmentReports() {

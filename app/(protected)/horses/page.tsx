@@ -1,4 +1,4 @@
-import { requireUser } from '@/lib/auth'
+import { requirePageAccess } from '@/lib/auth'
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
@@ -30,7 +30,7 @@ export default async function HorsesPage({
 }: {
   searchParams: Promise<{ q?: string }>
 }) {
-  await requireUser()
+  await requirePageAccess('page.horses')
   const { q = '' } = await searchParams
   const supabase = await createClient()
 
@@ -50,7 +50,7 @@ export default async function HorsesPage({
   const todayYear = new Date().getFullYear()
 
   return (
-    <div>
+    <div className="max-w-7xl mx-auto">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
         <div>

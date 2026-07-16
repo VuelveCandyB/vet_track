@@ -1,6 +1,5 @@
-import { requireUser, isAdmin } from '@/lib/auth'
+import { requirePageAccess } from '@/lib/auth'
 import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
 import AdminTabs from '@/components/admin/admin-tabs'
 import UserRow from '@/components/admin/user-row'
 import CreateUserModal from '@/components/admin/create-user-modal'
@@ -8,8 +7,7 @@ import { Button } from '@/components/ui/button'
 import { PALETTE } from '@/lib/palette'
 
 export default async function AdminUsersPage() {
-  const user = await requireUser()
-  if (!isAdmin(user.email!)) redirect('/dashboard')
+  await requirePageAccess('page.admin')
 
   const supabase = await createClient()
 
@@ -31,6 +29,11 @@ export default async function AdminUsersPage() {
     first_name: profileMap[u.id]?.first_name ?? '',
     last_name:  profileMap[u.id]?.last_name ?? '',
     roles:      rolesMap[u.id] ?? [],
+    notify_vaccinations: profileMap[u.id]?.notify_vaccinations ?? false,
+    license_number: profileMap[u.id]?.license_number ?? '',
+    license_renewal_date: profileMap[u.id]?.license_renewal_date ?? '',
+    phone1: profileMap[u.id]?.phone1 ?? '',
+    phone2: profileMap[u.id]?.phone2 ?? '',
   }))
 
   return (
@@ -54,7 +57,7 @@ export default async function AdminUsersPage() {
           <table className="w-full text-sm border-collapse">
             <thead>
               <tr style={{ borderBottom: `1px solid ${PALETTE.ui.border}` }}>
-                {['Email', 'Nombre', 'Apellido', 'Último acceso', 'Rol'].map(h => (
+                {['Email', 'Nombre', 'Apellido', 'Licencia', 'Renovación', 'Teléfono 1', 'Teléfono 2', 'Último acceso', 'Rol', 'Notif. Vacuna', 'Guardar'].map(h => (
                   <th key={h} className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider"
                     style={{ color: PALETTE.text.secondary }}>{h}</th>
                 ))}

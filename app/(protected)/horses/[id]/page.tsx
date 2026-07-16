@@ -6,8 +6,9 @@ import HorseActions from '@/components/horses/horse-actions'
 import { Badge } from '@/components/ui/badge'
 import AnimatedCapsuleDot from '@/components/timeline/animated-capsule-dot'
 import AnimatedDiagnosticoDot from '@/components/timeline/animated-diagnostico-dot'
+import AnimatedVaccinationDot from '@/components/timeline/animated-vaccination-dot'
 import Link from 'next/link'
-import type { Horse, Medication, VetlistEntry, EuthanasiaRecord, Drug, Diagnostico, TreatmentReport } from '@/lib/types'
+import type { Horse, Medication, VetlistEntry, EuthanasiaRecord, Drug, Diagnostico, TreatmentReport, Vaccination } from '@/lib/types'
 import { STATUS_LABEL } from '@/lib/constants'
 import { PALETTE } from '@/lib/palette'
 
@@ -68,8 +69,8 @@ export default async function HorseDetailPage({
 
   const [
     horseRes, medsRes, vetlistRes, euthRes,
-    drugsRes, diagRes, treatmentReportsRes, pmfReportsRes, vetName,
-    canEuth, officialVet,
+    drugsRes, diagRes, treatmentReportsRes, pmfReportsRes, vacRes,
+    itemCodesRes, catalogItemsRes, vetName, canEuth, officialVet,
   ] = await Promise.all([
     supabase.from('horses').select('*').eq('id', id).single(),
     supabase.from('medications').select('*').eq('horse_id', id).order('administered_at', { ascending: sort === 'asc' }),
@@ -79,6 +80,9 @@ export default async function HorseDetailPage({
     supabase.from('diagnosticos').select('*').eq('horse_id', id).order('fecha', { ascending: false }),
     supabase.from('treatment_reports').select('*, drug:drugs(nombre, categoria, tipo_restriccion)').eq('horse_id', id).order('fecha_tratamiento', { ascending: false }).limit(10),
     supabase.from('pmf_records').select('*, drug:drugs(nombre, categoria, tipo_restriccion)').eq('horse_id', id).order('fecha_tratamiento', { ascending: false }).limit(5),
+    supabase.from('vaccinations').select('*').eq('horse_id', id).order('fecha', { ascending: false }),
+    supabase.from('treatment_report_item_codes').select('treatment_report_id, catalog_item_id'),
+    supabase.from('catalog_items').select('id, name').eq('category', 'item_code'),
     getVetName(supabase, user),
     canRegisterEuthanasia(user.id, user.email!),
     isOfficialVet(user.id, user.email!),
@@ -92,6 +96,23 @@ export default async function HorseDetailPage({
   const diagnosticos = (diagRes.data ?? []) as Diagnostico[]
   const treatmentReports = (treatmentReportsRes.data ?? []) as (TreatmentReport & { drug?: { nombre: string; categoria?: string; tipo_restriccion?: string } })[]
   const pmfReports = (pmfReportsRes.data ?? []) as (TreatmentReport & { drug?: { nombre: string; categoria?: string; tipo_restriccion?: string } })[]
+  const vaccinations = (vacRes.data ?? []) as Vaccination[]
+
+  // Map EALLC item codes for treatment reports
+  const allItemCodes = (itemCodesRes.data ?? []) as { treatment_report_id: string; catalog_item_id: string }[]
+  const allCatalogItems = (catalogItemsRes.data ?? []) as { id: string; name: string }[]
+  const treatmentReportIds = new Set(treatmentReports.map(t => t.id))
+  const itemCodesForThisHorse = allItemCodes.filter(ic => treatmentReportIds.has(ic.treatment_report_id))
+  const catalogItemMap = Object.fromEntries(allCatalogItems.map(ci => [ci.id, ci.name]))
+  const reportItemCodesMap = Object.fromEntries(
+    treatmentReports.map(tr => [
+      tr.id,
+      itemCodesForThisHorse
+        .filter(ic => ic.treatment_report_id === tr.id)
+        .map(ic => catalogItemMap[ic.catalog_item_id])
+        .filter(Boolean)
+    ])
+  )
 
   const vetlistActiva = vetlist.find(e => !e.fecha_egreso) ?? null
 
@@ -254,6 +275,18 @@ export default async function HorseDetailPage({
                 </div>
               </>
             )}
+            {vaccinations.length > 0 && (() => {
+              const lastVaccination = vaccinations[0]
+              const nextVaccinationDate = new Date(new Date(lastVaccination.fecha).getTime() + 365 * 24 * 60 * 60 * 1000)
+                .toISOString()
+                .split('T')[0]
+              return (
+                <div className="flex justify-between py-2">
+                  <span className="text-xs" style={{ color: PALETTE.text.secondary }}>Próx. Vacuna</span>
+                  <span className="text-xs font-semibold" style={{ color: PALETTE.text.primary }}>{nextVaccinationDate}</span>
+                </div>
+              )
+            })()}
           </div>
         </div>
 
@@ -274,7 +307,7 @@ export default async function HorseDetailPage({
             </div>
           </div>
 
-          {medications.length === 0 && treatmentReports.length === 0 && pmfReports.length === 0 ? (
+          {medications.length === 0 && treatmentReports.length === 0 && pmfReports.length === 0 && diagnosticos.length === 0 && vaccinations.length === 0 ? (
             <div className="text-center py-14">
               <div className="text-base font-semibold mb-1" style={{ color: PALETTE.text.primary }}>Sin registros médicos</div>
               <div className="text-sm" style={{ color: PALETTE.text.primary }}>Este caballo no tiene medicamentos ni informes de tratamiento registrados aún.</div>
@@ -286,12 +319,13 @@ export default async function HorseDetailPage({
                 style={{ background: `linear-gradient(to bottom, ${PALETTE.primary.green} 0%, ${PALETTE.primary.green}30 100%)` }} />
 
               {(() => {
-                // Combine medications, treatment reports, PMF records, and diagnosticos
+                // Combine medications, treatment reports, PMF records, diagnosticos, and vaccinations
                 const combinedRecords = [
                   ...medications.map((m: any) => ({ ...m, recordType: 'medication' })),
                   ...treatmentReports.map((t: any) => ({ ...t, recordType: 'treatmentReport' })),
                   ...pmfReports.map((p: any) => ({ ...p, recordType: 'pmfReport' })),
-                  ...diagnosticos.map((d: any) => ({ ...d, recordType: 'diagnostico' }))
+                  ...diagnosticos.map((d: any) => ({ ...d, recordType: 'diagnostico' })),
+                  ...vaccinations.map((v: any) => ({ ...v, recordType: 'vaccination' }))
                 ].sort((a: any, b: any) => {
                   let dateA: number
                   let dateB: number
@@ -340,9 +374,14 @@ export default async function HorseDetailPage({
                                 {m.tipo_restriccion}
                               </Badge>
                             )}
+                            {m.detection_time_horas && (
+                              <span className="text-xs font-semibold" style={{ color: '#f97316' }}>
+                                Detección: {m.detection_time_horas}h
+                              </span>
+                            )}
                             {m.withdrawal_time_horas && (
                               <span className="text-xs font-semibold" style={{ color: '#f97316' }}>
-                                Tiempo restr.: {m.withdrawal_time_horas}h
+                                Restr.: {m.withdrawal_time_horas}h
                               </span>
                             )}
                           </div>
@@ -416,7 +455,10 @@ export default async function HorseDetailPage({
                     }
                     const [textColor, bgColor] = estadoColorMap[t.estado] || ['#9ca3af', '#f3f4f6']
                     const color = item.recordType === 'pmfReport' ? '#ec4899' : '#06b6d4'
-                    const artLabel = item.recordType === 'pmfReport' ? 'Art. 1412' : 'Art. 811'
+                    const isTreatmentReport = item.recordType === 'treatmentReport'
+                    const artLabel = item.recordType === 'pmfReport' ? 'Art. 1412' : null
+                    const reportCodes = isTreatmentReport ? reportItemCodesMap[t.id] || [] : []
+                    const reportHref = isTreatmentReport ? `/treatment-reports/${t.id}` : undefined
 
                     return (
                       <div key={`report-${t.id}`} className={`relative ${i < combinedRecords.length - 1 ? 'mb-5' : ''}`}>
@@ -425,34 +467,140 @@ export default async function HorseDetailPage({
                           <AnimatedCapsuleDot />
                         </div>
 
-                        <div
-                          className="flex items-start gap-4 p-4 rounded-lg border"
-                          style={{ background: '#F1F5F9', borderColor: PALETTE.ui.border, borderLeftColor: color, borderLeftWidth: '3px', borderLeftStyle: 'solid' }}>
+                        {reportHref ? (
+                          <Link href={reportHref} className="block transition-colors hover:opacity-80">
+                            <div
+                              className="flex items-start gap-4 p-4 rounded-lg border"
+                              style={{ background: '#F1F5F9', borderColor: PALETTE.ui.border, borderLeftColor: color, borderLeftWidth: '3px', borderLeftStyle: 'solid' }}>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 flex-wrap mb-2">
                               <span className="text-sm font-semibold" style={{ color: PALETTE.primary.green }}>
                                 {t.drug?.nombre || 'Medicamento'}
                               </span>
-                              <Badge className="text-xs" style={{ background: bgColor, color: textColor, border: 'none' }}>
-                                {t.estado.charAt(0).toUpperCase() + t.estado.slice(1)}
-                              </Badge>
                               {t.drug?.tipo_restriccion && (
                                 <Badge className="text-xs" style={{ background: '#fef3c722', color: '#92400e', border: 'none' }}>
                                   {t.drug.tipo_restriccion}
                                 </Badge>
                               )}
-                              <span className="text-xs" style={{ color: PALETTE.text.secondary }}>{artLabel}</span>
+                              {artLabel && (
+                                <span className="text-xs" style={{ color: PALETTE.text.secondary }}>{artLabel}</span>
+                              )}
                             </div>
                             <div className="text-xs mb-2" style={{ color: PALETTE.text.primary }}>
                               <span className="font-semibold">{t.dosis} {t.dosis_unidad}</span> · {t.vet_autorizado_nombre}
                             </div>
-                            <div className="text-xs" style={{ color: PALETTE.text.secondary }}>
+                            <div className="text-xs mb-2" style={{ color: PALETTE.text.secondary }}>
                               <span className="font-medium" style={{ color: PALETTE.text.primary }}>Dx:</span> {t.diagnostico.substring(0, 80)}
                               {t.diagnostico.length > 80 ? '...' : ''}
                             </div>
+                            {reportCodes.length > 0 && (
+                              <div className="flex gap-1.5 flex-wrap mb-2">
+                                {reportCodes.map((codeName: string) => {
+                                  const codePart = codeName.split(' — ')[0]
+                                  return (
+                                    <Badge key={codeName} className="text-xs" style={{ background: '#e0f2fe', color: '#0c4a6e', border: 'none' }}>
+                                      {codePart}
+                                    </Badge>
+                                  )
+                                })}
+                              </div>
+                            )}
+                            {t.tiempo_restriccion && (
+                              <div className="text-xs" style={{ color: '#f97316' }}>
+                                Restricción: {t.tiempo_restriccion}h {t.fecha_fin_tratamiento && `· Vence: ${t.fecha_fin_tratamiento}`}
+                              </div>
+                            )}
                           </div>
                           <div className="text-xs text-right flex-shrink-0" style={{ color: PALETTE.text.primary }}>
                             <div style={{ fontWeight: '600' }}>{t.fecha_tratamiento}</div>
+                          </div>
+                            </div>
+                          </Link>
+                        ) : (
+                          <div
+                            className="flex items-start gap-4 p-4 rounded-lg border"
+                            style={{ background: '#F1F5F9', borderColor: PALETTE.ui.border, borderLeftColor: color, borderLeftWidth: '3px', borderLeftStyle: 'solid' }}>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap mb-2">
+                                <span className="text-sm font-semibold" style={{ color: PALETTE.primary.green }}>
+                                  {t.drug?.nombre || 'Medicamento'}
+                                </span>
+                                <Badge className="text-xs" style={{ background: bgColor, color: textColor, border: 'none' }}>
+                                  {t.estado.charAt(0).toUpperCase() + t.estado.slice(1)}
+                                </Badge>
+                                {t.drug?.tipo_restriccion && (
+                                  <Badge className="text-xs" style={{ background: '#fef3c722', color: '#92400e', border: 'none' }}>
+                                    {t.drug.tipo_restriccion}
+                                  </Badge>
+                                )}
+                                {artLabel && (
+                                  <span className="text-xs" style={{ color: PALETTE.text.secondary }}>{artLabel}</span>
+                                )}
+                              </div>
+                              <div className="text-xs mb-2" style={{ color: PALETTE.text.primary }}>
+                                <span className="font-semibold">{t.dosis} {t.dosis_unidad}</span> · {t.vet_autorizado_nombre}
+                              </div>
+                              <div className="text-xs mb-2" style={{ color: PALETTE.text.secondary }}>
+                                <span className="font-medium" style={{ color: PALETTE.text.primary }}>Dx:</span> {t.diagnostico.substring(0, 80)}
+                                {t.diagnostico.length > 80 ? '...' : ''}
+                              </div>
+                              {reportCodes.length > 0 && (
+                                <div className="flex gap-1.5 flex-wrap mb-2">
+                                  {reportCodes.map((codeName: string) => {
+                                    const codePart = codeName.split(' — ')[0]
+                                    return (
+                                      <Badge key={codeName} className="text-xs" style={{ background: '#e0f2fe', color: '#0c4a6e', border: 'none' }}>
+                                        {codePart}
+                                      </Badge>
+                                    )
+                                  })}
+                                </div>
+                              )}
+                              {t.tiempo_restriccion && (
+                                <div className="text-xs" style={{ color: '#f97316' }}>
+                                  Restricción: {t.tiempo_restriccion}h {t.fecha_fin_tratamiento && `· Vence: ${t.fecha_fin_tratamiento}`}
+                                </div>
+                              )}
+                            </div>
+                            <div className="text-xs text-right flex-shrink-0" style={{ color: PALETTE.text.primary }}>
+                              <div style={{ fontWeight: '600' }}>{t.fecha_tratamiento}</div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )
+                  } else if (item.recordType === 'vaccination') {
+                    // Vaccination
+                    const v = item
+                    const color = '#1f9d6b'
+                    const nextVaccinationDate = new Date(new Date(v.fecha).getTime() + 365 * 24 * 60 * 60 * 1000)
+                      .toISOString()
+                      .split('T')[0]
+
+                    return (
+                      <div key={`vac-${v.id}`} className={`relative ${i < combinedRecords.length - 1 ? 'mb-5' : ''}`}>
+                        {/* Animated Vaccination Dot */}
+                        <div className="absolute -left-6 top-1/2 -translate-y-1/2 flex-shrink-0">
+                          <AnimatedVaccinationDot />
+                        </div>
+
+                        <div
+                          className="flex items-start gap-4 p-4 rounded-lg border"
+                          style={{ background: '#F1F5F9', borderColor: PALETTE.ui.border, borderLeftColor: color, borderLeftWidth: '3px', borderLeftStyle: 'solid' }}>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap mb-2">
+                              <span className="text-sm font-semibold" style={{ color }}>Vacunación</span>
+                            </div>
+                            <div className="text-xs mb-1" style={{ color: PALETTE.text.primary }}>
+                              <span className="font-medium">{v.vet_name}</span>
+                              {v.notas && <span> · {v.notas}</span>}
+                            </div>
+                            <div className="text-xs" style={{ color: PALETTE.text.secondary }}>
+                              Próxima: {nextVaccinationDate}
+                            </div>
+                          </div>
+                          <div className="text-xs text-right flex-shrink-0" style={{ color: PALETTE.text.primary }}>
+                            {v.fecha}
                           </div>
                         </div>
                       </div>

@@ -1,7 +1,7 @@
 'use server'
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
-import { requireUser } from '@/lib/auth'
+import { requireUser, can } from '@/lib/auth'
 import { getVetName } from './shared'
 
 const ALLOWED_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf'])
@@ -25,6 +25,8 @@ async function uploadAttachment(supabase: any, horseId: string, file: File, pref
 
 export async function createVetlistEntry(horseId: string, formData: FormData) {
   const user = await requireUser()
+  const allowed = await can(user, 'horses.vetlist_modal', 'full')
+  if (!allowed) throw new Error('Acceso denegado')
   const supabase = await createClient()
   const vetName = await getVetName(supabase, user)
 
@@ -51,6 +53,8 @@ export async function createVetlistEntry(horseId: string, formData: FormData) {
 
 export async function releaseVetlistEntry(horseId: string, entryId: string, formData: FormData) {
   const user = await requireUser()
+  const allowed = await can(user, 'horses.vetlist_release', 'full')
+  if (!allowed) throw new Error('Acceso denegado')
   const supabase = await createClient()
   const vetName = await getVetName(supabase, user)
 

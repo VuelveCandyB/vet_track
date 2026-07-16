@@ -1,0 +1,68 @@
+NOMBRE,EMAIL,PASSWORD,LICENCIA,RENOVACION,TEL1,TEL2
+"HILDA, AMOROS MEJIAS","hildamoros@hotmail.com","d917703436c071cf","21-050","2026-12-28","(787) 420-5589",""
+"FEDERICO, ARBONA ORTIZ","ficoarbona@gmail.com","c27d7fe01d2e91ce","19-812","2027-09-01","(787) 368-5177",""
+"RANDI, ARMAND CUBILLO","randiarmand@yahoo.com","974e52a60ea16e5c","20-239","2028-08-27","(504) 261-4897",""
+"VICTOR L., BOZZO BONILLA","victorbozzo.dvm@gmail.com","2e86920abdc68916","19-277","2027-06-16","(787) 368-5173","(787) 460-3997"
+"GUSTAVO, BRITO BRU","gbritodvm@yahoo.com","74cec9378ad68064","21-145","2027-05-22","(787) 312-3999","(787) 850-7380"
+"IVAN RENE, CARDONA DURAN","renecardonadvm@msn.com","9dddddb6fa91d0c1","20-647","2026-09-09","(787) 368-5172","(787) 368-5183"
+"JUAN, COLLAZO PEÑA","jcollazodvm@gmail.com","f204044d3eabeadb","19-506","2026-11-26","(787) 368-5176",""
+"JOSE, DE ANGEL RAMIREZ","jdeangel@equuspr.com","46598430e13eb84e","21-051","2028-03-05","(787) 502-2712",""
+"JOSE M., GARCIA BLANCO","equinepractitioners@yahoo.com","356d547537f5c036","20-922","2027-01-09","(787) 236-1191","(787) 886-1030"
+"RICARDO J., LOINAZ RIVERA","ricardoloinaz@gmail.com","1b936b6ea52c589f","19-508","2030-01-07","(787) 428-2884",""
+"NICOL, MEDINA GONZALEZ","nicolmgon@gmail.com","fd871361f0333e57","21-205","2027-12-16","(939) 579-4463",""
+"MARTA B, ROMAN VALLDEJULI","mbrvet2008@gmail.com","290bf5746f874194","21-173","2026-07-26","(787) 234-8799","(787) 612-6895"
+
+
+=== SQL PARA CREAR USUARIOS EN SUPABASE ===
+
+-- Crear usuario: HILDA, AMOROS MEJIAS
+-- Email: hildamoros@hotmail.com
+-- Password: d917703436c071cf
+
+-- Crear usuario: FEDERICO, ARBONA ORTIZ
+-- Email: ficoarbona@gmail.com
+-- Password: c27d7fe01d2e91ce
+
+-- Crear usuario: RANDI, ARMAND CUBILLO
+-- Email: randiarmand@yahoo.com
+-- Password: 974e52a60ea16e5c
+
+-- Crear usuario: VICTOR L., BOZZO BONILLA
+-- Email: victorbozzo.dvm@gmail.com
+-- Password: 2e86920abdc68916
+
+-- Crear usuario: GUSTAVO, BRITO BRU
+-- Email: gbritodvm@yahoo.com
+-- Password: 74cec9378ad68064
+
+-- Crear usuario: IVAN RENE, CARDONA DURAN
+-- Email: renecardonadvm@msn.com
+-- Password: 9dddddb6fa91d0c1
+
+-- Crear usuario: JUAN, COLLAZO PEÑA
+-- Email: jcollazodvm@gmail.com
+-- Password: f204044d3eabeadb
+
+-- Crear usuario: JOSE, DE ANGEL RAMIREZ
+-- Email: jdeangel@equuspr.com
+-- Password: 46598430e13eb84e
+
+-- Crear usuario: JOSE M., GARCIA BLANCO
+-- Email: equinepractitioners@yahoo.com
+-- Password: 356d547537f5c036
+
+-- Crear usuario: RICARDO J., LOINAZ RIVERA
+-- Email: ricardoloinaz@gmail.com
+-- Password: 1b936b6ea52c589f
+
+-- Crear usuario: NICOL, MEDINA GONZALEZ
+-- Email: nicolmgon@gmail.com
+-- Password: fd871361f0333e57
+
+-- Crear usuario: MARTA B, ROMAN VALLDEJULI
+-- Email: mbrvet2008@gmail.com
+-- Password: 290bf5746f874194
+
+
+
+Guardar este output en un archivo CSV para tener registro de usuario/password
