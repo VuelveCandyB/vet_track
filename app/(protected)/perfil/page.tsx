@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { PALETTE } from '@/lib/palette'
+import { getUserRoles } from '@/lib/actions/profile'
+import { getRoleLabel } from '@/lib/role-labels'
 
 type Status = 'idle' | 'saving' | 'ok' | 'error'
 
@@ -24,6 +26,11 @@ export default function PerfilPage() {
   const [email, setEmail] = useState('')
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
+  const [phone1, setPhone1] = useState('')
+  const [phone2, setPhone2] = useState('')
+  const [licenseNumber, setLicenseNumber] = useState('')
+  const [licenseRenewalDate, setLicenseRenewalDate] = useState('')
+  const [roles, setRoles] = useState<string[]>([])
   const [profileStatus, setProfileStatus] = useState<Status>('idle')
 
   const [newPassword, setNewPassword] = useState('')
@@ -36,15 +43,25 @@ export default function PerfilPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
       setEmail(user.email ?? '')
+
+      // Fetch profile data
       const { data } = await supabase
         .from('profiles')
-        .select('first_name, last_name')
+        .select('first_name, last_name, phone1, phone2, license_number, license_renewal_date')
         .eq('id', user.id)
         .single()
       if (data) {
         setFirstName(data.first_name ?? '')
         setLastName(data.last_name ?? '')
+        setPhone1(data.phone1 ?? '')
+        setPhone2(data.phone2 ?? '')
+        setLicenseNumber(data.license_number ?? '')
+        setLicenseRenewalDate(data.license_renewal_date ?? '')
       }
+
+      // Fetch user roles
+      const userRoles = await getUserRoles()
+      setRoles(userRoles)
     }
     load()
   }, [])
@@ -56,7 +73,7 @@ export default function PerfilPage() {
     if (!user) return
     const { error } = await supabase
       .from('profiles')
-      .update({ first_name: firstName, last_name: lastName })
+      .update({ first_name: firstName, last_name: lastName, phone1, phone2 })
       .eq('id', user.id)
     setProfileStatus(error ? 'error' : 'ok')
   }
@@ -108,9 +125,15 @@ export default function PerfilPage() {
         <form onSubmit={handleProfile} className="space-y-4">
           <div className="space-y-1.5">
             <Label className="text-xs font-semibold uppercase tracking-wider" style={labelStyle}>
-              Correo electrónico
+              Nombre de usuario
             </Label>
             <Input value={email} readOnly style={{ color: PALETTE.text.secondary, cursor: 'default' }} />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs font-semibold uppercase tracking-wider" style={labelStyle}>
+              Tipo de permiso
+            </Label>
+            <Input value={roles.map(r => getRoleLabel(r)).join(', ') || 'Sin rol asignado'} readOnly style={{ color: PALETTE.text.secondary, cursor: 'default' }} />
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1.5">
@@ -132,6 +155,44 @@ export default function PerfilPage() {
                 onChange={e => { setLastName(e.target.value); setProfileStatus('idle') }}
                 placeholder="García"
               />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold uppercase tracking-wider" style={labelStyle}>
+                Teléfono 1
+              </Label>
+              <Input
+                type="tel"
+                value={phone1}
+                onChange={e => { setPhone1(e.target.value); setProfileStatus('idle') }}
+                placeholder="(787) 000-0000"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold uppercase tracking-wider" style={labelStyle}>
+                Teléfono 2
+              </Label>
+              <Input
+                type="tel"
+                value={phone2}
+                onChange={e => { setPhone2(e.target.value); setProfileStatus('idle') }}
+                placeholder="(787) 000-0000"
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold uppercase tracking-wider" style={labelStyle}>
+                Número de licencia
+              </Label>
+              <Input value={licenseNumber} readOnly style={{ color: PALETTE.text.secondary, cursor: 'default' }} />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold uppercase tracking-wider" style={labelStyle}>
+                Fecha de renovación
+              </Label>
+              <Input value={licenseRenewalDate} readOnly style={{ color: PALETTE.text.secondary, cursor: 'default' }} />
             </div>
           </div>
           <div className="flex items-center gap-3">

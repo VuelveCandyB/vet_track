@@ -35,6 +35,28 @@ export default async function TreatmentReportDetailPage({
     )
   }
 
+  // Get veterinarian profile info (search by full name)
+  let vetProfile: any = null
+  if (report.vet_autorizado_nombre) {
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, first_name, last_name, license_number, license_renewal_date')
+
+    if (profiles) {
+      const searchName = report.vet_autorizado_nombre.toLowerCase().trim()
+      vetProfile = profiles.find((p: any) => {
+        const fullName = `${p.first_name ?? ''} ${p.last_name ?? ''}`.toLowerCase().trim()
+        // Try exact match first
+        if (fullName === searchName) return true
+        // Try partial match if first or last name is in the search string
+        const firstName = (p.first_name ?? '').toLowerCase().trim()
+        const lastName = (p.last_name ?? '').toLowerCase().trim()
+        if (firstName && lastName && searchName.includes(firstName) && searchName.includes(lastName)) return true
+        return false
+      })
+    }
+  }
+
   const typed = report as TreatmentReport & {
     horse?: { id: string; name: string; registration?: string; microchip?: string }
     drug?: { nombre: string; categoria: string; tipo_restriccion?: string; withdrawal_time_horas?: number }
@@ -184,9 +206,23 @@ export default async function TreatmentReportDetailPage({
           <h2 className="text-sm font-semibold uppercase tracking-wider mb-4" style={{ color: PALETTE.text.secondary }}>
             Veterinario Autorizado
           </h2>
-          <div>
-            <p className="text-xs" style={{ color: PALETTE.text.secondary }}>Nombre</p>
-            <p className="text-lg font-semibold">{typed.vet_autorizado_nombre || '—'}</p>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <p className="text-xs" style={{ color: PALETTE.text.secondary }}>Nombre</p>
+              <p className="text-lg font-semibold">{typed.vet_autorizado_nombre || '—'}</p>
+            </div>
+            {vetProfile?.license_number && (
+              <div>
+                <p className="text-xs" style={{ color: PALETTE.text.secondary }}>Licencia</p>
+                <p className="text-lg font-semibold">{vetProfile.license_number}</p>
+              </div>
+            )}
+            {vetProfile?.license_renewal_date && (
+              <div>
+                <p className="text-xs" style={{ color: PALETTE.text.secondary }}>Renovación de Licencia</p>
+                <p className="text-lg font-semibold">{new Date(vetProfile.license_renewal_date).toLocaleDateString('es-ES')}</p>
+              </div>
+            )}
           </div>
         </div>
 

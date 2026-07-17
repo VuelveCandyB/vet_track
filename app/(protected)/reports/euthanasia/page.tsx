@@ -1,4 +1,4 @@
-import { requirePageAccess } from '@/lib/auth'
+import { requirePageAccess, requireUser, isAdmin } from '@/lib/auth'
 import { createClient } from '@/lib/supabase/server'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -11,7 +11,16 @@ export default async function EuthanasiaReportPage({
   searchParams: Promise<{ horse?: string; vet?: string; date_from?: string; date_to?: string; notificado?: string }>
 }) {
   await requirePageAccess('page.reports')
-  const filters = await searchParams
+  const searchParamsObj = await searchParams
+  const filters = {
+    horse: searchParamsObj.horse ?? '',
+    vet: searchParamsObj.vet ?? '',
+    date_from: searchParamsObj.date_from ?? '',
+    date_to: searchParamsObj.date_to ?? '',
+    notificado: searchParamsObj.notificado ?? '',
+  }
+  const user = await requireUser()
+  const admin = isAdmin(user.email!)
   const supabase = await createClient()
 
   let rows: any[] = []
@@ -42,8 +51,10 @@ export default async function EuthanasiaReportPage({
     rows = data ?? []
   }
 
+  const hasFilters = Object.values(filters).some(f => f)
+
   return (
-    <div>
+    <div className="max-w-7xl mx-auto">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
         <div>
           <h1 className="text-2xl font-bold" style={{ color: PALETTE.primary.green, fontFamily: 'var(--font-sans)' }}>
@@ -51,10 +62,12 @@ export default async function EuthanasiaReportPage({
           </h1>
           <p className="text-sm mt-1" style={{ color: PALETTE.text.secondary }}>Registro histórico de eutanasias</p>
         </div>
-        <div className="flex gap-2">
-          <Link href="/reports/medications"><Button size="sm" style={{ background: PALETTE.primary.green, color: '#FFFFFF' }}>Medicaciones</Button></Link>
-          <Link href="/reports/vetlist"><Button size="sm" style={{ background: PALETTE.primary.green, color: '#FFFFFF' }}>Vetlist</Button></Link>
-        </div>
+        {admin && (
+          <div className="flex gap-2">
+            <Link href="/reports/medications"><Button size="sm" style={{ background: PALETTE.primary.green, color: '#FFFFFF' }}>Medicaciones</Button></Link>
+            <Link href="/reports/vetlist"><Button size="sm" style={{ background: PALETTE.primary.green, color: '#FFFFFF' }}>Vetlist</Button></Link>
+          </div>
+        )}
       </div>
 
       {/* Filters */}
@@ -62,24 +75,25 @@ export default async function EuthanasiaReportPage({
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 items-end">
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5" style={{ color: PALETTE.text.secondary }}>Caballo</label>
-            <Input name="horse" defaultValue={filters.horse} placeholder="Nombre..." />
+            <Input key={`horse-${filters.horse}`} name="horse" defaultValue={filters.horse} placeholder="Nombre..." suppressHydrationWarning />
           </div>
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5" style={{ color: PALETTE.text.secondary }}>Veterinario</label>
-            <Input name="vet" defaultValue={filters.vet} placeholder="Nombre..." />
+            <Input key={`vet-${filters.vet}`} name="vet" defaultValue={filters.vet} placeholder="Nombre..." suppressHydrationWarning />
           </div>
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5" style={{ color: PALETTE.text.secondary }}>Desde</label>
-            <Input type="date" name="date_from" defaultValue={filters.date_from} />
+            <Input key={`date_from-${filters.date_from}`} type="date" name="date_from" defaultValue={filters.date_from} suppressHydrationWarning />
           </div>
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5" style={{ color: PALETTE.text.secondary }}>Hasta</label>
-            <Input type="date" name="date_to" defaultValue={filters.date_to} />
+            <Input key={`date_to-${filters.date_to}`} type="date" name="date_to" defaultValue={filters.date_to} suppressHydrationWarning />
           </div>
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5" style={{ color: PALETTE.text.secondary }}>Propietario</label>
-            <select name="notificado" defaultValue={filters.notificado ?? ''} className="flex h-9 w-full rounded-md border px-3 py-1 text-sm"
-              style={{ background: PALETTE.background.white, borderColor: PALETTE.ui.border, color: PALETTE.text.primary }}>
+            <select name="notificado" defaultValue={filters.notificado} className="flex h-9 w-full rounded-md border px-3 py-1 text-sm"
+              style={{ background: PALETTE.background.white, borderColor: PALETTE.ui.border, color: PALETTE.text.primary }}
+              suppressHydrationWarning>
               <option value="">Todos</option>
               <option value="si">Notificado</option>
               <option value="no">No notificado</option>
@@ -87,10 +101,15 @@ export default async function EuthanasiaReportPage({
           </div>
           <div className="flex gap-2">
             <Button type="submit" style={{ background: PALETTE.primary.green, color: '#FFFFFF' }} className="flex-1">Filtrar</Button>
-            <Link href="/reports/euthanasia"><Button variant="ghost" type="button">✕</Button></Link>
           </div>
         </div>
       </form>
+
+      {hasFilters && (
+        <div className="mb-4">
+          <Link href="/reports/euthanasia"><Button size="sm" variant="ghost">Limpiar filtros</Button></Link>
+        </div>
+      )}
 
       {/* Table */}
       {noResults ? (

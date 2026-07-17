@@ -17,8 +17,10 @@ export const PERMISSIONS: Record<string, Partial<Record<Role, Level>>> = {
     director: 'view',
   },
   'page.reports': {
+    authorized_vet: 'view',
     official_vet: 'view',
     director: 'view',
+    euthanasia: 'view',
   },
   'page.treatment_reports': {
     authorized_vet: 'full',

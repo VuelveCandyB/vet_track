@@ -70,7 +70,7 @@ export default async function HorseDetailPage({
   const [
     horseRes, medsRes, vetlistRes, euthRes,
     drugsRes, diagRes, treatmentReportsRes, pmfReportsRes, vacRes,
-    itemCodesRes, catalogItemsRes, vetName, canEuth, officialVet,
+    itemCodesRes, catalogItemsRes, vetName, canEuth, officialVet, profilesRes,
   ] = await Promise.all([
     supabase.from('horses').select('*').eq('id', id).single(),
     supabase.from('medications').select('*').eq('horse_id', id).order('administered_at', { ascending: sort === 'asc' }),
@@ -86,6 +86,7 @@ export default async function HorseDetailPage({
     getVetName(supabase, user),
     canRegisterEuthanasia(user.id, user.email!),
     isOfficialVet(user.id, user.email!),
+    supabase.from('profiles').select('id, first_name, last_name, license_number'),
   ])
 
   const horse = horseRes.data as Horse
@@ -97,6 +98,19 @@ export default async function HorseDetailPage({
   const treatmentReports = (treatmentReportsRes.data ?? []) as (TreatmentReport & { drug?: { nombre: string; categoria?: string; tipo_restriccion?: string } })[]
   const pmfReports = (pmfReportsRes.data ?? []) as (TreatmentReport & { drug?: { nombre: string; categoria?: string; tipo_restriccion?: string } })[]
   const vaccinations = (vacRes.data ?? []) as Vaccination[]
+
+  // Create a map of vet_name -> license_number
+  const licenseMap: Record<string, string> = {}
+  if (profilesRes.data) {
+    (profilesRes.data as any[]).forEach(p => {
+      if (p.license_number) {
+        const fullName = `${p.first_name ?? ''} ${p.last_name ?? ''}`.trim()
+        if (fullName) {
+          licenseMap[fullName] = p.license_number
+        }
+      }
+    })
+  }
 
   // Map EALLC item codes for treatment reports
   const allItemCodes = (itemCodesRes.data ?? []) as { treatment_report_id: string; catalog_item_id: string }[]
@@ -386,7 +400,7 @@ export default async function HorseDetailPage({
                             )}
                           </div>
                           <div className="text-xs" style={{ color: PALETTE.text.primary }}>
-                            {m.vet_name}{m.drug_categoria ? ` · ${m.drug_categoria}` : ''}
+                            {m.vet_name}{m.drug_categoria ? ` · ${m.drug_categoria}` : ''}{licenseMap[m.vet_name] ? ` · Lic. ${licenseMap[m.vet_name]}` : ''}
                           </div>
                         </div>
                         <div className="flex items-center gap-2 flex-shrink-0">
@@ -487,7 +501,7 @@ export default async function HorseDetailPage({
                               )}
                             </div>
                             <div className="text-xs mb-2" style={{ color: PALETTE.text.primary }}>
-                              <span className="font-semibold">{t.dosis} {t.dosis_unidad}</span> · {t.vet_autorizado_nombre}
+                              <span className="font-semibold">{t.dosis} {t.dosis_unidad}</span> · {t.vet_autorizado_nombre}{licenseMap[t.vet_autorizado_nombre] ? ` · Lic. ${licenseMap[t.vet_autorizado_nombre]}` : ''}{t.profiles?.license_number ? ` · Lic. ${t.profiles.license_number}` : ''}
                             </div>
                             <div className="text-xs mb-2" style={{ color: PALETTE.text.secondary }}>
                               <span className="font-medium" style={{ color: PALETTE.text.primary }}>Dx:</span> {t.diagnostico.substring(0, 80)}
@@ -538,7 +552,7 @@ export default async function HorseDetailPage({
                                 )}
                               </div>
                               <div className="text-xs mb-2" style={{ color: PALETTE.text.primary }}>
-                                <span className="font-semibold">{t.dosis} {t.dosis_unidad}</span> · {t.vet_autorizado_nombre}
+                                <span className="font-semibold">{t.dosis} {t.dosis_unidad}</span> · {t.vet_autorizado_nombre}{licenseMap[t.vet_autorizado_nombre] ? ` · Lic. ${licenseMap[t.vet_autorizado_nombre]}` : ''}{t.profiles?.license_number ? ` · Lic. ${t.profiles.license_number}` : ''}
                               </div>
                               <div className="text-xs mb-2" style={{ color: PALETTE.text.secondary }}>
                                 <span className="font-medium" style={{ color: PALETTE.text.primary }}>Dx:</span> {t.diagnostico.substring(0, 80)}
@@ -592,7 +606,7 @@ export default async function HorseDetailPage({
                               <span className="text-sm font-semibold" style={{ color }}>Vacunación</span>
                             </div>
                             <div className="text-xs mb-1" style={{ color: PALETTE.text.primary }}>
-                              <span className="font-medium">{v.vet_name}</span>
+                              <span className="font-medium">{v.vet_name}{licenseMap[v.vet_name] ? ` · Lic. ${licenseMap[v.vet_name]}` : ''}</span>{v.profiles?.license_number ? <span> · Lic. {v.profiles.license_number}</span> : ''}
                               {v.notas && <span> · {v.notas}</span>}
                             </div>
                             <div className="text-xs" style={{ color: PALETTE.text.secondary }}>
@@ -637,7 +651,7 @@ export default async function HorseDetailPage({
                               )}
                             </div>
                             <div className="text-xs" style={{ color: PALETTE.text.primary }}>
-                              <span className="font-medium">{d.vet_name}</span>
+                              <span className="font-medium">{d.vet_name}</span>{d.profiles?.license_number ? <span> · Lic. {d.profiles.license_number}</span> : ''}
                             </div>
                           </div>
                           <div className="text-xs text-right flex-shrink-0" style={{ color: PALETTE.text.primary }}>

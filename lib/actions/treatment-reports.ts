@@ -19,9 +19,6 @@ export async function createTreatmentReport(formData: FormData) {
   if (!drug_id?.trim()) {
     throw new Error('Debe seleccionar un medicamento')
   }
-  if (itemCodeIds.length === 0) {
-    throw new Error('Debe seleccionar al menos un código de diagnóstico o procedimiento')
-  }
 
   const numero_identificacion_caballo = formData.get('numero_identificacion_caballo') as string | null
   const establo = (formData.get('establo') as string) || ''
