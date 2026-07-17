@@ -1,9 +1,11 @@
 import { requirePageAccess } from '@/lib/auth'
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
+import { Info } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
 import SyncButton from '@/components/horses/sync-button'
 import { PALETTE } from '@/lib/palette'
 
@@ -40,7 +42,7 @@ export default async function HorsesPage({
     .order('name')
     .limit(q ? 2000 : 200)
 
-  if (q) query.ilike('name', `%${q}%`)
+  if (q) query.or(`name.ilike.%${q}%,microchip.ilike.%${q}%`)
 
   const [{ data: horses }, { count: total }] = await Promise.all([
     query,
@@ -67,8 +69,14 @@ export default async function HorsesPage({
       </div>
 
       {/* Search */}
-      <form method="get" className="mb-5 flex gap-3 w-full max-w-md">
-        <Input name="q" defaultValue={q} placeholder="Buscar por nombre..." className="flex-1" />
+      <form method="get" className="mb-5 flex gap-3 w-full max-w-md items-center">
+        <Input name="q" defaultValue={q} placeholder="Buscar por nombre o microchip..." className="flex-1" />
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Info className="w-4 h-4" style={{ color: PALETTE.text.secondary, cursor: 'help' }} />
+          </TooltipTrigger>
+          <TooltipContent>También podés buscar por número de microchip</TooltipContent>
+        </Tooltip>
         <Button type="submit" variant="secondary">Buscar</Button>
         {q && (
           <Link href="/horses">
