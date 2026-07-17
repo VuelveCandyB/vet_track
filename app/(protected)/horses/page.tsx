@@ -76,7 +76,7 @@ export default async function HorsesPage({
             <TooltipTrigger asChild>
               <Info className="w-4 h-4" style={{ color: PALETTE.text.secondary, cursor: 'help' }} />
             </TooltipTrigger>
-            <TooltipContent>También podés buscar por número de microchip</TooltipContent>
+            <TooltipContent>También puedes buscar por número de microchip</TooltipContent>
           </Tooltip>
           <Button type="submit" variant="secondary">Buscar</Button>
           {q && (
