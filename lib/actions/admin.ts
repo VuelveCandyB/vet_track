@@ -232,3 +232,31 @@ export async function createUser(formData: FormData): Promise<{ error?: string }
   revalidatePath('/admin/users')
   return {}
 }
+
+// ── BLOQUEAR/DESBLOQUEAR USUARIO ────
+export async function blockUser(userId: string) {
+  const user = await requireAdmin()
+
+  if (user.id === userId) {
+    throw new Error('No puedes bloquearte a ti mismo')
+  }
+
+  const admin = createAdminClient()
+  const { error } = await admin.auth.admin.updateUserById(userId, {
+    ban_duration: '876000h', // ~100 años ≈ indefinido
+  })
+
+  if (error) throw new Error(error.message)
+  revalidatePath('/admin/users')
+}
+
+export async function unblockUser(userId: string) {
+  await requireAdmin()
+  const admin = createAdminClient()
+  const { error } = await admin.auth.admin.updateUserById(userId, {
+    ban_duration: 'none',
+  })
+
+  if (error) throw new Error(error.message)
+  revalidatePath('/admin/users')
+}

@@ -34,6 +34,7 @@ export default async function AdminUsersPage() {
     license_renewal_date: profileMap[u.id]?.license_renewal_date ?? '',
     phone1: profileMap[u.id]?.phone1 ?? '',
     phone2: profileMap[u.id]?.phone2 ?? '',
+    blocked: u.banned_until && new Date(u.banned_until) > new Date(),
   }))
 
   return (
@@ -57,7 +58,7 @@ export default async function AdminUsersPage() {
           <table className="w-full text-sm border-collapse">
             <thead>
               <tr style={{ borderBottom: `1px solid ${PALETTE.ui.border}` }}>
-                {['Email', 'Nombre', 'Apellido', 'Licencia', 'Renovación', 'Teléfono 1', 'Teléfono 2', 'Último acceso', 'Rol', 'Notif. Vacuna', 'Guardar'].map(h => (
+                {['Email', 'Nombre', 'Apellido', 'Licencia', 'Renovación', 'Teléfono 1', 'Teléfono 2', 'Último acceso', 'Estado', 'Rol', 'Notif. Vacuna', 'Guardar'].map(h => (
                   <th key={h} className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider"
                     style={{ color: PALETTE.text.secondary }}>{h}</th>
                 ))}
@@ -65,7 +66,7 @@ export default async function AdminUsersPage() {
             </thead>
             <tbody>
               {users.map((u: any) => (
-                <UserRow key={u.id} user={u} />
+                <UserRow key={u.id} user={u} blocked={u.blocked} />
               ))}
             </tbody>
           </table>

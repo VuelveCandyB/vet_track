@@ -1,9 +1,11 @@
 'use client'
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import RoleManagementModal from '@/components/admin/role-management-modal'
-import { updateUserProfile, setVaccinationNotifications } from '@/lib/actions/admin'
+import ConfirmDeleteButton from '@/components/admin/confirm-delete-button'
+import { updateUserProfile, setVaccinationNotifications, blockUser, unblockUser } from '@/lib/actions/admin'
 import { PALETTE } from '@/lib/palette'
 
 interface UserRowProps {
@@ -20,9 +22,11 @@ interface UserRowProps {
     phone1: string
     phone2: string
   }
+  blocked?: boolean
 }
 
-export default function UserRow({ user: u }: UserRowProps) {
+export default function UserRow({ user: u, blocked = false }: UserRowProps) {
+  const router = useRouter()
   const [firstName, setFirstName] = useState(u.first_name)
   const [lastName, setLastName] = useState(u.last_name)
   const [notifyVaccinations, setNotifyVaccinations] = useState(u.notify_vaccinations)
@@ -32,6 +36,7 @@ export default function UserRow({ user: u }: UserRowProps) {
   const [phone2, setPhone2] = useState(u.phone2)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [notifyPending, setNotifyPending] = useState(false)
+  const [blockPending, setBlockPending] = useState(false)
 
   const handleSave = async () => {
     setIsSubmitting(true)
@@ -64,8 +69,40 @@ export default function UserRow({ user: u }: UserRowProps) {
     }
   }
 
+  const handleBlock = async () => {
+    setBlockPending(true)
+    try {
+      await blockUser(u.id)
+      router.refresh()
+    } catch (err) {
+      console.error('Error al bloquear usuario:', err)
+      alert(`Error al bloquear usuario: ${err instanceof Error ? err.message : 'Desconocido'}`)
+    } finally {
+      setBlockPending(false)
+    }
+  }
+
+  const handleUnblock = async () => {
+    setBlockPending(true)
+    try {
+      await unblockUser(u.id)
+      router.refresh()
+    } catch (err) {
+      console.error('Error al desbloquear usuario:', err)
+      alert(`Error al desbloquear usuario: ${err instanceof Error ? err.message : 'Desconocido'}`)
+    } finally {
+      setBlockPending(false)
+    }
+  }
+
   return (
-    <tr className="transition-colors hover:bg-gray-50" style={{ borderBottom: `1px solid ${PALETTE.ui.border}` }}>
+    <tr
+      className="transition-colors hover:bg-gray-50"
+      style={{
+        borderBottom: `1px solid ${PALETTE.ui.border}`,
+        opacity: blocked ? 0.6 : 1,
+      }}
+    >
       <td className="px-5 py-3 text-sm" style={{ color: PALETTE.text.primary }}>
         {u.email}
       </td>
@@ -119,6 +156,46 @@ export default function UserRow({ user: u }: UserRowProps) {
       </td>
       <td className="px-5 py-3 text-xs" style={{ color: PALETTE.text.secondary }}>
         {u.last_sign_in_at ? u.last_sign_in_at.slice(0, 10) : '—'}
+      </td>
+      <td className="px-5 py-3">
+        <div className="flex items-center gap-2">
+          <span
+            className="inline-block px-2 py-1 text-xs font-semibold rounded"
+            style={{
+              background: blocked ? '#fee2e2' : '#dcfce7',
+              color: blocked ? '#7f1d1d' : '#166534',
+            }}
+          >
+            {blocked ? 'Bloqueado' : 'Activo'}
+          </span>
+          {blocked ? (
+            <button
+              type="button"
+              onClick={handleUnblock}
+              disabled={blockPending}
+              className="text-xs px-2 py-1 rounded transition-colors"
+              style={{
+                background: PALETTE.primary.green,
+                color: '#FFFFFF',
+              }}
+              title="Desbloquear usuario"
+            >
+              {blockPending ? '...' : 'Desbloquear'}
+            </button>
+          ) : (
+            <ConfirmDeleteButton
+              action={handleBlock}
+              message={`¿Bloquear a ${u.email}? No podrá iniciar sesión.`}
+              className="text-xs px-2 py-1 rounded transition-colors"
+              style={{
+                background: '#dc2626',
+                color: '#FFFFFF',
+              }}
+            >
+              {blockPending ? '...' : 'Bloquear'}
+            </ConfirmDeleteButton>
+          )}
+        </div>
       </td>
       <td className="px-5 py-3">
         <RoleManagementModal
