@@ -1,5 +1,7 @@
 -- Add banned_until to list_auth_users function
-CREATE OR REPLACE FUNCTION list_auth_users()
+DROP FUNCTION IF EXISTS list_auth_users();
+
+CREATE FUNCTION list_auth_users()
 RETURNS TABLE (
   id UUID,
   email TEXT,

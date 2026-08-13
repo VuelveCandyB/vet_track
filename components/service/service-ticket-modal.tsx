@@ -26,6 +26,7 @@ const SITUACIONES = [
   'Problema con vetlist',
   'Caballo no aparece',
   'Problema de acceso/login',
+  'Reportar Confidencia',
   'Otro',
 ]
 
