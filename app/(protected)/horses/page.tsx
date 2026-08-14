@@ -35,16 +35,19 @@ export default async function HorsesPage({
 
   const query = supabase
     .from('horses')
-    .select('id, name, color, status, microchip, birth_date, gender')
+    .select('id, name, color, status, microchip, birth_date, gender, red_flag')
     .order('name')
     .limit(q ? 2000 : 200)
 
   if (q) query.or(`name.ilike.%${q}%,microchip.ilike.%${q}%`)
 
-  const [{ data: horses }, { count: total }] = await Promise.all([
+  const [{ data: horses }, { count: total }, { data: vetlistData }] = await Promise.all([
     query,
     supabase.from('horses').select('id', { count: 'exact', head: true }),
+    supabase.from('vetlist').select('horse_id').is('fecha_egreso', null),
   ])
+
+  const vetlistActiveIds = new Set((vetlistData || []).map((v: any) => v.horse_id))
 
   const todayYear = new Date().getFullYear()
 
@@ -78,7 +81,7 @@ export default async function HorsesPage({
           <table className="w-full text-sm border-collapse">
             <thead>
               <tr style={{ borderBottom: `1px solid ${PALETTE.ui.border}` }}>
-                {['Nombre', 'Color', 'Estado', 'Género', 'Edad', 'Microchip'].map(h => (
+                {['Nombre', 'Color', 'Estado', 'Indicadores', 'Género', 'Edad', 'Microchip'].map(h => (
                   <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider"
                     style={{ color: PALETTE.text.secondary }}>
                     {h}
@@ -89,7 +92,7 @@ export default async function HorsesPage({
             <tbody>
               {!horses?.length ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-12 text-center" style={{ color: PALETTE.text.secondary }}>
+                  <td colSpan={7} className="px-4 py-12 text-center" style={{ color: PALETTE.text.secondary }}>
                     Sin resultados
                   </td>
                 </tr>
@@ -116,6 +119,19 @@ export default async function HorsesPage({
                     <Badge className={`text-xs border ${STATUS_COLOR[horse.status] ?? ''}`}>
                       {STATUS_LABEL[horse.status] ?? horse.status}
                     </Badge>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      {horse.red_flag && (
+                        <Badge className="text-xs border bg-red-100 text-red-800 border-red-300">Red Flag</Badge>
+                      )}
+                      {vetlistActiveIds.has(horse.id) && (
+                        <Badge className="text-xs border bg-orange-100 text-orange-800 border-orange-300">Vetlist</Badge>
+                      )}
+                      {!horse.red_flag && !vetlistActiveIds.has(horse.id) && (
+                        <span style={{ color: PALETTE.text.secondary }}>—</span>
+                      )}
+                    </div>
                   </td>
                   <td className="px-4 py-3" style={{ color: PALETTE.text.secondary }}>{horse.gender || '—'}</td>
                   <td className="px-4 py-3" style={{ color: PALETTE.text.secondary }}>
