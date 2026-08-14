@@ -11,7 +11,7 @@ export default async function DashboardPage() {
   const officialVet = await isOfficialVet(user.id, user.email!)
 
   const [
-    statsRes, recentMedsRes, vetlistRes, medsHoyRes, fallecidosRes, diagRes
+    statsRes, recentMedsRes, vetlistRes, medsHoyRes, fallecidosRes, diagRes, redFlagCountRes, redFlagListRes
   ] = await Promise.all([
     supabase.rpc('get_horse_stats'),
     supabase.from('treatment_reports').select('id, drug:drugs(nombre), fecha_tratamiento, hora_tratamiento, vet_autorizado_nombre, horse_id, horses(name)').order('fecha_tratamiento', { ascending: false }).limit(8),
@@ -19,6 +19,8 @@ export default async function DashboardPage() {
     supabase.from('treatment_reports').select('id', { count: 'exact', head: true }).eq('fecha_tratamiento', today),
     supabase.from('horses').select('id', { count: 'exact', head: true }).eq('status', 'deceased'),
     officialVet ? supabase.from('diagnosticos').select('id, horse_id, diagnostico, vet_name, fecha, horses(name)').eq('recomendar_vetlist', true).order('fecha', { ascending: false }).limit(10) : Promise.resolve({ data: [] }),
+    supabase.from('horses').select('id', { count: 'exact', head: true }).eq('red_flag', true),
+    supabase.from('horses').select('id, name, red_flag_reason, red_flag_by, red_flag_date').eq('red_flag', true).order('red_flag_date', { ascending: false }).limit(8),
   ])
 
   const statsRaw = statsRes.data || {}
@@ -27,6 +29,8 @@ export default async function DashboardPage() {
   const medsHoy = medsHoyRes.count || 0
   const fallecidos = fallecidosRes.count || 0
   const diagPendientes = diagRes.data || []
+  const redFlagCount = redFlagCountRes.count || 0
+  const redFlagList = redFlagListRes.data || []
 
   const stats = {
     total:    (statsRaw as Record<string, number>).total    ?? 0,
@@ -36,6 +40,7 @@ export default async function DashboardPage() {
     deceased: fallecidos,
     vetlist:  vetlistActiva.length,
     meds_hoy: medsHoy,
+    red_flag: redFlagCount,
   }
 
   return (
@@ -50,14 +55,15 @@ export default async function DashboardPage() {
       </div>
 
       {/* Stats Strip — Grid Distribution */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-6 md:gap-8 py-6 md:py-8 border-b" style={{ borderColor: PALETTE.ui.border }}>
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-6 md:gap-8 py-6 md:py-8 border-b" style={{ borderColor: PALETTE.ui.border }}>
         {[
-          { label: 'Total Caballos',   value: stats.total,    color: PALETTE.primary.green },
-          { label: 'Activos',          value: stats.active,   color: '#059669' },
-          { label: 'En Descanso',      value: stats.rest,     color: '#f59e0b' },
-          { label: 'En Vetlist',       value: stats.vetlist,  color: '#d97706' },
-          { label: 'Meds. Hoy',        value: stats.meds_hoy, color: '#0ea5e9' },
-          { label: 'Fallecidos',       value: stats.deceased, color: '#6b7280' },
+          { label: 'Total Caballos',   value: stats.total,      color: PALETTE.primary.green },
+          { label: 'Activos',          value: stats.active,     color: '#059669' },
+          { label: 'En Descanso',      value: stats.rest,       color: '#f59e0b' },
+          { label: 'En Vetlist',       value: stats.vetlist,    color: '#d97706' },
+          { label: 'Meds. Hoy',        value: stats.meds_hoy,   color: '#0ea5e9' },
+          { label: 'Red Flag',         value: stats.red_flag,   color: '#dc2626' },
+          { label: 'Fallecidos',       value: stats.deceased,   color: '#6b7280' },
         ].map(({ label, value, color }) => (
           <div key={label} className="text-center">
             <div className="text-3xl md:text-4xl font-bold tabular-nums mb-1" style={{ color }}>
@@ -72,6 +78,46 @@ export default async function DashboardPage() {
 
       {/* Sections Stack */}
       <div className="space-y-8 mt-8">
+
+        {/* Red Flag */}
+        {redFlagList.length > 0 && (
+          <div className="section">
+            <span className="text-sm font-semibold uppercase tracking-wider mb-3 block" style={{ color: PALETTE.text.secondary }}>
+              Caballos con Red Flag
+            </span>
+            <div className="rounded-lg border overflow-hidden" style={{ background: PALETTE.background.white, borderColor: PALETTE.ui.border }}>
+              {/* Header */}
+              <div className="grid gap-4 px-4 py-2.5" style={{ gridTemplateColumns: '140px 200px 1fr 120px', background: '#f8fafc', borderBottom: `1px solid ${PALETTE.ui.border}` }}>
+                <div className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: PALETTE.text.secondary }}>Caballo</div>
+                <div className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: PALETTE.text.secondary }}>Motivo</div>
+                <div></div>
+                <div className="text-[11px] font-semibold uppercase tracking-wider text-right" style={{ color: PALETTE.text.secondary }}>Fecha</div>
+              </div>
+              {/* Body */}
+              <>
+                {redFlagList.map((r: any, idx: number) => (
+                  <Link key={r.id} href={`/horses/${r.id}`}
+                    className="grid gap-4 px-4 py-3 transition-colors hover:bg-slate-50"
+                    style={{
+                      gridTemplateColumns: '140px 200px 1fr 120px',
+                      borderBottom: idx < redFlagList.length - 1 ? `1px solid ${PALETTE.ui.border}` : 'none'
+                    }}>
+                    <div className="text-sm font-medium truncate" style={{ color: PALETTE.text.primary }}>
+                      {r.name ?? '—'}
+                    </div>
+                    <div className="text-sm truncate" style={{ color: PALETTE.text.secondary }}>
+                      {r.red_flag_reason ?? '—'}
+                    </div>
+                    <div></div>
+                    <div className="text-sm text-right" style={{ color: PALETTE.text.primary }}>
+                      {r.red_flag_date?.slice(0, 10) ?? '—'}
+                    </div>
+                  </Link>
+                ))}
+              </>
+            </div>
+          </div>
+        )}
 
         {/* Vetlist activa */}
         <div className="section">

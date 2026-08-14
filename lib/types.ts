@@ -10,6 +10,10 @@ export interface Horse {
   microchip?: string
   gender?: string
   ubicacion?: string
+  red_flag?: boolean
+  red_flag_reason?: string
+  red_flag_by?: string
+  red_flag_date?: string
 }
 
 export interface Medication {

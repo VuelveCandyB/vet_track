@@ -5,7 +5,9 @@ import { createClient } from '@/lib/supabase/server'
 import { requireUser } from '@/lib/auth'
 
 const BASE_URL = 'https://hipodromocamarero.crioonline.com/App/Guest/GroupOfHorses/1364'
-const CONCURRENCY = 5 // páginas en paralelo a la vez
+const MIN_DELAY_MS = 800
+const MAX_DELAY_MS = 20000
+const MAX_CONSECUTIVE_FAILURES = 5
 
 const COLOR_MAP: Record<string, string> = {
   BAY: 'Bay', DKBAY: 'Dark Bay', CHEST: 'Chestnut',
@@ -27,24 +29,47 @@ function parseDate(raw: string): string | null {
 function parsePage(html: string): any[] {
   const $ = load(html)
   const horses: any[] = []
+
   $('tbody tr').each((_, tr) => {
-    const tds = $(tr).find('td')
-    if (tds.length < 9) return
-    const name = $(tds[1]).text().trim()
+    const $tr = $(tr)
+    const tds = $tr.find('td')
+
+    // Extract by cell index (no data-field attributes)
+    // td[0] = gender icon (skip)
+    // td[1] = name
+    // td[2] = color
+    // td[3] = empty (ID)
+    // td[4] = registration
+    // td[5] = microchip
+    // td[6] = birth_date
+    // td[7] = ubicacion
+    // td[8] = age (skip)
+
+    if (tds.length < 7) return
+
+    const name = $(tds[1]).text().trim() || null
     if (!name) return
+
     const colorRaw = $(tds[2]).text().trim().toUpperCase()
-    const genderTag = $(tds[0]).find('[title]').attr('title')
+    const registration = $(tds[4]).text().trim() || null
+    const microchip_raw = $(tds[5]).text().trim()
+    const birth_date_str = $(tds[6]).text().trim()
+    const ubicacion = $(tds[7]).text().trim() || null
+
     horses.push({
       name,
       color:        COLOR_MAP[colorRaw] ?? (colorRaw ? colorRaw.charAt(0) + colorRaw.slice(1).toLowerCase() : null),
-      registration: $(tds[4]).text().trim() || null,
-      microchip:    $(tds[6]).text().trim().replace(/^\*/, '') || null,
-      birth_date:   parseDate($(tds[7]).text().trim()),
-      ubicacion:    $(tds[8]).text().trim() || null,
-      gender:       genderTag ? (GENDER_MAP[genderTag] ?? null) : null,
+      registration: registration || null,
+      microchip:    microchip_raw.replace(/^\*/, '') || null,
+      birth_date:   parseDate(birth_date_str),
+      ubicacion:    ubicacion || null,
+      gender:       null, // Gender determined by icon, not easily extractable
       status:       'active',
+      detail_url_id: null, // Not available in this HTML structure
     })
   })
+
+  console.log(`[SYNC-PARSE] Parsed ${horses.length} horses from page`)
   return horses
 }
 
@@ -53,17 +78,29 @@ function totalPages(html: string): number {
   return match ? parseInt(match[1]) : 1
 }
 
-function stableKey(h: any): string {
-  if (h.microchip) return `chip:${h.microchip}`
-  return `name:${(h.name ?? '').trim().toLowerCase()}:${h.birth_date ?? ''}`
+function keysFor(h: any): string[] {
+  const keys: string[] = []
+  if (h.detail_url_id) keys.push(`detail:${h.detail_url_id}`)
+  if (h.microchip) keys.push(`chip:${h.microchip}`)
+  if (h.registration) keys.push(`reg:${h.registration.trim().toLowerCase()}`)
+  keys.push(`name:${(h.name ?? '').trim().toLowerCase()}:${h.birth_date ?? ''}`)
+  return keys
 }
 
-async function fetchPage(page: number): Promise<string | null> {
+async function fetchPageWithBackoff(page: number, currentDelay: number): Promise<{ html: string | null; nextDelay: number }> {
   try {
+    console.log(`[SYNC] Fetching page ${page} with ${currentDelay}ms delay...`)
+
+    // Wait before fetching
+    await new Promise(r => setTimeout(r, currentDelay))
+
     const controller = new AbortController()
     const timeout = setTimeout(() => controller.abort(), 15000)
 
-    const res = await fetch(`${BASE_URL}?page=${page}`, {
+    const url = `${BASE_URL}?page=${page}`
+    console.log(`[SYNC] URL: ${url}`)
+
+    const res = await fetch(url, {
       cache: 'no-store',
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
@@ -74,97 +111,284 @@ async function fetchPage(page: number): Promise<string | null> {
     })
     clearTimeout(timeout)
 
-    if (!res.ok) return null
-    return await res.text()
-  } catch (err) {
-    return null
+    console.log(`[SYNC] Page ${page} response status: ${res.status}`)
+
+    if (res.status === 429) {
+      const retryAfter = res.headers.get('Retry-After')
+      const nextDelay = retryAfter ? Math.min(parseInt(retryAfter) * 1000, MAX_DELAY_MS) : Math.min(currentDelay * 1.7, MAX_DELAY_MS)
+      console.log(`[SYNC] Page ${page} returned 429, next delay: ${nextDelay}ms`)
+      return { html: null, nextDelay }
+    }
+
+    if (!res.ok) {
+      console.log(`[SYNC] Page ${page} failed with status ${res.status}`)
+      return { html: null, nextDelay: currentDelay }
+    }
+
+    const html = await res.text()
+    console.log(`[SYNC] Page ${page} loaded (${html.length} bytes)`)
+    return { html, nextDelay: Math.max(currentDelay * 0.9, MIN_DELAY_MS) }
+  } catch (err: any) {
+    console.error(`[SYNC] Error fetching page ${page}:`, err?.message || err)
+    return { html: null, nextDelay: currentDelay }
   }
 }
 
-export async function syncHorses(): Promise<{ total: number; inserted: number; updated: number; errors: string[] }> {
+async function getOrCreateActiveRun(supabase: any, triggeredBy: string) {
+  // Check for active run
+  const { data: existing, error: existingError } = await supabase
+    .from('horse_sync_runs')
+    .select('*')
+    .in('status', ['running', 'paused'])
+    .order('started_at', { ascending: false })
+    .limit(1)
+
+  if (existing && existing.length > 0) {
+    console.log(`[SYNC] Resuming run ${existing[0].id} from page ${existing[0].current_page}`)
+    return existing[0]
+  }
+
+  // Create new run
+  const { data: newRun, error: insertError } = await supabase
+    .from('horse_sync_runs')
+    .insert({ triggered_by: triggeredBy, status: 'running' })
+    .select()
+    .single()
+
+  if (insertError || !newRun) {
+    console.error('[SYNC] Error creating run:', insertError)
+    throw new Error(`Failed to create sync run: ${insertError?.message || 'Unknown error'}`)
+  }
+
+  console.log(`[SYNC] Created new run ${newRun.id}`)
+  return newRun
+}
+
+interface SyncBatchResult {
+  status: 'running' | 'completed' | 'paused' | 'failed'
+  currentPage: number
+  totalPages: number | null
+  inserted: number
+  updated: number
+  renamed: number
+  chipsCompletados: number
+  errors: string[]
+}
+
+export async function processSyncBatch(maxPages: number = 10): Promise<SyncBatchResult> {
   await requireUser()
   const supabase = await createClient()
-  const errors: string[] = []
 
-  // Fetch primera página
-  const firstHtml = await fetchPage(1)
-  if (!firstHtml) return { total: 0, inserted: 0, updated: 0, errors: ['No se pudo conectar al sitio externo'] }
-
-  const numPages = totalPages(firstHtml)
-  const allHorses = parsePage(firstHtml)
-
-  // Fetch páginas restantes EN PARALELO (en grupos de CONCURRENCY)
-  // y fetch de DB existente simultáneamente
-  const remainingPages = Array.from({ length: numPages - 1 }, (_, i) => i + 2)
-
-  const [pageResults, existingRes] = await Promise.all([
-    // Páginas en chunks paralelos
-    (async () => {
-      const results: any[][] = []
-      for (let i = 0; i < remainingPages.length; i += CONCURRENCY) {
-        const chunk = remainingPages.slice(i, i + CONCURRENCY)
-        const htmls = await Promise.all(chunk.map(fetchPage))
-        for (let j = 0; j < htmls.length; j++) {
-          if (htmls[j]) results.push(parsePage(htmls[j]!))
-          else errors.push(`Error en página ${chunk[j]}`)
-        }
-      }
-      return results
-    })(),
-    // DB en paralelo con el scraping
-    supabase.from('horses').select('id, name, microchip, birth_date').limit(10000),
-  ])
-
-  for (const batch of pageResults) allHorses.push(...batch)
-
-  if (!allHorses.length) return { total: 0, inserted: 0, updated: 0, errors: ['No se encontraron caballos'] }
-
-  // Índice de existentes
-  const existingIndex: Record<string, string> = {}
-  for (const h of existingRes.data ?? []) {
-    if (h.microchip) existingIndex[`chip:${h.microchip}`] = h.id
-    else existingIndex[`name:${(h.name ?? '').trim().toLowerCase()}:${h.birth_date ?? ''}`] = h.id
-  }
-
-  const now = new Date().toISOString()
-  const toInsert: any[] = []
-  const toUpdateIds: string[] = []
-
-  for (const horse of allHorses) {
-    const key = stableKey(horse)
-    if (!existingIndex[key]) toInsert.push({ ...horse, last_seen_at: now })
-    else toUpdateIds.push(existingIndex[key])
-  }
+  const run = await getOrCreateActiveRun(supabase, 'manual')
+  const runId = run.id
+  const startPage = (run.current_page || 0) + 1
+  const errors: string[] = [...(run.errors || [])]
 
   let inserted = 0
-  let updated  = 0
+  let updated = 0
+  let renamed = 0
+  let chipsCompletados = 0
+  let currentPage = run.current_page || 0
+  let totalPages = run.total_pages || null
+  let consecutiveFailures = 0
+  let currentDelay = MIN_DELAY_MS
 
-  // Inserts en batches de 100 paralelos
-  const insertBatches = []
-  for (let i = 0; i < toInsert.length; i += 100) {
-    insertBatches.push(toInsert.slice(i, i + 100))
-  }
-  const insertResults = await Promise.all(
-    insertBatches.map(batch => supabase.from('horses').insert(batch))
-  )
-  for (let i = 0; i < insertResults.length; i++) {
-    if (insertResults[i].error) errors.push(`INSERT lote ${i + 1}: ${insertResults[i].error!.message}`)
-    else inserted += insertBatches[i].length
-  }
-
-  // Un solo UPDATE por batch de IDs en vez de uno por caballo
-  // Pero solo actualizar status a 'active' si NO está 'deceased' (tiene eutanasia)
-  for (let i = 0; i < toUpdateIds.length; i += 500) {
-    const batch = toUpdateIds.slice(i, i + 500)
-    const { error } = await supabase
-      .from('horses')
-      .update({ last_seen_at: now, status: 'active' })
-      .in('id', batch)
-      .neq('status', 'deceased')  // No sobrescribir si está marcado como fallecido
-    if (error) errors.push(`UPDATE batch: ${error.message}`)
-    else updated += Math.min(500, toUpdateIds.length - i)
+  // Fetch total pages if needed
+  if (!totalPages) {
+    const { html: firstHtml } = await fetchPageWithBackoff(1, MIN_DELAY_MS)
+    if (firstHtml) {
+      totalPages = totalPages || 1
+      const firstPageHorses = parsePage(firstHtml)
+      const match = firstHtml.match(/de\s+(\d+)/)
+      if (match) totalPages = parseInt(match[1])
+      console.log(`[SYNC] Total pages: ${totalPages}`)
+    } else {
+      return { status: 'failed', currentPage, totalPages, inserted, updated, renamed, chipsCompletados, errors: ['Could not fetch first page'] }
+    }
   }
 
-  revalidatePath('/horses')
-  return { total: allHorses.length, inserted, updated, errors }
+  // Fetch existing horses for matching
+  const { data: existingHorses } = await supabase
+    .from('horses')
+    .select('id, name, microchip, birth_date, color, registration, ubicacion, gender, status, detail_url_id')
+    .limit(10000)
+
+  const existingIndex: Record<string, string> = {}
+  const existingMap: Record<string, any> = {}
+  for (const h of existingHorses || []) {
+    existingMap[h.id] = h
+    for (const key of keysFor(h)) {
+      existingIndex[key] = h.id
+    }
+  }
+
+  // Process batch of pages
+  for (let i = 0; i < maxPages && startPage + i <= totalPages!; i++) {
+    const pageNum = startPage + i
+    let pageHorses: any[] = []
+    let retries = 0
+
+    // Retry logic for 429 and soft failures
+    while (retries < 4) {
+      const { html, nextDelay } = await fetchPageWithBackoff(pageNum, currentDelay)
+      currentDelay = nextDelay
+
+      if (!html) {
+        retries++
+        if (retries < 4) {
+          await new Promise(r => setTimeout(r, currentDelay))
+        }
+        continue
+      }
+
+      pageHorses = parsePage(html)
+
+      // Detect corrupt pages (too few horses)
+      if (pageHorses.length === 0 && pageNum > 1) {
+        retries++
+        if (retries < 4) {
+          console.log(`[SYNC] Page ${pageNum} returned 0 horses, retrying...`)
+          await new Promise(r => setTimeout(r, currentDelay))
+        }
+        continue
+      }
+
+      consecutiveFailures = 0
+      break
+    }
+
+    if (pageHorses.length === 0) {
+      consecutiveFailures++
+      errors.push(`Page ${pageNum}: No horses found after retries`)
+      if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
+        console.log(`[SYNC] Too many consecutive failures (${consecutiveFailures}), pausing.`)
+        await supabase
+          .from('horse_sync_runs')
+          .update({ status: 'paused', current_page: currentPage, errors, updated_at: new Date().toISOString() })
+          .eq('id', runId)
+        return { status: 'paused', currentPage, totalPages, inserted, updated, renamed, chipsCompletados, errors }
+      }
+      continue
+    }
+
+    // Process horses from this page
+    const toInsert: any[] = []
+    const toUpdate: Array<{ existing: any; scraped: any }> = []
+
+    for (const horse of pageHorses) {
+      let matchedId: string | null = null
+      for (const key of keysFor(horse)) {
+        if (existingIndex[key]) {
+          matchedId = existingIndex[key]
+          break
+        }
+      }
+
+      if (!matchedId) {
+        toInsert.push({ ...horse, last_seen_at: new Date().toISOString() })
+      } else {
+        const existing = existingMap[matchedId]
+        if (existing.name !== horse.name) renamed++
+        if (!existing.microchip && horse.microchip) chipsCompletados++
+        toUpdate.push({ existing, scraped: horse })
+      }
+    }
+
+    // Combine all payloads for batch upsert (handles both inserts and updates)
+    const allPayloads: any[] = []
+
+    // New horses (will be inserted)
+    allPayloads.push(...toInsert)
+
+    // Existing horses (will be updated)
+    allPayloads.push(...toUpdate.map(({ existing, scraped }) => ({
+      id: existing.id,
+      name: scraped.name,
+      color: scraped.color ?? existing.color,
+      registration: scraped.registration || existing.registration,
+      ubicacion: scraped.ubicacion || existing.ubicacion,
+      gender: scraped.gender ?? existing.gender,
+      microchip: scraped.microchip || existing.microchip,
+      birth_date: scraped.birth_date || existing.birth_date,
+      detail_url_id: scraped.detail_url_id || existing.detail_url_id,
+      last_seen_at: new Date().toISOString(),
+      status: existing.status === 'deceased' ? 'deceased' : 'active',
+    })))
+
+    // Single upsert operation for all records
+    if (allPayloads.length > 0) {
+      const { error: upsertError } = await supabase
+        .from('horses')
+        .upsert(allPayloads, { onConflict: 'microchip' })
+
+      if (upsertError) {
+        errors.push(`Page ${pageNum} upsert: ${upsertError.message}`)
+      } else {
+        inserted += toInsert.length
+        updated += toUpdate.length
+      }
+    }
+
+    currentPage = pageNum
+
+    // Update run state after each page
+    await supabase
+      .from('horse_sync_runs')
+      .update({
+        current_page: currentPage,
+        pages_ok: (run.pages_ok || 0) + 1,
+        inserted: (run.inserted || 0) + inserted,
+        updated: (run.updated || 0) + updated,
+        renamed: (run.renamed || 0) + renamed,
+        chips_completados: (run.chips_completados || 0) + chipsCompletados,
+        errors,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', runId)
+
+    // Delay between pages
+    if (pageNum < totalPages) {
+      await new Promise(r => setTimeout(r, currentDelay))
+    }
+  }
+
+  const isComplete = currentPage >= totalPages!
+  const finalStatus = isComplete ? 'completed' : 'running'
+
+  if (isComplete) {
+    await supabase
+      .from('horse_sync_runs')
+      .update({
+        status: 'completed',
+        finished_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', runId)
+    revalidatePath('/horses')
+  }
+
+  return {
+    status: finalStatus,
+    currentPage,
+    totalPages,
+    inserted,
+    updated,
+    renamed,
+    chipsCompletados,
+    errors,
+  }
+}
+
+// Wrapper for backwards compatibility / simple use
+export async function syncHorses(): Promise<{ status: 'running' | 'completed' | 'paused' | 'failed'; total: number; inserted: number; updated: number; renamed?: number; chipsCompletados?: number; errors: string[] }> {
+  const result = await processSyncBatch(15)
+  return {
+    status: result.status,
+    total: 0, // Not tracked anymore, use horse_sync_runs table
+    inserted: result.inserted,
+    updated: result.updated,
+    renamed: result.renamed,
+    chipsCompletados: result.chipsCompletados,
+    errors: result.errors,
+  }
 }

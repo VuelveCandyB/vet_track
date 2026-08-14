@@ -1,12 +1,9 @@
 import { requirePageAccess } from '@/lib/auth'
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
-import { Info } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
-import { Input } from '@/components/ui/input'
-import { Button } from '@/components/ui/button'
-import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip'
 import SyncButton from '@/components/horses/sync-button'
+import SearchForm from '@/components/horses/search-form'
 import { PALETTE } from '@/lib/palette'
 
 const STATUS_LABEL: Record<string, string> = {
@@ -69,23 +66,7 @@ export default async function HorsesPage({
       </div>
 
       {/* Search */}
-      <TooltipProvider>
-        <form method="get" className="mb-5 flex gap-3 w-full max-w-md items-center">
-          <Input name="q" defaultValue={q} placeholder="Buscar por nombre o microchip..." className="flex-1" />
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Info className="w-4 h-4" style={{ color: PALETTE.text.secondary, cursor: 'help' }} />
-            </TooltipTrigger>
-            <TooltipContent>También puedes buscar por número de microchip</TooltipContent>
-          </Tooltip>
-          <Button type="submit" variant="secondary">Buscar</Button>
-          {q && (
-            <Link href="/horses">
-              <Button variant="ghost">✕</Button>
-            </Link>
-          )}
-        </form>
-      </TooltipProvider>
+      <SearchForm />
 
       {/* Table */}
       <div className="rounded-lg overflow-hidden" style={{ background: PALETTE.background.white, border: `1px solid ${PALETTE.ui.border}` }}>

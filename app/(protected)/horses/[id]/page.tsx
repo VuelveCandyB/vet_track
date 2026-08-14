@@ -169,6 +169,11 @@ export default async function HorseDetailPage({
             <Badge className={`text-xs border ${STATUS_STYLE[horse.status] ?? ''}`}>
               {STATUS_LABEL[horse.status] ?? horse.status}
             </Badge>
+            {horse.red_flag && (
+              <Badge className="text-xs border bg-red-100 text-red-800 border-red-300">
+                Red Flag
+              </Badge>
+            )}
             {horse.registration && (
               <span className="text-xs" style={{ color: PALETTE.text.secondary }}>Reg. {horse.registration}</span>
             )}
@@ -199,6 +204,19 @@ export default async function HorseDetailPage({
               Ver documento
             </a>
           )}
+        </div>
+      )}
+
+      {/* Red Flag banner */}
+      {horse.red_flag && (
+        <div className="rounded-lg px-4 py-3 mb-5 flex items-center gap-4"
+          style={{ background: '#dc262615', border: '1px solid #dc2626' }}>
+          <div className="text-sm font-bold" style={{ color: '#dc2626' }}>
+            RED FLAG — NO SE RECOMIENDA PARA CORRER
+          </div>
+          <div className="text-xs ml-2" style={{ color: PALETTE.text.secondary }}>
+            {horse.red_flag_reason} · {horse.red_flag_by} · {horse.red_flag_date?.slice(0, 10)}
+          </div>
         </div>
       )}
 

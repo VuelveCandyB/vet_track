@@ -7,10 +7,13 @@ import VetlistModal from './vetlist-modal'
 import VetlistReleaseModal from './vetlist-release-modal'
 import EuthanasiaModal from './euthanasia-modal'
 import VaccinationModal from './vaccination-modal'
+import RedFlagModal from './red-flag-modal'
+import ConfirmDeleteButton from '@/components/admin/confirm-delete-button'
+import { clearRedFlag } from '@/lib/actions/horses'
 import { PALETTE } from '@/lib/palette'
 import type { Horse, VetlistEntry, Drug } from '@/lib/types'
 
-type ModalType = 'vetlist' | 'release' | 'euthanasia' | 'vaccination' | null
+type ModalType = 'vetlist' | 'release' | 'euthanasia' | 'vaccination' | 'redflag' | null
 
 interface Props {
   horse: Horse
@@ -80,8 +83,18 @@ export default function HorseActions({
               </div>
             )}
           </div>
-          <Button onClick={() => setOpen('release')} className="flex-shrink-0 text-sm font-semibold"
-            style={{ background: PALETTE.primary.green, color: '#FFFFFF' }}>
+          <Button
+            onClick={() => setOpen('release')}
+            disabled={!isOfficialVet}
+            className="flex-shrink-0 text-sm font-semibold"
+            style={{
+              background: isOfficialVet ? PALETTE.primary.green : '#ccc',
+              color: '#FFFFFF',
+              cursor: isOfficialVet ? 'pointer' : 'not-allowed',
+              opacity: isOfficialVet ? 1 : 0.6,
+            }}
+            title={!isOfficialVet ? 'Solo veterinarios oficiales pueden liberar de vetlist' : undefined}
+          >
             Liberar de Vetlist
           </Button>
         </div>
@@ -94,9 +107,19 @@ export default function HorseActions({
 
           {/* Vetlist button */}
           {!vetlistActiva && (
-            <Button onClick={() => setOpen('vetlist')} size="sm"
+            <Button
+              onClick={() => setOpen('vetlist')}
+              size="sm"
+              disabled={!isOfficialVet}
               className="text-sm font-semibold min-w-fit"
-              style={{ background: PALETTE.primary.green, color: '#FFFFFF' }}>
+              style={{
+                background: isOfficialVet ? PALETTE.primary.green : '#ccc',
+                color: '#FFFFFF',
+                cursor: isOfficialVet ? 'pointer' : 'not-allowed',
+                opacity: isOfficialVet ? 1 : 0.6,
+              }}
+              title={!isOfficialVet ? 'Solo veterinarios oficiales pueden usar vetlist' : undefined}
+            >
               <svg className="mr-1.5" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                 <circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
               </svg>
@@ -128,6 +151,27 @@ export default function HorseActions({
             style={{ background: PALETTE.primary.green, color: '#FFFFFF' }}>
             Registrar Vacuna
           </Button>
+
+          {/* Red Flag buttons */}
+          {!horse.red_flag ? (
+            <Button onClick={() => setOpen('redflag')} size="sm"
+              className="text-sm font-semibold min-w-fit"
+              style={{ background: '#dc2626', color: '#FFFFFF' }}>
+              Marcar Red Flag
+            </Button>
+          ) : (
+            <ConfirmDeleteButton
+              action={async () => {
+                await clearRedFlag(horse.id)
+                router.refresh()
+              }}
+              message="¿Quitar el Red Flag? El caballo volverá a ser recomendado para correr."
+              className="text-sm font-semibold min-w-fit px-3 py-1.5 rounded-md transition-colors"
+              style={{ background: '#666', color: '#FFFFFF' }}
+            >
+              Quitar Red Flag
+            </ConfirmDeleteButton>
+          )}
         </div>
       )}
 
@@ -153,6 +197,10 @@ export default function HorseActions({
         open={open === 'vaccination'} onClose={closeAndRefresh}
         horseId={horse.id} horseName={horse.name}
         vetName={vetName} today={today}
+      />
+      <RedFlagModal
+        open={open === 'redflag'} onClose={closeAndRefresh}
+        horseId={horse.id} horseName={horse.name}
       />
     </>
   )
