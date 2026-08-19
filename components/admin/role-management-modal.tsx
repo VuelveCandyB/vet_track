@@ -14,6 +14,7 @@ const ROLES = [
   { id: 'authorized_vet', label: 'Veterinario Autorizado', description: 'Crea informes de tratamiento' },
   { id: 'official_vet', label: 'Veterinario Oficial', description: 'Radica y supervisa informes' },
   { id: 'director', label: 'Director', description: 'Gestor de usuarios y auditoría' },
+  { id: 'technician', label: 'Técnico', description: 'Ingresa medicaciones bajo supervisión de veterinario' },
   { id: 'euthanasia', label: 'Personal de Eutanasia', description: 'Gestiona eutanasias' },
 ]
 

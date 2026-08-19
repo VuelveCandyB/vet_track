@@ -23,6 +23,19 @@ export default function ChangePasswordPage() {
   useEffect(() => {
     const supabase = createClient()
 
+    // Check if there's a recovery code in the URL
+    const hash = window.location.hash
+    const params = new URLSearchParams(window.location.search)
+    const code = params.get('code')
+
+    // If there's a code in the URL, Supabase should process it
+    if (code) {
+      // The code will be processed by Supabase automatically
+      setReady(true)
+      return
+    }
+
+    // Otherwise, listen for PASSWORD_RECOVERY event
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === 'PASSWORD_RECOVERY') {
         setReady(true)

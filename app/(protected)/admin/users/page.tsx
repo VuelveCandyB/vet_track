@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import AdminTabs from '@/components/admin/admin-tabs'
 import UserRow from '@/components/admin/user-row'
 import CreateUserModal from '@/components/admin/create-user-modal'
+import SupervisorSelectHeader from '@/components/admin/supervisor-select-header'
 import { Button } from '@/components/ui/button'
 import { PALETTE } from '@/lib/palette'
 
@@ -11,10 +12,11 @@ export default async function AdminUsersPage() {
 
   const supabase = await createClient()
 
-  const [{ data: usersRaw }, { data: profiles }, { data: rolesRows }] = await Promise.all([
+  const [{ data: usersRaw }, { data: profiles }, { data: rolesRows }, { data: supervisorsRows }] = await Promise.all([
     supabase.rpc('list_auth_users'),
     supabase.from('profiles').select('*'),
     supabase.from('user_roles').select('user_id, role'),
+    supabase.from('technician_supervisors').select('technician_id, vet_id'),
   ])
 
   const profileMap = Object.fromEntries((profiles ?? []).map((p: any) => [p.id, p]))
@@ -23,6 +25,22 @@ export default async function AdminUsersPage() {
     rolesMap[r.user_id] = rolesMap[r.user_id] ?? []
     rolesMap[r.user_id].push(r.role)
   }
+  const supervisorsMap: Record<string, string[]> = {}
+  for (const s of supervisorsRows ?? []) {
+    supervisorsMap[s.technician_id] = supervisorsMap[s.technician_id] ?? []
+    supervisorsMap[s.technician_id].push(s.vet_id)
+  }
+
+  // Get list of available vets (authorized_vet, official_vet, or director)
+  const availableVets = (usersRaw ?? [])
+    .filter((u: any) => {
+      const roles = rolesMap[u.id] ?? []
+      return roles.includes('authorized_vet') || roles.includes('official_vet') || roles.includes('director')
+    })
+    .map((u: any) => ({
+      id: u.id,
+      label: `${profileMap[u.id]?.first_name ?? ''} ${profileMap[u.id]?.last_name ?? ''}`.trim() || u.email,
+    }))
 
   const users = (usersRaw ?? []).map((u: any) => ({
     ...u,
@@ -34,6 +52,7 @@ export default async function AdminUsersPage() {
     license_renewal_date: profileMap[u.id]?.license_renewal_date ?? '',
     phone1: profileMap[u.id]?.phone1 ?? '',
     phone2: profileMap[u.id]?.phone2 ?? '',
+    supervisorVetIds: supervisorsMap[u.id] ?? [],
     blocked: u.banned_until && new Date(u.banned_until) > new Date(),
   }))
 
@@ -58,15 +77,17 @@ export default async function AdminUsersPage() {
           <table className="w-full text-sm border-collapse">
             <thead>
               <tr style={{ borderBottom: `1px solid ${PALETTE.ui.border}` }}>
-                {['Email', 'Nombre', 'Apellido', 'Licencia', 'Renovación', 'Teléfono 1', 'Teléfono 2', 'Último acceso', 'Estado', 'Rol', 'Notif. Vacuna', 'Guardar'].map(h => (
-                  <th key={h} className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider"
-                    style={{ color: PALETTE.text.secondary }}>{h}</th>
+                {['Email', 'Nombre', 'Apellido', 'Licencia', 'Teléfono', 'Último acceso', 'Estado', 'Rol', 'Supervisor', 'Notif. Vacuna', 'Guardar'].map(h => (
+                  <th key={h} className="px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wider"
+                    style={{ color: PALETTE.text.secondary }}>
+                    {h === 'Supervisor' ? <SupervisorSelectHeader /> : h}
+                  </th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {users.map((u: any) => (
-                <UserRow key={u.id} user={u} blocked={u.blocked} />
+                <UserRow key={u.id} user={u} blocked={u.blocked} availableVets={availableVets} />
               ))}
             </tbody>
           </table>

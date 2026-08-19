@@ -65,3 +65,22 @@ export async function deleteMedication(horseId: string, medId: string) {
   await supabase.from('medications').delete().eq('id', medId)
   revalidatePath(`/horses/${horseId}`)
 }
+
+export async function reviewMedication(medId: string) {
+  const user = await requireUser()
+  const allowed = await can(user, 'horses.medication_review', 'full')
+  if (!allowed) throw new Error('Acceso denegado')
+
+  const supabase = await createClient()
+
+  const { data: treatment } = await supabase.from('treatment_reports').select('id, horse_id, created_for_vet_id').eq('id', medId).single()
+  if (!treatment) throw new Error('Tratamiento no encontrado')
+
+  if (!isAdmin(user.email!)) {
+    if (treatment.created_for_vet_id !== user.id) throw new Error('Acceso denegado')
+  }
+
+  await supabase.from('treatment_reports').update({ reviewed_by: user.id, reviewed_at: new Date().toISOString() }).eq('id', medId)
+  revalidatePath('/revisiones')
+  revalidatePath(`/horses/${treatment.horse_id}`)
+}

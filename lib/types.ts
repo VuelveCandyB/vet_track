@@ -77,6 +77,7 @@ export interface Drug {
   dosis_unidad?: string
   detection_time_horas?: number
   withdrawal_time_horas?: number
+  withdrawal_time_dias?: number
   tipo_restriccion?: string
   nivel_maximo_permitido?: string
   notas?: string
@@ -88,6 +89,12 @@ export interface Profile {
   email: string
   first_name?: string
   last_name?: string
+  license_number?: string
+  license_renewal_date?: string
+  phone1?: string
+  phone2?: string
+  notify_vaccinations?: boolean
+  active_vet_id?: string | null
 }
 
 export interface Diagnostico {
@@ -132,11 +139,13 @@ export interface TreatmentReport {
   nivel_dosificacion?: string
   tiempo_restriccion?: number | null
   fecha_fin_tratamiento?: string | null
+  hora_fin_tratamiento?: string | null
   hasta_cuando?: string | null
   es_auto_generado?: boolean
   informe_padre_id?: string | null
   notas?: string
   vet_autorizado_nombre: string
+  created_for_vet_id?: string | null
   estado: 'borrador' | 'sometido' | 'radicado'
   sometido_en?: string | null
   radicado_en?: string | null

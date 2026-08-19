@@ -4,12 +4,13 @@ import Link from 'next/link'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import type { User } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/client'
+import { clearActiveVetOnLogout } from '@/lib/actions/technician'
 import { ADMIN_EMAIL } from '@/lib/constants'
 import { PALETTE } from '@/lib/palette'
 import { ServiceTicketModal } from '@/components/service/service-ticket-modal'
 import SosLogo from '@/components/SosLogo'
 
-export default function Navbar({ user, isAdmin, isOfficialVet, vetName, canAccessAdmin, canAccessRaceDay }: { user: User; isAdmin: boolean; isOfficialVet: boolean; vetName: string; canAccessAdmin: boolean; canAccessRaceDay: boolean }) {
+export default function Navbar({ user, isAdmin, isOfficialVet, vetName, canAccessAdmin, canAccessRaceDay, canAccessRevisiones, pendingReviewCount, isTechnician = false, activeVetName = null, showVetSwitcher = false }: { user: User; isAdmin: boolean; isOfficialVet: boolean; vetName: string; canAccessAdmin: boolean; canAccessRaceDay: boolean; canAccessRevisiones?: boolean; pendingReviewCount?: number; isTechnician?: boolean; activeVetName?: string | null; showVetSwitcher?: boolean }) {
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const router = useRouter()
@@ -20,6 +21,9 @@ export default function Navbar({ user, isAdmin, isOfficialVet, vetName, canAcces
   const isFromHorses = searchParams.get('horse_id') !== null
 
   async function handleLogout() {
+    // Clear active_vet_id for technicians before logout
+    await clearActiveVetOnLogout()
+
     const supabase = createClient()
     await supabase.auth.signOut()
     router.push('/login')
@@ -36,6 +40,7 @@ export default function Navbar({ user, isAdmin, isOfficialVet, vetName, canAcces
     // TODO: PMF oculto por ahora - en desarrollo
     // { href: '/pmf-records', label: 'PMF' },
     { href: '/reports',   label: 'Reportes' },
+    ...(canAccessRevisiones ? [{ href: '/revisiones', label: 'Revisiones', badge: pendingReviewCount ?? 0 }] : []),
     ...(canAccessAdmin ? [{ href: '/admin', label: 'Admin' }] : []),
   ]
 
@@ -55,6 +60,10 @@ export default function Navbar({ user, isAdmin, isOfficialVet, vetName, canAcces
       return false
     }
 
+    if (href === '/revisiones' && pathname === '/revisiones') {
+      return true
+    }
+
     return href === '/dashboard' ? pathname === '/dashboard' : pathname.startsWith(href)
   }
 
@@ -72,14 +81,19 @@ export default function Navbar({ user, isAdmin, isOfficialVet, vetName, canAcces
         </Link>
 
         {/* Desktop nav */}
-        <nav className="hidden md:flex gap-0.5">
-          {navItems.map(({ href, label }) => (
+        <nav className="hidden md:flex gap-0.5 items-center">
+          {navItems.map(({ href, label, badge }) => (
             <Link key={href} href={href}
-              className="px-4 py-1.5 text-sm font-medium rounded-md transition-colors -mb-px border-b-2 hover:bg-white/10"
+              className="px-4 py-1.5 text-sm font-medium rounded-md transition-colors -mb-px border-b-2 hover:bg-white/10 flex items-center gap-2"
               style={isActive(href)
                 ? { background: `${PALETTE.primary.green}20`, color: '#FFFFFF', borderColor: '#FFFFFF', borderRadius: '6px 6px 0 0' }
                 : { color: '#FFFFFF', borderColor: 'transparent' }}>
               {label}
+              {badge !== undefined && badge > 0 && (
+                <span className="ml-1.5 px-1.5 py-0.5 rounded-full text-[10px] font-bold" style={{ background: '#dc2626', color: '#fff' }}>
+                  {badge}
+                </span>
+              )}
             </Link>
           ))}
           <SosLogo onClick={() => setServiceModalOpen(true)} />
@@ -93,7 +107,9 @@ export default function Navbar({ user, isAdmin, isOfficialVet, vetName, canAcces
           </div>
           <div className="hidden lg:block">
             <div className="text-sm font-medium" style={{ color: PALETTE.text.primary }}>{user.email}</div>
-            <div className="text-xs" style={{ color: PALETTE.text.secondary }}>{userRole}</div>
+            <div className="text-xs" style={{ color: PALETTE.text.secondary }}>
+              {isTechnician && activeVetName ? `Trabajando con: ${activeVetName}` : userRole}
+            </div>
           </div>
           <Link href="/perfil"
             className="text-xs px-3 py-1.5 rounded-md border transition-colors"
@@ -140,14 +156,19 @@ export default function Navbar({ user, isAdmin, isOfficialVet, vetName, canAcces
         }}
       >
         <div className="px-4 pb-4 space-y-1">
-          {navItems.map(({ href, label }) => (
+          {navItems.map(({ href, label, badge }) => (
             <Link key={href} href={href}
               onClick={() => setMenuOpen(false)}
-              className="flex items-center px-4 py-3 rounded-lg text-sm font-medium transition-colors hover:bg-white/5"
+              className="flex items-center justify-between px-4 py-3 rounded-lg text-sm font-medium transition-colors hover:bg-white/5"
               style={isActive(href)
                 ? { background: '#2B55F420', color: '#fff', borderLeft: '3px solid #C8F135' }
                 : { color: '#9ca3af' }}>
               {label}
+              {badge !== undefined && badge > 0 && (
+                <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold" style={{ background: '#dc2626', color: '#fff' }}>
+                  {badge}
+                </span>
+              )}
             </Link>
           ))}
           <div className="px-4 py-3">
@@ -158,6 +179,18 @@ export default function Navbar({ user, isAdmin, isOfficialVet, vetName, canAcces
           </div>
           <div className="pt-2 mt-2" style={{ borderTop: '1px solid #1e2235' }}>
             <div className="px-4 py-2 text-xs" style={{ color: '#4a5280' }}>{user.email} · {userRole}</div>
+            {isTechnician && activeVetName && (
+              <div className="px-4 py-2 text-xs font-medium" style={{ color: '#059669' }}>
+                Trabajando con: {activeVetName}
+                {showVetSwitcher && (
+                  <Link href="/seleccionar-medico" onClick={() => setMenuOpen(false)}
+                    className="block mt-1 text-[11px] transition-colors cursor-pointer"
+                    style={{ color: '#059669', textDecoration: 'underline' }}>
+                    Cambiar médico
+                  </Link>
+                )}
+              </div>
+            )}
             <Link href="/perfil" onClick={() => setMenuOpen(false)}
               className="flex items-center px-4 py-3 rounded-lg text-sm transition-colors"
               style={{ color: '#9ca3af' }}>

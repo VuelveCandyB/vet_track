@@ -142,7 +142,7 @@ export async function setUserRoles(userId: string, roles: string[]) {
   const user = await requireAdmin()
   const supabase = await createClient()
 
-  const validRoles = ['authorized_vet', 'official_vet', 'euthanasia', 'director']
+  const validRoles = ['authorized_vet', 'official_vet', 'euthanasia', 'director', 'technician']
   for (const role of roles) {
     if (!validRoles.includes(role)) {
       throw new Error(`Rol inválido: ${role}`)
@@ -258,5 +258,36 @@ export async function unblockUser(userId: string) {
   })
 
   if (error) throw new Error(error.message)
+  revalidatePath('/admin/users')
+}
+
+// ── TÉCNICOS ─────────────────────────────────────────────
+export async function setTechnicianSupervisors(userId: string, vetIds: string[]) {
+  await requireAdmin()
+  const supabase = await createClient()
+
+  // Delete existing supervisor assignments for this technician
+  await supabase
+    .from('technician_supervisors')
+    .delete()
+    .eq('technician_id', userId)
+
+  // Insert new assignments
+  if (vetIds.length > 0) {
+    await supabase.from('technician_supervisors').insert(
+      vetIds.map(vetId => ({
+        technician_id: userId,
+        vet_id: vetId,
+      }))
+    )
+  }
+
+  // If there's exactly 1 supervisor, auto-activate it; otherwise clear active_vet_id
+  if (vetIds.length === 1) {
+    await supabase.from('profiles').update({ active_vet_id: vetIds[0] }).eq('id', userId)
+  } else {
+    await supabase.from('profiles').update({ active_vet_id: null }).eq('id', userId)
+  }
+
   revalidatePath('/admin/users')
 }

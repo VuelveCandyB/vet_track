@@ -9,7 +9,8 @@ import { PALETTE } from '@/lib/palette'
 
 const SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL ??
-  'https://vet-track-five.vercel.app'
+  (typeof window !== 'undefined' && window.location.origin) ??
+  'http://localhost:3000'
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('')
@@ -23,7 +24,7 @@ export default function ForgotPasswordPage() {
 
     const supabase = createClient()
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${SITE_URL}/auth/callback?next=/perfil`,
+      redirectTo: `${SITE_URL}/cambiar-contrasena`,
     })
 
     if (error) {

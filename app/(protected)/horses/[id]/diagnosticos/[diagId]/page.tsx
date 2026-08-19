@@ -22,6 +22,15 @@ export default async function DiagnosisDetailPage({
   const horse = horseRes.data as any
   const diagnosis = diagRes.data as Diagnostico
 
+  // Get creator name if it's a technician
+  let creatorName: string | null = null
+  if (diagnosis?.created_by) {
+    const { data: creator } = await supabase.from('profiles').select('first_name, last_name').eq('id', diagnosis.created_by).single()
+    if (creator) {
+      creatorName = `${creator.first_name ?? ''} ${creator.last_name ?? ''}`.trim()
+    }
+  }
+
   if (!diagnosis) {
     return (
       <div className="text-center py-12">
@@ -54,7 +63,9 @@ export default async function DiagnosisDetailPage({
         <div className="flex items-start justify-between mb-4">
           <div>
             <h1 className="text-2xl font-semibold mb-2" style={{ color: PALETTE.text.dark }}>{diagnosis.diagnostico}</h1>
-            <p style={{ color: PALETTE.text.secondary }}>Registrado por {diagnosis.vet_name} · {diagnosis.fecha}</p>
+            <p style={{ color: PALETTE.text.secondary }}>
+            Registrado {creatorName ? `por ${creatorName} ` : ''}· Médico: {diagnosis.vet_name} · {diagnosis.fecha}
+          </p>
           </div>
           {diagnosis.recomendar_vetlist && (
             <Badge style={{ background: PALETTE.status.error, color: '#FFFFFF', border: 'none' }} className="text-xs">

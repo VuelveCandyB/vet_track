@@ -10,7 +10,8 @@ import { Label } from '@/components/ui/label'
 
 const SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL ??
-  'https://vet-track-five.vercel.app'
+  (typeof window !== 'undefined' && window.location.origin) ??
+  'http://localhost:3000'
 
 export default function LoginForm() {
   const router = useRouter()

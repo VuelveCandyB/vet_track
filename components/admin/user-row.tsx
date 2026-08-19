@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import RoleManagementModal from '@/components/admin/role-management-modal'
+import SupervisorSelect from '@/components/admin/supervisor-select'
 import ConfirmDeleteButton from '@/components/admin/confirm-delete-button'
 import { updateUserProfile, setVaccinationNotifications, blockUser, unblockUser } from '@/lib/actions/admin'
 import { PALETTE } from '@/lib/palette'
@@ -21,11 +22,13 @@ interface UserRowProps {
     license_renewal_date: string
     phone1: string
     phone2: string
+    supervisorVetIds: string[]
   }
   blocked?: boolean
+  availableVets?: Array<{ id: string; label: string }>
 }
 
-export default function UserRow({ user: u, blocked = false }: UserRowProps) {
+export default function UserRow({ user: u, blocked = false, availableVets = [] }: UserRowProps) {
   const router = useRouter()
   const [firstName, setFirstName] = useState(u.first_name)
   const [lastName, setLastName] = useState(u.last_name)
@@ -103,64 +106,64 @@ export default function UserRow({ user: u, blocked = false }: UserRowProps) {
         opacity: blocked ? 0.6 : 1,
       }}
     >
-      <td className="px-5 py-3 text-sm" style={{ color: PALETTE.text.primary }}>
+      <td className="px-3 py-2 text-xs" style={{ color: PALETTE.text.primary }}>
         {u.email}
       </td>
-      <td className="px-5 py-2.5">
+      <td className="px-3 py-2">
         <Input
           value={firstName}
           onChange={(e) => setFirstName(e.target.value)}
           placeholder="Nombre"
-          className="h-8 text-sm w-32"
+          className="h-7 text-xs w-28"
         />
       </td>
-      <td className="px-5 py-2.5">
+      <td className="px-3 py-2">
         <Input
           value={lastName}
           onChange={(e) => setLastName(e.target.value)}
           placeholder="Apellido"
-          className="h-8 text-sm w-36"
+          className="h-7 text-xs w-28"
         />
       </td>
-      <td className="px-5 py-2.5">
-        <Input
-          value={licenseNumber}
-          onChange={(e) => setLicenseNumber(e.target.value)}
-          placeholder="Licencia"
-          className="h-8 text-sm w-32"
-        />
+      <td className="px-3 py-2">
+        <div className="flex flex-col gap-1">
+          <Input
+            value={licenseNumber}
+            onChange={(e) => setLicenseNumber(e.target.value)}
+            placeholder="Licencia"
+            className="h-7 text-xs w-28"
+          />
+          <Input
+            type="date"
+            value={licenseRenewalDate}
+            onChange={(e) => setLicenseRenewalDate(e.target.value)}
+            className="h-6 text-[11px] w-28"
+          />
+        </div>
       </td>
-      <td className="px-5 py-2.5">
-        <Input
-          type="date"
-          value={licenseRenewalDate}
-          onChange={(e) => setLicenseRenewalDate(e.target.value)}
-          className="h-8 text-sm w-40"
-        />
+      <td className="px-3 py-2">
+        <div className="flex flex-col gap-1">
+          <Input
+            value={phone1}
+            onChange={(e) => setPhone1(e.target.value)}
+            placeholder="Tel 1"
+            className="h-7 text-xs w-28"
+          />
+          <Input
+            value={phone2}
+            onChange={(e) => setPhone2(e.target.value)}
+            placeholder="Tel 2"
+            className="h-6 text-[11px] w-28"
+          />
+        </div>
       </td>
-      <td className="px-5 py-2.5">
-        <Input
-          value={phone1}
-          onChange={(e) => setPhone1(e.target.value)}
-          placeholder="Tel 1"
-          className="h-8 text-sm w-32"
-        />
-      </td>
-      <td className="px-5 py-2.5">
-        <Input
-          value={phone2}
-          onChange={(e) => setPhone2(e.target.value)}
-          placeholder="Tel 2"
-          className="h-8 text-sm w-32"
-        />
-      </td>
-      <td className="px-5 py-3 text-xs" style={{ color: PALETTE.text.secondary }}>
+      <td className="px-3 py-2 text-xs" style={{ color: PALETTE.text.secondary }}>
         {u.last_sign_in_at ? u.last_sign_in_at.slice(0, 10) : '—'}
       </td>
-      <td className="px-5 py-3">
-        <div className="flex items-center gap-2">
+      <td className="px-3 py-2">
+        <div className="flex items-center gap-1.5">
           <span
-            className="inline-block px-2 py-1 text-xs font-semibold rounded"
+            className="inline-block px-2 py-0.5 text-[10px] font-semibold rounded"
             style={{
               background: blocked ? '#fee2e2' : '#dcfce7',
               color: blocked ? '#7f1d1d' : '#166534',
@@ -173,38 +176,49 @@ export default function UserRow({ user: u, blocked = false }: UserRowProps) {
               type="button"
               onClick={handleUnblock}
               disabled={blockPending}
-              className="text-xs px-2 py-1 rounded transition-colors"
+              className="text-[10px] px-1.5 py-0.5 rounded transition-colors"
               style={{
                 background: PALETTE.primary.green,
                 color: '#FFFFFF',
               }}
               title="Desbloquear usuario"
             >
-              {blockPending ? '...' : 'Desbloquear'}
+              {blockPending ? '...' : 'Desbl.'}
             </button>
           ) : (
             <ConfirmDeleteButton
               action={handleBlock}
               message={`¿Bloquear a ${u.email}? No podrá iniciar sesión.`}
-              className="text-xs px-2 py-1 rounded transition-colors"
+              className="text-[10px] px-1.5 py-0.5 rounded transition-colors"
               style={{
                 background: '#dc2626',
                 color: '#FFFFFF',
               }}
             >
-              {blockPending ? '...' : 'Bloquear'}
+              {blockPending ? '...' : 'Bloq.'}
             </ConfirmDeleteButton>
           )}
         </div>
       </td>
-      <td className="px-5 py-3">
+      <td className="px-3 py-2">
         <RoleManagementModal
           userId={u.id}
           userEmail={u.email}
           currentRoles={u.roles}
         />
       </td>
-      <td className="px-5 py-3 text-center">
+      <td className="px-3 py-2">
+        {u.roles.includes('technician') ? (
+          <SupervisorSelect
+            userId={u.id}
+            currentVetIds={u.supervisorVetIds}
+            vets={availableVets}
+          />
+        ) : (
+          <span style={{ color: PALETTE.text.secondary }}>—</span>
+        )}
+      </td>
+      <td className="px-3 py-2 text-center">
         <input
           type="checkbox"
           checked={notifyVaccinations}
@@ -214,14 +228,14 @@ export default function UserRow({ user: u, blocked = false }: UserRowProps) {
           style={{ accentColor: PALETTE.primary.green }}
         />
       </td>
-      <td className="px-5 py-3">
+      <td className="px-3 py-2">
         <Button
           onClick={handleSave}
           size="sm"
           disabled={isSubmitting}
           style={{ background: PALETTE.primary.green, color: '#FFFFFF' }}
           className="text-xs">
-          {isSubmitting ? 'Guardando...' : 'Guardar'}
+          {isSubmitting ? '...' : 'Guardar'}
         </Button>
       </td>
     </tr>

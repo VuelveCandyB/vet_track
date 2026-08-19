@@ -3,9 +3,10 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { requireUser } from '@/lib/auth'
+import { getVetName, getCreatedForVetId } from '@/lib/actions/shared'
 
 export async function createTreatmentReport(formData: FormData) {
-  await requireUser()
+  const user = await requireUser()
   const supabase = await createClient()
 
   const horse_id = formData.get('horse_id') as string
@@ -29,16 +30,23 @@ export async function createTreatmentReport(formData: FormData) {
   const nivel_dosificacion = formData.get('nivel_dosificacion') as string | null
   const tiempo_restriccion_str = formData.get('tiempo_restriccion') as string
   const notas = formData.get('notas') as string | null
-  const vet_autorizado_nombre = formData.get('vet_autorizado_nombre') as string
   const from_horse = formData.get('from_horse') as string | null
+
+  // Calcular el nombre del médico y el ID del médico para el que se crea
+  const vet_autorizado_nombre = await getVetName(supabase, user)
+  const created_for_vet_id = await getCreatedForVetId(supabase, user)
 
   const tiempo_restriccion = tiempo_restriccion_str ? parseInt(tiempo_restriccion_str) : null
 
   let fecha_fin_tratamiento: string | null = null
+  let hora_fin_tratamiento: string | null = null
   if (tiempo_restriccion && fecha_tratamiento) {
-    const fecha = new Date(fecha_tratamiento)
+    const [year, month, day] = fecha_tratamiento.split('-')
+    const [horaNum, minNum] = hora_tratamiento.split(':')
+    const fecha = new Date(parseInt(year), parseInt(month) - 1, parseInt(day), parseInt(horaNum), parseInt(minNum))
     fecha.setHours(fecha.getHours() + tiempo_restriccion)
     fecha_fin_tratamiento = fecha.toISOString().split('T')[0]
+    hora_fin_tratamiento = fecha.toISOString().split('T')[1].slice(0, 5)
   }
 
   // Obtener nombres de los códigos seleccionados para concatenar en diagnostico
@@ -63,11 +71,14 @@ export async function createTreatmentReport(formData: FormData) {
     nivel_dosificacion,
     tiempo_restriccion,
     fecha_fin_tratamiento,
+    hora_fin_tratamiento,
     notas,
     vet_autorizado_nombre,
+    created_for_vet_id,
     estado: 'sometido',
     sometido_en: new Date().toISOString(),
     es_auto_generado: false,
+    created_by: user.id,
   }).select('id').single()
 
   if (error) throw new Error(error.message)
@@ -95,7 +106,7 @@ export async function createTreatmentReport(formData: FormData) {
 }
 
 export async function updateTreatmentReport(id: string, formData: FormData) {
-  await requireUser()
+  const user = await requireUser()
   const supabase = await createClient()
 
   const { data: report } = await supabase
@@ -120,15 +131,22 @@ export async function updateTreatmentReport(id: string, formData: FormData) {
   const nivel_dosificacion = formData.get('nivel_dosificacion') as string | null
   const tiempo_restriccion_str = formData.get('tiempo_restriccion') as string
   const notas = formData.get('notas') as string | null
-  const vet_autorizado_nombre = formData.get('vet_autorizado_nombre') as string
+
+  // Calcular el nombre del médico y el ID del médico para el que se edita
+  const vet_autorizado_nombre = await getVetName(supabase, user)
+  const created_for_vet_id = await getCreatedForVetId(supabase, user)
 
   const tiempo_restriccion = tiempo_restriccion_str ? parseInt(tiempo_restriccion_str) : null
 
   let fecha_fin_tratamiento: string | null = null
+  let hora_fin_tratamiento: string | null = null
   if (tiempo_restriccion && fecha_tratamiento) {
-    const fecha = new Date(fecha_tratamiento)
+    const [year, month, day] = fecha_tratamiento.split('-')
+    const [horaNum, minNum] = hora_tratamiento.split(':')
+    const fecha = new Date(parseInt(year), parseInt(month) - 1, parseInt(day), parseInt(horaNum), parseInt(minNum))
     fecha.setHours(fecha.getHours() + tiempo_restriccion)
     fecha_fin_tratamiento = fecha.toISOString().split('T')[0]
+    hora_fin_tratamiento = fecha.toISOString().split('T')[1].slice(0, 5)
   }
 
   // Obtener nombres de los códigos seleccionados para concatenar en diagnostico
@@ -155,8 +173,10 @@ export async function updateTreatmentReport(id: string, formData: FormData) {
       nivel_dosificacion,
       tiempo_restriccion,
       fecha_fin_tratamiento,
+      hora_fin_tratamiento,
       notas,
       vet_autorizado_nombre,
+      created_for_vet_id,
     })
     .eq('id', id)
 

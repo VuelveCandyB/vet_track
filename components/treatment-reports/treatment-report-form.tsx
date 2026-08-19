@@ -134,6 +134,7 @@ export default function TreatmentReportForm({
   const [selectedDrugId, setSelectedDrugId] = useState<string>(defaultValues?.drug_id ?? '')
   const [withdrawalTime, setWithdrawalTime] = useState<string>(defaultValues?.tiempo_restriccion?.toString() ?? '')
   const [fechaFin, setFechaFin] = useState<string>('')
+  const [horaFin, setHoraFin] = useState<string>('')
   const [showConfirmation, setShowConfirmation] = useState(false)
   const [formDataToSubmit, setFormDataToSubmit] = useState<FormData | null>(null)
 
@@ -192,14 +193,39 @@ export default function TreatmentReportForm({
     calcularFechaFin(fecha ?? '', parseInt(e.target.value) || null)
   }
 
+  const handleHoraChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const fecha = formRef.current?.querySelector<HTMLInputElement>('input[name="fecha_tratamiento"]')?.value
+    const tiempo = formRef.current?.querySelector<HTMLInputElement>('input[name="tiempo_restriccion"]')?.value
+    calcularFechaFin(fecha ?? '', tiempo ? parseInt(tiempo) : null)
+  }
+
   const calcularFechaFin = (fechaStr: string, horas: number | null) => {
     if (!fechaStr || !horas) {
       setFechaFin('')
+      setHoraFin('')
       return
     }
-    const fecha = new Date(fechaStr)
+
+    // Get hora_tratamiento from form
+    const horaInput = formRef.current?.querySelector<HTMLInputElement>('input[name="hora_tratamiento"]')
+    const horaStr = horaInput?.value || '00:00'
+
+    // Parse fecha and hora
+    const [year, month, day] = fechaStr.split('-')
+    const [horaNum, minNum] = horaStr.split(':')
+
+    // Create date with time
+    const fecha = new Date(parseInt(year), parseInt(month) - 1, parseInt(day), parseInt(horaNum), parseInt(minNum))
+
+    // Add hours
     fecha.setHours(fecha.getHours() + horas)
-    setFechaFin(fecha.toISOString().split('T')[0])
+
+    // Format fecha_fin and hora_fin
+    const fechaFinStr = fecha.toISOString().split('T')[0]
+    const horaFinStr = fecha.toISOString().split('T')[1].slice(0, 5)
+
+    setFechaFin(fechaFinStr)
+    setHoraFin(horaFinStr)
   }
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -414,17 +440,31 @@ export default function TreatmentReportForm({
             )}
           </div>
 
-          <div>
-            <Label htmlFor="fecha_tratamiento" style={{ color: PALETTE.text.primary }}>Fecha de Tratamiento *</Label>
-            <Input
-              id="fecha_tratamiento"
-              name="fecha_tratamiento"
-              type="date"
-              defaultValue={defaultValues?.fecha_tratamiento ?? ''}
-              required
-              onChange={handleFechaChange}
-              className="mt-1"
-            />
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="fecha_tratamiento" style={{ color: PALETTE.text.primary }}>Fecha de Tratamiento *</Label>
+              <Input
+                id="fecha_tratamiento"
+                name="fecha_tratamiento"
+                type="date"
+                defaultValue={defaultValues?.fecha_tratamiento ?? ''}
+                required
+                onChange={handleFechaChange}
+                className="mt-1"
+              />
+            </div>
+            <div>
+              <Label htmlFor="hora_tratamiento" style={{ color: PALETTE.text.primary }}>Hora de Tratamiento *</Label>
+              <Input
+                id="hora_tratamiento"
+                name="hora_tratamiento"
+                type="time"
+                defaultValue={defaultValues?.hora_tratamiento ?? ''}
+                required
+                onChange={handleHoraChange}
+                className="mt-1"
+              />
+            </div>
           </div>
 
           <div>
@@ -490,7 +530,7 @@ export default function TreatmentReportForm({
             <Label htmlFor="withdrawal_time" style={{ color: PALETTE.text.primary }}>Retiro Restricción (horas)</Label>
             <Input
               id="withdrawal_time"
-              name="withdrawal_time"
+              name="tiempo_restriccion"
               type="number"
               value={withdrawalTime}
               onChange={(e) => setWithdrawalTime(e.target.value)}
@@ -499,6 +539,11 @@ export default function TreatmentReportForm({
               className="mt-1"
               style={{ backgroundColor: selectedDrug?.withdrawal_time_horas ? '#F3F4F6' : '#FFFFFF', opacity: selectedDrug?.withdrawal_time_horas ? 0.7 : 1 }}
             />
+            {selectedDrug?.withdrawal_time_dias && (
+              <p className="text-xs mt-1" style={{ color: PALETTE.text.secondary }}>
+                ≈ {selectedDrug.withdrawal_time_dias} días
+              </p>
+            )}
           </div>
         </div>
 
@@ -531,6 +576,7 @@ export default function TreatmentReportForm({
 
       {/* Hidden inputs para los valores que no son editable directo */}
       <input type="hidden" name="fecha_fin_tratamiento" value={fechaFin} />
+      <input type="hidden" name="hora_fin_tratamiento" value={horaFin} />
       <input type="hidden" name="vet_autorizado_nombre" value={vetName} />
       {defaultValues?.horse_id && (
         <>

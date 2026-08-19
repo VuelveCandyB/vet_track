@@ -23,7 +23,7 @@ export default async function TreatmentReportDetailPage({
 
   const { data: report, error } = await supabase
     .from('treatment_reports')
-    .select('*, horse:horses(id, name, registration, microchip), drug:drugs(nombre, categoria, tipo_restriccion, withdrawal_time_horas)')
+    .select('*, horse:horses(id, name, registration, microchip), drug:drugs(nombre, categoria, tipo_restriccion, withdrawal_time_horas, withdrawal_time_dias)')
     .eq('id', id)
     .single()
 
@@ -33,6 +33,16 @@ export default async function TreatmentReportDetailPage({
         Informe no encontrado
       </div>
     )
+  }
+
+  // Helper function to convert 24-hour to 12-hour format
+  const formatTo12Hour = (timeStr: string | undefined | null) => {
+    if (!timeStr) return '—'
+    const [h, m] = timeStr.split(':')
+    const hour = parseInt(h)
+    const isAM = hour < 12
+    const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour
+    return `${displayHour}:${m} ${isAM ? 'AM' : 'PM'}`
   }
 
   // Get veterinarian profile info (search by full name)
@@ -57,9 +67,23 @@ export default async function TreatmentReportDetailPage({
     }
   }
 
+  // Get creator (technician) name
+  let creatorName: string | null = null
+  if (report.created_by) {
+    const { data: creator } = await supabase
+      .from('profiles')
+      .select('first_name, last_name')
+      .eq('id', report.created_by)
+      .single()
+
+    if (creator) {
+      creatorName = `${creator.first_name ?? ''} ${creator.last_name ?? ''}`.trim()
+    }
+  }
+
   const typed = report as TreatmentReport & {
     horse?: { id: string; name: string; registration?: string; microchip?: string }
-    drug?: { nombre: string; categoria: string; tipo_restriccion?: string; withdrawal_time_horas?: number }
+    drug?: { nombre: string; categoria: string; tipo_restriccion?: string; withdrawal_time_horas?: number; withdrawal_time_dias?: number }
   }
 
   return (
@@ -138,7 +162,7 @@ export default async function TreatmentReportDetailPage({
             </div>
             <div>
               <p className="text-xs" style={{ color: PALETTE.text.secondary }}>Hora</p>
-              <p className="text-lg font-semibold">{typed.hora_tratamiento}</p>
+              <p className="text-lg font-semibold">{formatTo12Hour(typed.hora_tratamiento)}</p>
             </div>
           </div>
           <div className="mb-4">
@@ -167,11 +191,18 @@ export default async function TreatmentReportDetailPage({
               <div>
                 <p className="text-xs" style={{ color: PALETTE.text.secondary }}>Tiempo de Restricción (horas)</p>
                 <p className="text-lg font-semibold">{typed.tiempo_restriccion || '—'}</p>
+                {typed.drug?.withdrawal_time_dias && (
+                  <p className="text-xs" style={{ color: PALETTE.text.secondary }}>
+                    ≈ {typed.drug.withdrawal_time_dias} días
+                  </p>
+                )}
               </div>
               {typed.fecha_fin_tratamiento && (
                 <div>
                   <p className="text-xs" style={{ color: PALETTE.text.secondary }}>Fecha Fin de Restricción</p>
-                  <p className="text-lg font-semibold">{new Date(typed.fecha_fin_tratamiento).toLocaleDateString('es-ES')}</p>
+                  <p className="text-lg font-semibold">
+                    {new Date(typed.fecha_fin_tratamiento).toLocaleDateString('es-ES')} {formatTo12Hour(typed.hora_fin_tratamiento)}
+                  </p>
                 </div>
               )}
             </div>
@@ -241,9 +272,15 @@ export default async function TreatmentReportDetailPage({
           <h2 className="text-sm font-semibold uppercase tracking-wider mb-4" style={{ color: PALETTE.text.secondary }}>
             Auditoría
           </h2>
-          <div className="text-xs">
-            <p style={{ color: PALETTE.text.secondary }}>Creado</p>
-            <p className="font-semibold">{typed.created_at ? new Date(typed.created_at).toLocaleString('es-ES') : '—'}</p>
+          <div className="grid grid-cols-2 gap-4 text-xs">
+            <div>
+              <p style={{ color: PALETTE.text.secondary }}>Creado por</p>
+              <p className="font-semibold">{creatorName || '—'}</p>
+            </div>
+            <div>
+              <p style={{ color: PALETTE.text.secondary }}>Fecha de Creación</p>
+              <p className="font-semibold">{typed.created_at ? new Date(typed.created_at).toLocaleString('es-ES') : '—'}</p>
+            </div>
           </div>
         </div>
       </div>

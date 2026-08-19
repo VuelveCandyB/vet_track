@@ -1,22 +1,12 @@
 import { requireUser } from '@/lib/auth'
 import { createClient } from '@/lib/supabase/server'
+import { getVetName } from '@/lib/actions/shared'
 import TreatmentReportForm from '@/components/treatment-reports/treatment-report-form'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { PALETTE } from '@/lib/palette'
 import type { Horse, Drug, TreatmentReport } from '@/lib/types'
 import type { CatalogItem } from '@/components/treatment-reports/item-codes-select'
-
-async function getVetName(supabase: any, user: any): Promise<string> {
-  try {
-    const { data } = await supabase.from('profiles').select('first_name, last_name').eq('id', user.id).single()
-    if (data) {
-      const full = `${data.first_name ?? ''} ${data.last_name ?? ''}`.trim()
-      if (full) return full
-    }
-  } catch {}
-  return user.email
-}
 
 export default async function EditTreatmentReportPage({
   params,

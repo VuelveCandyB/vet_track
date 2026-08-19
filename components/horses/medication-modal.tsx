@@ -54,6 +54,7 @@ export default function MedicationModal({ open, onClose, horseId, horseName, dru
   const [fileName, setFileName] = useState('')
   const [doseAmount, setDoseAmount] = useState('')
   const [doseUnit, setDoseUnit] = useState('mg')
+  const [error, setError] = useState<string | null>(null)
   const formRef = useRef<HTMLFormElement>(null)
 
   const categoriaOptions = useMemo(
@@ -79,16 +80,23 @@ export default function MedicationModal({ open, onClose, horseId, horseName, dru
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    setError(null)
     const formData = new FormData(formRef.current!)
     startTransition(async () => {
-      await createMedication(horseId, formData)
-      formRef.current?.reset()
-      setSelectedDrug(null)
-      setSelectedCategoria('')
-      setFileName('')
-      setDoseAmount('')
-      setDoseUnit('mg')
-      onClose()
+      try {
+        await createMedication(horseId, formData)
+        formRef.current?.reset()
+        setSelectedDrug(null)
+        setSelectedCategoria('')
+        setFileName('')
+        setDoseAmount('')
+        setDoseUnit('mg')
+        onClose()
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : 'Error al guardar el medicamento'
+        setError(msg)
+        console.error('Error en createMedication:', err)
+      }
     })
   }
 
@@ -283,6 +291,12 @@ export default function MedicationModal({ open, onClose, horseId, horseName, dru
                 onChange={e => setFileName(e.target.files?.[0]?.name || '')} />
             </label>
           </div>
+
+          {error && (
+            <div className="rounded-lg p-3 text-sm" style={{ background: '#fee2e2', border: '1px solid #dc2626', color: '#7f1d1d' }}>
+              ⚠️ {error}
+            </div>
+          )}
 
           <div className="flex gap-3 pt-1">
             <Button type="submit" disabled={pending} className="flex-1"

@@ -1,7 +1,8 @@
 'use server'
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
-import { requireUser, can } from '@/lib/auth'
+import { requireUser, can, isTechnician } from '@/lib/auth'
+import { getVetName } from '@/lib/actions/shared'
 
 const ALLOWED_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf'])
 const MAX_SIZE = 10 * 1024 * 1024
@@ -22,16 +23,6 @@ async function uploadAttachment(supabase: any, horseId: string, file: File, pref
   } catch { return null }
 }
 
-async function getVetName(supabase: any, user: any): Promise<string> {
-  try {
-    const { data } = await supabase.from('profiles').select('first_name, last_name').eq('id', user.id).single()
-    if (data) {
-      const full = `${data.first_name ?? ''} ${data.last_name ?? ''}`.trim()
-      if (full) return full
-    }
-  } catch {}
-  return user.email
-}
 
 export async function createDiagnostico(horseId: string, formData: FormData) {
   try {

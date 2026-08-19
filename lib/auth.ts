@@ -50,6 +50,7 @@ export async function can(user: User, key: string, minLevel: Level = 'view'): Pr
     official_vet: roles.includes('official_vet') ? permDef.official_vet : undefined,
     director: roles.includes('director') ? permDef.director : undefined,
     euthanasia: roles.includes('euthanasia') ? permDef.euthanasia : undefined,
+    technician: roles.includes('technician') ? permDef.technician : undefined,
   }
 
   return hasPermission(userLevels, minLevel)
@@ -71,6 +72,12 @@ export async function isAuthorizedVet(userId: string, email: string): Promise<bo
   if (isAdmin(email)) return true
   const roles = await getUserRoles(userId, email)
   return roles.includes('authorized_vet')
+}
+
+export async function isTechnician(userId: string, email: string): Promise<boolean> {
+  if (isAdmin(email)) return false
+  const roles = await getUserRoles(userId, email)
+  return roles.includes('technician')
 }
 
 export async function requirePageAccess(pageKey: string): Promise<void> {
