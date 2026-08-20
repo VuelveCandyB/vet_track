@@ -136,14 +136,22 @@ export default async function HorsesPage({
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-1.5 flex-wrap">
                       {referidoCounts.has(horse.id) && (
-                        <Badge className="text-xs border bg-red-100 text-red-800 border-red-300">
-                          Referido ×{referidoCounts.get(horse.id)}
-                        </Badge>
+                        horse.red_flag
+                          ? <Badge className="text-xs border bg-red-100 text-red-800 border-red-300">
+                              Referido ×{referidoCounts.get(horse.id)}
+                            </Badge>
+                          : <span className="text-xs" style={{ color: PALETTE.text.secondary }}>
+                              Referido ×{referidoCounts.get(horse.id)}
+                            </span>
                       )}
                       {vetlistCounts.has(horse.id) && (
-                        <Badge className="text-xs border bg-orange-100 text-orange-800 border-orange-300">
-                          Vetlist ×{vetlistCounts.get(horse.id)}
-                        </Badge>
+                        vetlistActiveIds.has(horse.id)
+                          ? <Badge className="text-xs border bg-orange-100 text-orange-800 border-orange-300">
+                              Vetlist ×{vetlistCounts.get(horse.id)}
+                            </Badge>
+                          : <span className="text-xs" style={{ color: PALETTE.text.secondary }}>
+                              Vetlist ×{vetlistCounts.get(horse.id)}
+                            </span>
                       )}
                       {!referidoCounts.has(horse.id) && !vetlistCounts.has(horse.id) && (
                         <span style={{ color: PALETTE.text.secondary }}>—</span>
