@@ -71,6 +71,7 @@ export default async function HorseDetailPage({
     horseRes, medsRes, vetlistRes, euthRes,
     drugsRes, diagRes, treatmentReportsRes, pmfReportsRes, vacRes,
     itemCodesRes, catalogItemsRes, vetName, canEuth, officialVet, profilesRes,
+    referidosRes,
   ] = await Promise.all([
     supabase.from('horses').select('*').eq('id', id).single(),
     supabase.from('medications').select('*').eq('horse_id', id).order('administered_at', { ascending: sort === 'asc' }),
@@ -87,6 +88,7 @@ export default async function HorseDetailPage({
     canRegisterEuthanasia(user.id, user.email!),
     isOfficialVet(user.id, user.email!),
     supabase.from('profiles').select('id, first_name, last_name, license_number'),
+    supabase.from('horse_referidos').select('*').eq('horse_id', id).order('fecha_marcado', { ascending: false }),
   ])
 
   const horse = horseRes.data as Horse
@@ -98,6 +100,7 @@ export default async function HorseDetailPage({
   const treatmentReports = (treatmentReportsRes.data ?? []) as (TreatmentReport & { drug?: { nombre: string; categoria?: string; tipo_restriccion?: string } })[]
   const pmfReports = (pmfReportsRes.data ?? []) as (TreatmentReport & { drug?: { nombre: string; categoria?: string; tipo_restriccion?: string } })[]
   const vaccinations = (vacRes.data ?? []) as Vaccination[]
+  const referidos = (referidosRes.data ?? []) as any[]
 
   // Create a map of vet_name -> license_number
   const licenseMap: Record<string, string> = {}
@@ -171,7 +174,7 @@ export default async function HorseDetailPage({
             </Badge>
             {horse.red_flag && (
               <Badge className="text-xs border bg-red-100 text-red-800 border-red-300">
-                Red Flag
+                Referido
               </Badge>
             )}
             {horse.registration && (
@@ -207,12 +210,12 @@ export default async function HorseDetailPage({
         </div>
       )}
 
-      {/* Red Flag banner */}
+      {/* Referido banner */}
       {horse.red_flag && (
         <div className="rounded-lg px-4 py-3 mb-5 flex items-center gap-4"
           style={{ background: '#dc262615', border: '1px solid #dc2626' }}>
           <div className="text-sm font-bold" style={{ color: '#dc2626' }}>
-            RED FLAG — NO SE RECOMIENDA PARA CORRER
+            REFERIDO — NO SE RECOMIENDA PARA CORRER
           </div>
           <div className="text-xs ml-2" style={{ color: PALETTE.text.secondary }}>
             {horse.red_flag_reason} · {horse.red_flag_by} · {horse.red_flag_date?.slice(0, 10)}
@@ -294,6 +297,14 @@ export default async function HorseDetailPage({
             <div className="flex justify-between items-center py-2" style={{ borderBottom: `1px solid ${PALETTE.ui.border}` }}>
               <span className="text-xs" style={{ color: PALETTE.text.secondary }}>Total Registros</span>
               <span className="text-2xl font-bold tabular-nums" style={{ color: PALETTE.primary.green }}>{medications.length + treatmentReports.length + diagnosticos.length}</span>
+            </div>
+            <div className="flex justify-between items-center py-2" style={{ borderBottom: `1px solid ${PALETTE.ui.border}` }}>
+              <span className="text-xs" style={{ color: PALETTE.text.secondary }}>Veces en Vetlist</span>
+              <span className="text-lg font-bold tabular-nums" style={{ color: '#d97706' }}>{vetlist.length}</span>
+            </div>
+            <div className="flex justify-between items-center py-2" style={{ borderBottom: `1px solid ${PALETTE.ui.border}` }}>
+              <span className="text-xs" style={{ color: PALETTE.text.secondary }}>Veces Referido</span>
+              <span className="text-lg font-bold tabular-nums" style={{ color: '#dc2626' }}>{referidos.length}</span>
             </div>
             {medications[0] && (
               <>

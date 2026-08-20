@@ -28,7 +28,7 @@ export default function RedFlagModal({ open, onClose, horseId, horseName }: Prop
         await setRedFlag(horseId, formData)
         onClose()
       } catch (err: any) {
-        setError(err?.message || 'Error al marcar red flag')
+        setError(err?.message || 'Error al marcar referido')
       }
     })
   }
@@ -38,7 +38,7 @@ export default function RedFlagModal({ open, onClose, horseId, horseName }: Prop
       <DialogContent className="max-w-lg"
         style={{ background: PALETTE.background.white, border: `1px solid ${PALETTE.ui.border}` }}>
         <DialogHeader>
-          <DialogTitle style={{ color: PALETTE.text.dark }}>Marcar Red Flag</DialogTitle>
+          <DialogTitle style={{ color: PALETTE.text.dark }}>Marcar Referido</DialogTitle>
           <p className="text-xs" style={{ color: PALETTE.text.secondary }}>{horseName}</p>
         </DialogHeader>
 
@@ -65,7 +65,7 @@ export default function RedFlagModal({ open, onClose, horseId, horseName }: Prop
           <div className="flex gap-3">
             <Button type="submit" disabled={pending} className="flex-1"
               style={{ background: '#dc2626', color: '#FFFFFF' }}>
-              {pending ? 'Guardando...' : 'Marcar Red Flag'}
+              {pending ? 'Guardando...' : 'Marcar Referido'}
             </Button>
             <Button type="button" variant="ghost" onClick={onClose} disabled={pending}>
               Cancelar

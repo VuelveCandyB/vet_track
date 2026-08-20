@@ -62,7 +62,7 @@ export default async function DashboardPage() {
           { label: 'En Descanso',      value: stats.rest,       color: '#f59e0b' },
           { label: 'En Vetlist',       value: stats.vetlist,    color: '#d97706' },
           { label: 'Meds. Hoy',        value: stats.meds_hoy,   color: '#0ea5e9' },
-          { label: 'Red Flag',         value: stats.red_flag,   color: '#dc2626' },
+          { label: 'Referidos',        value: stats.red_flag,   color: '#dc2626' },
           { label: 'Fallecidos',       value: stats.deceased,   color: '#6b7280' },
         ].map(({ label, value, color }) => (
           <div key={label} className="text-center">
@@ -79,11 +79,11 @@ export default async function DashboardPage() {
       {/* Sections Stack */}
       <div className="space-y-8 mt-8">
 
-        {/* Red Flag */}
+        {/* Referidos */}
         {redFlagList.length > 0 && (
           <div className="section">
             <span className="text-sm font-semibold uppercase tracking-wider mb-3 block" style={{ color: PALETTE.text.secondary }}>
-              Caballos con Red Flag
+              Caballos Referidos
             </span>
             <div className="rounded-lg border overflow-hidden" style={{ background: PALETTE.background.white, borderColor: PALETTE.ui.border }}>
               {/* Header */}

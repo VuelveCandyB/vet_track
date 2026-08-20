@@ -41,13 +41,26 @@ export default async function HorsesPage({
 
   if (q) query.or(`name.ilike.%${q}%,microchip.ilike.%${q}%`)
 
-  const [{ data: horses }, { count: total }, { data: vetlistData }] = await Promise.all([
+  const [{ data: horses }, { count: total }, { data: vetlistData }, { data: vetlistAllData }, { data: referidosData }] = await Promise.all([
     query,
     supabase.from('horses').select('id', { count: 'exact', head: true }),
     supabase.from('vetlist').select('horse_id').is('fecha_egreso', null),
+    supabase.from('vetlist').select('horse_id'),
+    supabase.from('horse_referidos').select('horse_id'),
   ])
 
   const vetlistActiveIds = new Set((vetlistData || []).map((v: any) => v.horse_id))
+
+  // Build count maps for historical vetlist and referido counts
+  const vetlistCounts = new Map<string, number>()
+  for (const v of vetlistAllData || []) {
+    vetlistCounts.set(v.horse_id, (vetlistCounts.get(v.horse_id) ?? 0) + 1)
+  }
+
+  const referidoCounts = new Map<string, number>()
+  for (const r of referidosData || []) {
+    referidoCounts.set(r.horse_id, (referidoCounts.get(r.horse_id) ?? 0) + 1)
+  }
 
   const todayYear = new Date().getFullYear()
 
@@ -122,13 +135,17 @@ export default async function HorsesPage({
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-1.5 flex-wrap">
-                      {horse.red_flag && (
-                        <Badge className="text-xs border bg-red-100 text-red-800 border-red-300">Red Flag</Badge>
+                      {referidoCounts.has(horse.id) && (
+                        <Badge className="text-xs border bg-red-100 text-red-800 border-red-300">
+                          Referido ×{referidoCounts.get(horse.id)}
+                        </Badge>
                       )}
-                      {vetlistActiveIds.has(horse.id) && (
-                        <Badge className="text-xs border bg-orange-100 text-orange-800 border-orange-300">Vetlist</Badge>
+                      {vetlistCounts.has(horse.id) && (
+                        <Badge className="text-xs border bg-orange-100 text-orange-800 border-orange-300">
+                          Vetlist ×{vetlistCounts.get(horse.id)}
+                        </Badge>
                       )}
-                      {!horse.red_flag && !vetlistActiveIds.has(horse.id) && (
+                      {!referidoCounts.has(horse.id) && !vetlistCounts.has(horse.id) && (
                         <span style={{ color: PALETTE.text.secondary }}>—</span>
                       )}
                     </div>

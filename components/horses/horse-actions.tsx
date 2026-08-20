@@ -152,12 +152,12 @@ export default function HorseActions({
             Registrar Vacuna
           </Button>
 
-          {/* Red Flag buttons */}
+          {/* Referido buttons */}
           {!horse.red_flag ? (
             <Button onClick={() => setOpen('redflag')} size="sm"
               className="text-sm font-semibold min-w-fit"
               style={{ background: '#dc2626', color: '#FFFFFF' }}>
-              Marcar Red Flag
+              Marcar Referido
             </Button>
           ) : (
             <ConfirmDeleteButton
@@ -165,11 +165,11 @@ export default function HorseActions({
                 await clearRedFlag(horse.id)
                 router.refresh()
               }}
-              message="¿Quitar el Red Flag? El caballo volverá a ser recomendado para correr."
+              message="¿Quitar el Referido? El caballo volverá a ser recomendado para correr."
               className="text-sm font-semibold min-w-fit px-3 py-1.5 rounded-md transition-colors"
               style={{ background: '#666', color: '#FFFFFF' }}
             >
-              Quitar Red Flag
+              Quitar Referido
             </ConfirmDeleteButton>
           )}
         </div>
