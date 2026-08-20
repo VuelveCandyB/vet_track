@@ -59,7 +59,7 @@ export default async function MedicationsReportPage({
     if (filters.vet)       q = q.ilike('vet_autorizado_nombre', `%${filters.vet}%`)
     if (horseIds.length)   q = q.in('horse_id', horseIds)
     if (drugIds.length)    q = q.in('drug_id', drugIds)
-    const { data, error } = await q.order('fecha_tratamiento', { ascending: false }).limit(500)
+    const { data, error } = await q.order('fecha_tratamiento', { ascending: false }).order('hora_tratamiento', { ascending: false }).limit(500)
     if (error) console.error('Treatment reports query error:', error)
     rows = data ?? []
   }

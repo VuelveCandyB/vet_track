@@ -370,18 +370,35 @@ export default async function HorseDetailPage({
                   ...diagnosticos.map((d: any) => ({ ...d, recordType: 'diagnostico' })),
                   ...vaccinations.map((v: any) => ({ ...v, recordType: 'vaccination' }))
                 ].sort((a: any, b: any) => {
-                  let dateA: number
-                  let dateB: number
+                  // Primary sort key: extract full date+time when available
+                  const getFullDateTime = (item: any): number => {
+                    if (item.recordType === 'treatmentReport' || item.recordType === 'pmfReport') {
+                      if (item.hora_tratamiento) {
+                        return new Date(`${item.fecha_tratamiento}T${item.hora_tratamiento}`).getTime()
+                      }
+                      return new Date(item.fecha_tratamiento).getTime()
+                    }
+                    const dateField = item.recordType === 'medication' ? item.administered_at : item.fecha
+                    return new Date(dateField).getTime()
+                  }
 
-                  if (a.recordType === 'medication') dateA = new Date(a.administered_at).getTime()
-                  else if (a.recordType === 'treatmentReport' || a.recordType === 'pmfReport') dateA = new Date(a.fecha_tratamiento).getTime()
-                  else dateA = new Date(a.fecha).getTime()
+                  // Secondary sort key (tiebreak): created_at timestamp
+                  const getCreatedAt = (item: any): number => {
+                    return item.created_at ? new Date(item.created_at).getTime() : 0
+                  }
 
-                  if (b.recordType === 'medication') dateB = new Date(b.administered_at).getTime()
-                  else if (b.recordType === 'treatmentReport' || b.recordType === 'pmfReport') dateB = new Date(b.fecha_tratamiento).getTime()
-                  else dateB = new Date(b.fecha).getTime()
+                  const primaryA = getFullDateTime(a)
+                  const primaryB = getFullDateTime(b)
 
-                  return dateB - dateA // Most recent first
+                  let result: number
+                  if (primaryA !== primaryB) {
+                    result = primaryA - primaryB
+                  } else {
+                    result = getCreatedAt(a) - getCreatedAt(b)
+                  }
+
+                  // Respect the sort toggle: ascending means oldest first, descending means newest first
+                  return sort === 'asc' ? result : -result
                 })
 
                 return combinedRecords.map((item: any, i: number) => {
