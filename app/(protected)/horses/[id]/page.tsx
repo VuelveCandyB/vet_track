@@ -1,4 +1,4 @@
-import { requireUser, canRegisterEuthanasia, isAdmin, isOfficialVet } from '@/lib/auth'
+import { requireUser, canRegisterEuthanasia, isAdmin, isOfficialVet, isTechnician } from '@/lib/auth'
 import ConfirmDeleteButton from '@/components/admin/confirm-delete-button'
 import { createClient } from '@/lib/supabase/server'
 import { deleteMedication } from '@/lib/actions/medications'
@@ -72,7 +72,7 @@ export default async function HorseDetailPage({
   const [
     horseRes, medsRes, vetlistRes, euthRes,
     drugsRes, vaccineTypesRes, diagRes, treatmentReportsRes, pmfReportsRes, vacRes,
-    itemCodesRes, catalogItemsRes, vetName, canEuth, officialVet, profilesRes,
+    itemCodesRes, catalogItemsRes, vetName, canEuth, officialVet, isTech, profilesRes,
     referidosRes,
   ] = await Promise.all([
     supabase.from('horses').select('*').eq('id', id).single(),
@@ -90,6 +90,7 @@ export default async function HorseDetailPage({
     getVetName(supabase, user),
     canRegisterEuthanasia(user.id, user.email!),
     isOfficialVet(user.id, user.email!),
+    isTechnician(user.id, user.email!),
     supabase.from('profiles').select('id, first_name, last_name, license_number'),
     supabase.from('horse_referidos').select('*').eq('horse_id', id).order('fecha_marcado', { ascending: false }),
   ])
@@ -234,6 +235,7 @@ export default async function HorseDetailPage({
         canEuth={canEuth}
         isAdmin={userIsAdmin}
         isOfficialVet={officialVet}
+        isTechnician={isTech}
         vetName={vetName}
         today={today}
         drugs={drugs}

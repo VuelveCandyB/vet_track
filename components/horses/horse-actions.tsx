@@ -21,6 +21,7 @@ interface Props {
   canEuth: boolean
   isAdmin: boolean
   isOfficialVet: boolean
+  isTechnician: boolean
   vetName: string
   today: string
   drugs: Drug[]
@@ -29,7 +30,7 @@ interface Props {
 }
 
 export default function HorseActions({
-  horse, vetlistActiva, canEuth, isAdmin, isOfficialVet, vetName, today,
+  horse, vetlistActiva, canEuth, isAdmin, isOfficialVet, isTechnician, vetName, today,
   drugs, vaccineTypes, diasRestantes,
 }: Props) {
   const [open, setOpen] = useState<ModalType>(null)
@@ -155,9 +156,15 @@ export default function HorseActions({
 
           {/* Referido buttons */}
           {!horse.red_flag ? (
-            <Button onClick={() => setOpen('redflag')} size="sm"
+            <Button onClick={() => setOpen('redflag')} size="sm" disabled={isTechnician}
               className="text-sm font-semibold min-w-fit"
-              style={{ background: '#dc2626', color: '#FFFFFF' }}>
+              style={{
+                background: isTechnician ? '#ccc' : '#dc2626',
+                color: '#FFFFFF',
+                cursor: isTechnician ? 'not-allowed' : 'pointer',
+                opacity: isTechnician ? 0.6 : 1,
+              }}
+              title={isTechnician ? 'Los técnicos no pueden referir caballos' : undefined}>
               Marcar Referido
             </Button>
           ) : (
