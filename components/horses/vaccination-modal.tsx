@@ -26,6 +26,7 @@ export default function VaccinationModal({ open, onClose, horseId, horseName, ve
   const [error, setError] = useState<string | null>(null)
   const [pdfFile, setPdfFile] = useState<File | null>(null)
   const [pdfError, setPdfError] = useState<string | null>(null)
+  const [selectedVaccineId, setSelectedVaccineId] = useState<string>('')
   const formRef = useRef<HTMLFormElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -87,9 +88,12 @@ export default function VaccinationModal({ open, onClose, horseId, horseName, ve
               <Label className="text-xs font-semibold uppercase tracking-wider" style={{ color: PALETTE.text.secondary }}>
                 Vacuna *
               </Label>
-              <select name="vaccine_type_id" required
+              <select
+                name="vaccine_type_id"
+                required
                 className="flex h-9 w-full rounded-md border px-3 py-1 text-sm"
-                style={SELECT_STYLE}>
+                style={SELECT_STYLE}
+                onChange={(e) => setSelectedVaccineId(e.target.value)}>
                 <option value="" disabled>Seleccionar vacuna...</option>
                 <optgroup label="Requeridas">
                   {vaccineTypes.filter(v => v.required && v.active).sort((a, b) => a.sort_order - b.sort_order).map(v => (
@@ -102,6 +106,11 @@ export default function VaccinationModal({ open, onClose, horseId, horseName, ve
                   ))}
                 </optgroup>
               </select>
+              {selectedVaccineId && (
+                <p className="text-xs" style={{ color: PALETTE.text.secondary }}>
+                  Validez: {vaccineTypes.find(v => v.id === selectedVaccineId)?.validity_days || 365} días
+                </p>
+              )}
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs font-semibold uppercase tracking-wider" style={{ color: PALETTE.text.secondary }}>
@@ -109,6 +118,20 @@ export default function VaccinationModal({ open, onClose, horseId, horseName, ve
               </Label>
               <Input type="date" name="fecha" required defaultValue={today} />
             </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label className="text-xs font-semibold uppercase tracking-wider" style={{ color: PALETTE.text.secondary }}>
+              #Ser (10 caracteres)
+            </Label>
+            <Input
+              type="text"
+              name="serial_number"
+              placeholder="Número de serie del lote"
+              maxLength={10}
+              pattern="[A-Za-z0-9]{0,10}"
+              title="Solo alfanuméricos, máximo 10 caracteres"
+            />
           </div>
 
           <div className="space-y-1.5">
@@ -129,19 +152,29 @@ export default function VaccinationModal({ open, onClose, horseId, horseName, ve
             <Label className="text-xs font-semibold uppercase tracking-wider" style={{ color: PALETTE.text.secondary }}>
               Certificado PDF (Opcional)
             </Label>
-            <div className="flex items-center gap-2">
-              <Input
-                ref={fileInputRef}
-                type="file"
-                accept=".pdf"
-                onChange={handlePdfChange}
-                disabled={pending}
-                className="text-xs"
-              />
-            </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".pdf"
+              onChange={handlePdfChange}
+              disabled={pending}
+              className="hidden"
+            />
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={pending}
+              className="w-full flex items-center justify-center gap-2 rounded-md border px-3 py-2 text-sm transition-colors"
+              style={{
+                background: pdfFile ? PALETTE.primary.green : PALETTE.background.white,
+                borderColor: PALETTE.ui.border,
+                color: pdfFile ? '#FFFFFF' : PALETTE.text.primary,
+              }}>
+              <span>{pdfFile ? '✓ Archivo seleccionado' : '📄 Seleccionar PDF'}</span>
+            </button>
             {pdfFile && (
-              <p className="text-xs" style={{ color: PALETTE.primary.green }}>
-                ✓ {pdfFile.name}
+              <p className="text-xs" style={{ color: PALETTE.text.secondary }}>
+                {pdfFile.name}
               </p>
             )}
             {pdfError && (

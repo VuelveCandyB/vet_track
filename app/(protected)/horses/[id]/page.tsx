@@ -2,11 +2,13 @@ import { requireUser, canRegisterEuthanasia, isAdmin, isOfficialVet } from '@/li
 import ConfirmDeleteButton from '@/components/admin/confirm-delete-button'
 import { createClient } from '@/lib/supabase/server'
 import { deleteMedication } from '@/lib/actions/medications'
+import { getVaccinationPdfUrl } from '@/lib/actions/vaccinations'
 import HorseActions from '@/components/horses/horse-actions'
 import { Badge } from '@/components/ui/badge'
 import AnimatedCapsuleDot from '@/components/timeline/animated-capsule-dot'
 import AnimatedDiagnosticoDot from '@/components/timeline/animated-diagnostico-dot'
 import AnimatedVaccinationDot from '@/components/timeline/animated-vaccination-dot'
+import VaccinationPdfButton from '@/components/horses/vaccination-pdf-button'
 import Link from 'next/link'
 import type { Horse, Medication, VetlistEntry, EuthanasiaRecord, Drug, Diagnostico, TreatmentReport, Vaccination, VaccineType } from '@/lib/types'
 import { STATUS_LABEL } from '@/lib/constants'
@@ -350,7 +352,16 @@ export default async function HorseDetailPage({
                     <div key={vt.id} className="flex justify-between items-center py-1.5 text-xs"
                       style={{ borderBottom: `1px solid ${PALETTE.ui.border}` }}>
                       <span style={{ color: PALETTE.text.secondary }}>{vt.name}</span>
-                      <span style={{ color: statusColor, fontWeight: '600' }}>{status}</span>
+                      <div className="flex items-center gap-2">
+                        {lastVac?.pdf_path && (
+                          <VaccinationPdfButton
+                            vaccinationId={lastVac.id}
+                            pdfPath={lastVac.pdf_path}
+                            pdfName={lastVac.pdf_name}
+                          />
+                        )}
+                        <span style={{ color: statusColor, fontWeight: '600' }}>{status}</span>
+                      </div>
                     </div>
                   )
                 })}
@@ -690,8 +701,17 @@ export default async function HorseDetailPage({
                               })()}
                             </div>
                           </div>
-                          <div className="text-xs text-right flex-shrink-0" style={{ color: PALETTE.text.primary }}>
-                            {v.fecha}
+                          <div className="flex flex-col items-end gap-2 flex-shrink-0">
+                            <div className="text-xs" style={{ color: PALETTE.text.primary }}>
+                              {v.fecha}
+                            </div>
+                            {v.pdf_path && (
+                              <VaccinationPdfButton
+                                vaccinationId={v.id}
+                                pdfPath={v.pdf_path}
+                                pdfName={v.pdf_name}
+                              />
+                            )}
                           </div>
                         </div>
                       </div>

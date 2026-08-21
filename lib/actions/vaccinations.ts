@@ -4,6 +4,28 @@ import { createClient } from '@/lib/supabase/server'
 import { requireUser, can } from '@/lib/auth'
 import { getVetName } from './shared'
 
+export async function getVaccinationPdfUrl(vaccinationId: string, pdfPath: string) {
+  const user = await requireUser()
+  const supabase = await createClient()
+
+  // Verify user can access this vaccination
+  const { data: vac } = await supabase
+    .from('vaccinations')
+    .select('horse_id')
+    .eq('id', vaccinationId)
+    .single()
+
+  if (!vac) throw new Error('Vacunación no encontrada')
+
+  // Generate signed URL (valid for 1 hour)
+  const { data, error } = await supabase.storage
+    .from('vaccinations')
+    .createSignedUrl(pdfPath, 3600)
+
+  if (error) throw new Error(`Error al generar enlace: ${error.message}`)
+  return data.signedUrl
+}
+
 async function sendVaccinationEmail(supabase: any, horseName: string, fecha: string, vaccineName: string, microchip: string | null | undefined) {
   try {
     const { data: recipients } = await supabase
@@ -127,6 +149,7 @@ export async function createVaccination(horseId: string, formData: FormData) {
     vet_name:       vetName,
     fecha,
     notas:          (formData.get('notas') as string) || null,
+    serial_number:  (formData.get('serial_number') as string) || null,
     pdf_path:       pdfPath,
     pdf_name:       pdfName,
     created_by:     user.id,
