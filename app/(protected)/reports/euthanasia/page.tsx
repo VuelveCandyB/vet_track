@@ -20,7 +20,7 @@ export default async function EuthanasiaReportPage({
     notificado: searchParamsObj.notificado ?? '',
   }
   const user = await requireUser()
-  const admin = isAdmin(user.email!)
+  const admin = await isAdmin(user.id, user.email!)
   const supabase = await createClient()
 
   let rows: any[] = []

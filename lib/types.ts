@@ -132,6 +132,9 @@ export interface Vaccination {
   vaccine_type_id?: string
   fecha: string
   notas?: string
+  serial_number?: string
+  pdf_path?: string
+  pdf_name?: string
   created_by?: string
   created_at?: string
   vaccine_types?: VaccineType

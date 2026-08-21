@@ -8,9 +8,11 @@ interface RoleManagementModalProps {
   userId: string
   userEmail: string
   currentRoles: string[]
+  currentUserId?: string
 }
 
 const ROLES = [
+  { id: 'admin', label: 'Administrador', description: 'Acceso total al sistema — gestiona usuarios, roles y configuración' },
   { id: 'authorized_vet', label: 'Veterinario Autorizado', description: 'Crea informes de tratamiento' },
   { id: 'official_vet', label: 'Veterinario Oficial', description: 'Radica y supervisa informes' },
   { id: 'director', label: 'Director', description: 'Gestor de usuarios y auditoría' },
@@ -18,12 +20,14 @@ const ROLES = [
   { id: 'euthanasia', label: 'Personal de Eutanasia', description: 'Gestiona eutanasias' },
 ]
 
-export default function RoleManagementModal({ userId, userEmail, currentRoles }: RoleManagementModalProps) {
+export default function RoleManagementModal({ userId, userEmail, currentRoles, currentUserId }: RoleManagementModalProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [selectedRoles, setSelectedRoles] = useState<Set<string>>(new Set(currentRoles))
   const [isLoading, setIsLoading] = useState(false)
 
   const handleToggleRole = (roleId: string) => {
+    const isAdminRole = roleId === 'admin' && userId === currentUserId
+    if (isAdminRole) return
     const newSet = new Set(selectedRoles)
     if (newSet.has(roleId)) {
       newSet.delete(roleId)
@@ -84,18 +88,26 @@ export default function RoleManagementModal({ userId, userEmail, currentRoles }:
 
             {/* Checkboxes */}
             <div className="space-y-3 mb-6">
-              {ROLES.map(role => (
+              {ROLES.map(role => {
+                const isAdminRole = role.id === 'admin' && userId === currentUserId
+                const isSelected = selectedRoles.has(role.id)
+                const bgColor = role.id === 'admin' ? PALETTE.form.errorBg : (isSelected ? PALETTE.primary.green + '10' : 'transparent')
+                const borderColor = role.id === 'admin' ? PALETTE.form.errorBorder : (isSelected ? PALETTE.primary.green : PALETTE.ui.border)
+                return (
                 <label
                   key={role.id}
-                  className="flex items-start gap-3 p-3 rounded-lg cursor-pointer transition-colors"
+                  className="flex items-start gap-3 p-3 rounded-lg transition-colors"
                   style={{
-                    background: selectedRoles.has(role.id) ? PALETTE.primary.green + '10' : 'transparent',
-                    border: `1px solid ${selectedRoles.has(role.id) ? PALETTE.primary.green : PALETTE.ui.border}`,
+                    background: bgColor,
+                    border: `1px solid ${borderColor}`,
+                    cursor: isAdminRole ? 'not-allowed' : 'pointer',
+                    opacity: isAdminRole ? 0.6 : 1,
                   }}>
                   <input
                     type="checkbox"
                     checked={selectedRoles.has(role.id)}
                     onChange={() => handleToggleRole(role.id)}
+                    disabled={isAdminRole}
                     style={{ marginTop: '4px' }}
                   />
                   <div className="flex-1">
@@ -107,7 +119,8 @@ export default function RoleManagementModal({ userId, userEmail, currentRoles }:
                     </p>
                   </div>
                 </label>
-              ))}
+              )
+            })}
             </div>
 
             {/* Buttons */}

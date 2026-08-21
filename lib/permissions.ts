@@ -3,7 +3,7 @@
 // Levels: 'view' < 'full' < 'special'
 // Admin always has full access (checked separately via isAdmin)
 
-export type Role = 'authorized_vet' | 'official_vet' | 'director' | 'euthanasia' | 'technician'
+export type Role = 'admin' | 'authorized_vet' | 'official_vet' | 'director' | 'euthanasia' | 'technician'
 export type Level = 'view' | 'full' | 'special'
 
 export const PERMISSIONS: Record<string, Partial<Record<Role, Level>>> = {

@@ -7,7 +7,7 @@ import { createClient } from '@/lib/supabase/server'
 export default async function ProtectedLayout({ children }: { children: React.ReactNode }) {
   const user = await requireUser()
   const supabase = await createClient()
-  const isAdminUser = isAdmin(user.email || '')
+  const isAdminUser = await isAdmin(user.id, user.email || '')
   const officialVet = await isOfficialVet(user.id, user.email || '')
   const isTech = await isTechnician(user.id, user.email || '')
   const canAccessAdmin = await can(user, 'page.admin', 'view')

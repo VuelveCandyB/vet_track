@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import RoleManagementModal from '@/components/admin/role-management-modal'
+import PasswordChangeModal from '@/components/admin/password-change-modal'
 import SupervisorSelect from '@/components/admin/supervisor-select'
 import ConfirmDeleteButton from '@/components/admin/confirm-delete-button'
 import { updateUserProfile, setVaccinationNotifications, blockUser, unblockUser } from '@/lib/actions/admin'
@@ -26,9 +27,10 @@ interface UserRowProps {
   }
   blocked?: boolean
   availableVets?: Array<{ id: string; label: string }>
+  currentUserId?: string
 }
 
-export default function UserRow({ user: u, blocked = false, availableVets = [] }: UserRowProps) {
+export default function UserRow({ user: u, blocked = false, availableVets = [], currentUserId }: UserRowProps) {
   const router = useRouter()
   const [firstName, setFirstName] = useState(u.first_name)
   const [lastName, setLastName] = useState(u.last_name)
@@ -205,7 +207,11 @@ export default function UserRow({ user: u, blocked = false, availableVets = [] }
           userId={u.id}
           userEmail={u.email}
           currentRoles={u.roles}
+          currentUserId={currentUserId}
         />
+      </td>
+      <td className="px-3 py-2">
+        <PasswordChangeModal userId={u.id} userEmail={u.email} />
       </td>
       <td className="px-3 py-2">
         {u.roles.includes('technician') ? (

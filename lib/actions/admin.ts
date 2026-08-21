@@ -6,7 +6,7 @@ import { requireUser, isAdmin } from '@/lib/auth'
 
 async function requireAdmin() {
   const user = await requireUser()
-  if (!isAdmin(user.email!)) throw new Error('Acceso denegado')
+  if (!await isAdmin(user.id, user.email!)) throw new Error('Acceso denegado')
   return user
 }
 
@@ -190,7 +190,7 @@ export async function setUserRoles(userId: string, roles: string[]) {
   const user = await requireAdmin()
   const supabase = await createClient()
 
-  const validRoles = ['authorized_vet', 'official_vet', 'euthanasia', 'director', 'technician']
+  const validRoles = ['admin', 'authorized_vet', 'official_vet', 'euthanasia', 'director', 'technician']
   for (const role of roles) {
     if (!validRoles.includes(role)) {
       throw new Error(`Rol inválido: ${role}`)
@@ -205,6 +205,11 @@ export async function setUserRoles(userId: string, roles: string[]) {
 
   const currentRoleSet = new Set((currentRoles ?? []).map(r => r.role))
   const newRoleSet = new Set(roles)
+
+  // Prevent self-revocation of admin role
+  if (user.id === userId && currentRoleSet.has('admin') && !newRoleSet.has('admin')) {
+    throw new Error('No puedes quitarte el rol de administrador a ti mismo')
+  }
 
   // Delete roles that are no longer needed
   const rolesToDelete = [...currentRoleSet].filter(r => !newRoleSet.has(r))
@@ -303,6 +308,22 @@ export async function unblockUser(userId: string) {
   const admin = createAdminClient()
   const { error } = await admin.auth.admin.updateUserById(userId, {
     ban_duration: 'none',
+  })
+
+  if (error) throw new Error(error.message)
+  revalidatePath('/admin/users')
+}
+
+export async function setUserPassword(userId: string, newPassword: string) {
+  await requireAdmin()
+
+  if (!newPassword || newPassword.length < 6) {
+    throw new Error('La contraseña debe tener al menos 6 caracteres')
+  }
+
+  const admin = createAdminClient()
+  const { error } = await admin.auth.admin.updateUserById(userId, {
+    password: newPassword,
   })
 
   if (error) throw new Error(error.message)

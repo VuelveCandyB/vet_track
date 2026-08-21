@@ -8,7 +8,7 @@ import type { VaccineType } from '@/lib/types'
 
 export default async function VaccinesPage() {
   const user = await requireUser()
-  if (!isAdmin(user.email!)) redirect('/horses')
+  if (!await isAdmin(user.id, user.email!)) redirect('/horses')
 
   const supabase = await createClient()
   const { data: vaccineTypes } = await supabase

@@ -1,4 +1,4 @@
-import { requirePageAccess } from '@/lib/auth'
+import { requirePageAccess, requireUser } from '@/lib/auth'
 import { createClient } from '@/lib/supabase/server'
 import AdminTabs from '@/components/admin/admin-tabs'
 import UserRow from '@/components/admin/user-row'
@@ -9,6 +9,7 @@ import { PALETTE } from '@/lib/palette'
 
 export default async function AdminUsersPage() {
   await requirePageAccess('page.admin')
+  const currentUser = await requireUser()
 
   const supabase = await createClient()
 
@@ -77,7 +78,7 @@ export default async function AdminUsersPage() {
           <table className="w-full text-sm border-collapse">
             <thead>
               <tr style={{ borderBottom: `1px solid ${PALETTE.ui.border}` }}>
-                {['Email', 'Nombre', 'Apellido', 'Licencia', 'Teléfono', 'Último acceso', 'Estado', 'Rol', 'Supervisor', 'Notif. Vacuna', 'Guardar'].map(h => (
+                {['Email', 'Nombre', 'Apellido', 'Licencia', 'Teléfono', 'Último acceso', 'Estado', 'Rol', 'Contraseña', 'Supervisor', 'Notif. Vacuna', 'Guardar'].map(h => (
                   <th key={h} className="px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wider"
                     style={{ color: PALETTE.text.secondary }}>
                     {h === 'Supervisor' ? <SupervisorSelectHeader /> : h}
@@ -87,7 +88,7 @@ export default async function AdminUsersPage() {
             </thead>
             <tbody>
               {users.map((u: any) => (
-                <UserRow key={u.id} user={u} blocked={u.blocked} availableVets={availableVets} />
+                <UserRow key={u.id} user={u} blocked={u.blocked} availableVets={availableVets} currentUserId={currentUser.id} />
               ))}
             </tbody>
           </table>

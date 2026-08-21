@@ -5,17 +5,19 @@ import { PALETTE } from '@/lib/palette'
 
 interface Props {
   vaccinationId: string
-  pdfPath: string
-  pdfName: string
+  pdfPath?: string
+  pdfName?: string
 }
 
 export default function VaccinationPdfButton({ vaccinationId, pdfPath, pdfName }: Props) {
   const [loading, setLoading] = useState(false)
 
+  if (!pdfPath) return null
+
   async function handleDownload() {
     try {
       setLoading(true)
-      const url = await getVaccinationPdfUrl(vaccinationId, pdfPath)
+      const url = await getVaccinationPdfUrl(vaccinationId, pdfPath!)
       window.open(url, '_blank')
     } catch (error) {
       alert('Error al descargar PDF')

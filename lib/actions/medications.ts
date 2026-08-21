@@ -60,7 +60,7 @@ export async function createMedication(horseId: string, formData: FormData) {
 
 export async function deleteMedication(horseId: string, medId: string) {
   const user = await requireUser()
-  if (!isAdmin(user.email!)) throw new Error('Acceso denegado')
+  if (!await isAdmin(user.id, user.email!)) throw new Error('Acceso denegado')
   const supabase = await createClient()
   await supabase.from('medications').delete().eq('id', medId)
   revalidatePath(`/horses/${horseId}`)
@@ -76,7 +76,7 @@ export async function reviewMedication(medId: string) {
   const { data: treatment } = await supabase.from('treatment_reports').select('id, horse_id, created_for_vet_id').eq('id', medId).single()
   if (!treatment) throw new Error('Tratamiento no encontrado')
 
-  if (!isAdmin(user.email!)) {
+  if (!await isAdmin(user.id, user.email!)) {
     if (treatment.created_for_vet_id !== user.id) throw new Error('Acceso denegado')
   }
 

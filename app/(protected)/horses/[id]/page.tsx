@@ -145,7 +145,7 @@ export default async function HorseDetailPage({
     )
   }
 
-  const userIsAdmin = isAdmin(user.email!)
+  const userIsAdmin = await isAdmin(user.id, user.email!)
 
   return (
     <div style={{

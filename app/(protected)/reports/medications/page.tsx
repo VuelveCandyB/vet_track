@@ -29,7 +29,7 @@ export default async function MedicationsReportPage({
     date_to: searchParamsObj.date_to ?? '',
   }
   const user = await requireUser()
-  const admin = isAdmin(user.email!)
+  const admin = await isAdmin(user.id, user.email!)
   const supabase = await createClient()
 
   let rows: any[] = []

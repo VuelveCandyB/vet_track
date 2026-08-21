@@ -8,7 +8,7 @@ import { PALETTE } from '@/lib/palette'
 
 export default async function AdminDrugsPage() {
   const user = await requireUser()
-  if (!isAdmin(user.email!)) redirect('/dashboard')
+  if (!await isAdmin(user.id, user.email!)) redirect('/dashboard')
 
   const supabase = await createClient()
   const { data: drugs } = await supabase.from('drugs').select('*').order('categoria').order('nombre')

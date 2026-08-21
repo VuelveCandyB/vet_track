@@ -6,7 +6,7 @@ export async function getUserRoles(): Promise<string[]> {
   const user = await requireUser()
 
   // Check if admin (by email)
-  if (isAdmin(user.email!)) {
+  if (await isAdmin(user.id, user.email!)) {
     return ['admin']
   }
 
