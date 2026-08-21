@@ -79,7 +79,6 @@ export default function VaccinationModal({ open, onClose, horseId, horseName, ve
         style={{ background: PALETTE.background.white, border: `1px solid ${PALETTE.ui.border}` }}>
         <DialogHeader>
           <DialogTitle style={{ color: PALETTE.text.dark }}>Registro de Vacunación</DialogTitle>
-          <p className="text-xs" style={{ color: PALETTE.text.secondary }}>{horseName}</p>
         </DialogHeader>
 
         <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
