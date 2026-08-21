@@ -83,6 +83,9 @@ export default async function DashboardPage() {
     }
   }
 
+  // Sort alphabetically by horse name
+  vaccineStatusByHorse.sort((a, b) => a.horse_name.localeCompare(b.horse_name))
+
   const stats = {
     total:    (statsRaw as Record<string, number>).total    ?? 0,
     active:   (statsRaw as Record<string, number>).active   ?? 0,
