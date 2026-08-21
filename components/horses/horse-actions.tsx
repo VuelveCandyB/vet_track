@@ -11,7 +11,7 @@ import RedFlagModal from './red-flag-modal'
 import ConfirmDeleteButton from '@/components/admin/confirm-delete-button'
 import { clearRedFlag } from '@/lib/actions/horses'
 import { PALETTE } from '@/lib/palette'
-import type { Horse, VetlistEntry, Drug } from '@/lib/types'
+import type { Horse, VetlistEntry, Drug, VaccineType } from '@/lib/types'
 
 type ModalType = 'vetlist' | 'release' | 'euthanasia' | 'vaccination' | 'redflag' | null
 
@@ -24,12 +24,13 @@ interface Props {
   vetName: string
   today: string
   drugs: Drug[]
+  vaccineTypes: VaccineType[]
   diasRestantes: number | null
 }
 
 export default function HorseActions({
   horse, vetlistActiva, canEuth, isAdmin, isOfficialVet, vetName, today,
-  drugs, diasRestantes,
+  drugs, vaccineTypes, diasRestantes,
 }: Props) {
   const [open, setOpen] = useState<ModalType>(null)
   const [, startTransition] = useTransition()
@@ -196,7 +197,7 @@ export default function HorseActions({
       <VaccinationModal
         open={open === 'vaccination'} onClose={closeAndRefresh}
         horseId={horse.id} horseName={horse.name}
-        vetName={vetName} today={today}
+        vetName={vetName} today={today} vaccineTypes={vaccineTypes}
       />
       <RedFlagModal
         open={open === 'redflag'} onClose={closeAndRefresh}

@@ -85,6 +85,54 @@ export async function deleteDrug(drugId: string) {
   revalidatePath('/admin/drugs')
 }
 
+// ── VACUNAS ──────────────────────────────────────────────────
+export async function createVaccineType(formData: FormData) {
+  await requireAdmin()
+  const supabase = await createClient()
+  const name = (formData.get('name') as string).trim()
+  const validity_days = intOrNull(formData.get('validity_days') as string) || 365
+  const warning_days = intOrNull(formData.get('warning_days') as string) || 30
+  const required = formData.get('required') === 'on'
+  const sort_order = intOrNull(formData.get('sort_order') as string) || 0
+
+  if (!name) return
+
+  await supabase.from('vaccine_types').insert({
+    name,
+    validity_days,
+    warning_days,
+    required,
+    sort_order,
+  })
+  revalidatePath('/admin/vaccines')
+}
+
+export async function updateVaccineType(vaccineTypeId: string, formData: FormData) {
+  await requireAdmin()
+  const supabase = await createClient()
+  const name = (formData.get('name') as string).trim()
+  const validity_days = intOrNull(formData.get('validity_days') as string) || 365
+  const warning_days = intOrNull(formData.get('warning_days') as string) || 30
+  const required = formData.get('required') === 'on'
+  const sort_order = intOrNull(formData.get('sort_order') as string) || 0
+
+  await supabase.from('vaccine_types').update({
+    name,
+    validity_days,
+    warning_days,
+    required,
+    sort_order,
+  }).eq('id', vaccineTypeId)
+  revalidatePath('/admin/vaccines')
+}
+
+export async function deleteVaccineType(vaccineTypeId: string) {
+  await requireAdmin()
+  const supabase = await createClient()
+  await supabase.from('vaccine_types').update({ active: false }).eq('id', vaccineTypeId)
+  revalidatePath('/admin/vaccines')
+}
+
 // ── USUARIOS ─────────────────────────────────────────────────
 export async function updateUserProfile(userId: string, formData: FormData) {
   await requireAdmin()

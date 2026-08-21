@@ -114,14 +114,27 @@ export interface Diagnostico {
   created_at?: string
 }
 
+export interface VaccineType {
+  id: string
+  name: string
+  validity_days: number
+  warning_days: number
+  required: boolean
+  active: boolean
+  sort_order: number
+  created_at?: string
+}
+
 export interface Vaccination {
   id: string
   horse_id: string
   vet_name: string
+  vaccine_type_id?: string
   fecha: string
   notas?: string
   created_by?: string
   created_at?: string
+  vaccine_types?: VaccineType
 }
 
 export interface TreatmentReport {

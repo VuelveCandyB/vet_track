@@ -5,6 +5,7 @@ import { PALETTE } from '@/lib/palette'
 const TABS = [
   { href: '/admin',       label: 'Catálogos',    key: 'catalog' },
   { href: '/admin/drugs', label: 'Medicamentos', key: 'drugs' },
+  { href: '/admin/vaccines', label: 'Vacunas',   key: 'vaccines' },
   { href: '/admin/users', label: 'Usuarios',     key: 'users' },
 ]
 

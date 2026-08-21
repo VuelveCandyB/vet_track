@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { createVaccination } from '@/lib/actions/vaccinations'
 import { PALETTE } from '@/lib/palette'
+import type { VaccineType } from '@/lib/types'
 
 interface Props {
   open: boolean
@@ -15,17 +16,52 @@ interface Props {
   horseName: string
   vetName: string
   today: string
+  vaccineTypes: VaccineType[]
 }
 
-export default function VaccinationModal({ open, onClose, horseId, horseName, vetName, today }: Props) {
+const SELECT_STYLE = { background: PALETTE.background.white, borderColor: PALETTE.ui.border, color: PALETTE.text.primary }
+
+export default function VaccinationModal({ open, onClose, horseId, horseName, vetName, today, vaccineTypes }: Props) {
   const [pending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
+  const [pdfFile, setPdfFile] = useState<File | null>(null)
+  const [pdfError, setPdfError] = useState<string | null>(null)
   const formRef = useRef<HTMLFormElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  function handlePdfChange(e: React.ChangeEvent<HTMLInputElement>) {
+    setPdfError(null)
+    const file = e.target.files?.[0]
+
+    if (!file) {
+      setPdfFile(null)
+      return
+    }
+
+    // Validar tipo
+    if (file.type !== 'application/pdf') {
+      setPdfError('Solo se permiten archivos PDF')
+      setPdfFile(null)
+      return
+    }
+
+    // Validar tamaño (5MB = 5242880 bytes)
+    if (file.size > 5 * 1024 * 1024) {
+      setPdfError('El PDF no debe superar 5MB')
+      setPdfFile(null)
+      return
+    }
+
+    setPdfFile(file)
+  }
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
     const formData = new FormData(formRef.current!)
+    if (pdfFile) {
+      formData.append('pdf', pdfFile)
+    }
     startTransition(async () => {
       try {
         await createVaccination(horseId, formData)
@@ -49,30 +85,70 @@ export default function VaccinationModal({ open, onClose, horseId, horseName, ve
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label className="text-xs font-semibold uppercase tracking-wider" style={{ color: PALETTE.text.secondary }}>
+                Vacuna *
+              </Label>
+              <select name="vaccine_type_id" required
+                className="flex h-9 w-full rounded-md border px-3 py-1 text-sm"
+                style={SELECT_STYLE}>
+                <option value="" disabled>Seleccionar vacuna...</option>
+                <optgroup label="Requeridas">
+                  {vaccineTypes.filter(v => v.required && v.active).sort((a, b) => a.sort_order - b.sort_order).map(v => (
+                    <option key={v.id} value={v.id}>{v.name}</option>
+                  ))}
+                </optgroup>
+                <optgroup label="Otras">
+                  {vaccineTypes.filter(v => !v.required && v.active).sort((a, b) => a.sort_order - b.sort_order).map(v => (
+                    <option key={v.id} value={v.id}>{v.name}</option>
+                  ))}
+                </optgroup>
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold uppercase tracking-wider" style={{ color: PALETTE.text.secondary }}>
                 Fecha Vacuna *
               </Label>
               <Input type="date" name="fecha" required defaultValue={today} />
             </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs font-semibold uppercase tracking-wider" style={{ color: PALETTE.text.secondary }}>
-                Veterinario
-              </Label>
-              <Input value={vetName} readOnly style={{ color: PALETTE.text.secondary, cursor: 'default' }} />
-            </div>
-
-            <div className="col-span-2 space-y-1.5">
-              <Label className="text-xs font-semibold uppercase tracking-wider" style={{ color: PALETTE.text.secondary }}>
-                Notas adicionales
-              </Label>
-              <Textarea name="notas" rows={3} placeholder="Notas opcionales..." />
-            </div>
           </div>
 
-          <div className="rounded-lg px-3 py-2.5 flex gap-2.5"
-            style={{ background: PALETTE.background.lightAlt, border: `1px solid ${PALETTE.ui.border}` }}>
-            <p className="text-xs leading-relaxed" style={{ color: PALETTE.text.secondary }}>
-              Recordatorio: es requisito las 5 vacunas West Nile, Rhinopneumonitis, Tetanus, Rabies and Flu.
-            </p>
+          <div className="space-y-1.5">
+            <Label className="text-xs font-semibold uppercase tracking-wider" style={{ color: PALETTE.text.secondary }}>
+              Veterinario
+            </Label>
+            <Input value={vetName} readOnly style={{ color: PALETTE.text.secondary, cursor: 'default' }} />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label className="text-xs font-semibold uppercase tracking-wider" style={{ color: PALETTE.text.secondary }}>
+              Notas adicionales
+            </Label>
+            <Textarea name="notas" rows={2} placeholder="Notas opcionales..." />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label className="text-xs font-semibold uppercase tracking-wider" style={{ color: PALETTE.text.secondary }}>
+              Certificado PDF (Opcional)
+            </Label>
+            <div className="flex items-center gap-2">
+              <Input
+                ref={fileInputRef}
+                type="file"
+                accept=".pdf"
+                onChange={handlePdfChange}
+                disabled={pending}
+                className="text-xs"
+              />
+            </div>
+            {pdfFile && (
+              <p className="text-xs" style={{ color: PALETTE.primary.green }}>
+                ✓ {pdfFile.name}
+              </p>
+            )}
+            {pdfError && (
+              <p className="text-xs" style={{ color: PALETTE.form.errorText }}>
+                {pdfError}
+              </p>
+            )}
           </div>
 
           {error && (

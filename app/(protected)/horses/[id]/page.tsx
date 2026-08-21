@@ -8,7 +8,7 @@ import AnimatedCapsuleDot from '@/components/timeline/animated-capsule-dot'
 import AnimatedDiagnosticoDot from '@/components/timeline/animated-diagnostico-dot'
 import AnimatedVaccinationDot from '@/components/timeline/animated-vaccination-dot'
 import Link from 'next/link'
-import type { Horse, Medication, VetlistEntry, EuthanasiaRecord, Drug, Diagnostico, TreatmentReport, Vaccination } from '@/lib/types'
+import type { Horse, Medication, VetlistEntry, EuthanasiaRecord, Drug, Diagnostico, TreatmentReport, Vaccination, VaccineType } from '@/lib/types'
 import { STATUS_LABEL } from '@/lib/constants'
 import { PALETTE } from '@/lib/palette'
 
@@ -69,7 +69,7 @@ export default async function HorseDetailPage({
 
   const [
     horseRes, medsRes, vetlistRes, euthRes,
-    drugsRes, diagRes, treatmentReportsRes, pmfReportsRes, vacRes,
+    drugsRes, vaccineTypesRes, diagRes, treatmentReportsRes, pmfReportsRes, vacRes,
     itemCodesRes, catalogItemsRes, vetName, canEuth, officialVet, profilesRes,
     referidosRes,
   ] = await Promise.all([
@@ -78,10 +78,11 @@ export default async function HorseDetailPage({
     supabase.from('vetlist').select('*').eq('horse_id', id).order('fecha_ingreso', { ascending: false }),
     supabase.from('euthanasia').select('*').eq('horse_id', id).maybeSingle(),
     supabase.from('drugs').select('*').eq('active', true).order('nombre'),
+    supabase.from('vaccine_types').select('*').eq('active', true).order('sort_order'),
     supabase.from('diagnosticos').select('*').eq('horse_id', id).order('fecha', { ascending: false }),
     supabase.from('treatment_reports').select('*, drug:drugs(nombre, categoria, tipo_restriccion)').eq('horse_id', id).order('fecha_tratamiento', { ascending: false }).limit(10),
     supabase.from('pmf_records').select('*, drug:drugs(nombre, categoria, tipo_restriccion)').eq('horse_id', id).order('fecha_tratamiento', { ascending: false }).limit(5),
-    supabase.from('vaccinations').select('*').eq('horse_id', id).order('fecha', { ascending: false }),
+    supabase.from('vaccinations').select('*, vaccine_types(name, validity_days)').eq('horse_id', id).order('fecha', { ascending: false }),
     supabase.from('treatment_report_item_codes').select('treatment_report_id, catalog_item_id'),
     supabase.from('catalog_items').select('id, name').eq('category', 'item_code'),
     getVetName(supabase, user),
@@ -96,6 +97,7 @@ export default async function HorseDetailPage({
   const vetlist = (vetlistRes.data ?? []) as VetlistEntry[]
   const euthanasiaRecord = euthRes.data as EuthanasiaRecord | null
   const drugs = (drugsRes.data ?? []) as Drug[]
+  const vaccineTypes = (vaccineTypesRes.data ?? []) as VaccineType[]
   const diagnosticos = (diagRes.data ?? []) as Diagnostico[]
   const treatmentReports = (treatmentReportsRes.data ?? []) as (TreatmentReport & { drug?: { nombre: string; categoria?: string; tipo_restriccion?: string } })[]
   const pmfReports = (pmfReportsRes.data ?? []) as (TreatmentReport & { drug?: { nombre: string; categoria?: string; tipo_restriccion?: string } })[]
@@ -233,6 +235,7 @@ export default async function HorseDetailPage({
         vetName={vetName}
         today={today}
         drugs={drugs}
+        vaccineTypes={vaccineTypes}
         diasRestantes={diasRestantes}
       />
 
@@ -318,18 +321,41 @@ export default async function HorseDetailPage({
                 </div>
               </>
             )}
-            {vaccinations.length > 0 && (() => {
-              const lastVaccination = vaccinations[0]
-              const nextVaccinationDate = new Date(new Date(lastVaccination.fecha).getTime() + 365 * 24 * 60 * 60 * 1000)
-                .toISOString()
-                .split('T')[0]
-              return (
-                <div className="flex justify-between py-2">
-                  <span className="text-xs" style={{ color: PALETTE.text.secondary }}>Próx. Vacuna</span>
-                  <span className="text-xs font-semibold" style={{ color: PALETTE.text.primary }}>{nextVaccinationDate}</span>
-                </div>
-              )
-            })()}
+            {vaccineTypes.length > 0 && (
+              <div className="pt-2">
+                <div className="text-xs font-semibold mb-2" style={{ color: PALETTE.text.primary }}>Vacunas</div>
+                {vaccineTypes.map(vt => {
+                  const lastVac = vaccinations.find(v => v.vaccine_type_id === vt.id)
+                  let status = 'Nunca aplicada'
+                  let statusColor = PALETTE.text.secondary
+
+                  if (lastVac) {
+                    const vencDate = new Date(new Date(lastVac.fecha).getTime() + vt.validity_days * 24 * 60 * 60 * 1000)
+                    const today = new Date()
+                    const daysUntilExpiry = Math.floor((vencDate.getTime() - today.getTime()) / (24 * 60 * 60 * 1000))
+
+                    if (daysUntilExpiry < 0) {
+                      status = 'Vencida'
+                      statusColor = '#dc2626'
+                    } else if (daysUntilExpiry <= vt.warning_days) {
+                      status = 'Por Vencer'
+                      statusColor = '#f97316'
+                    } else {
+                      status = 'Vigente'
+                      statusColor = PALETTE.primary.green
+                    }
+                  }
+
+                  return (
+                    <div key={vt.id} className="flex justify-between items-center py-1.5 text-xs"
+                      style={{ borderBottom: `1px solid ${PALETTE.ui.border}` }}>
+                      <span style={{ color: PALETTE.text.secondary }}>{vt.name}</span>
+                      <span style={{ color: statusColor, fontWeight: '600' }}>{status}</span>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
           </div>
         </div>
 
@@ -649,14 +675,19 @@ export default async function HorseDetailPage({
                           style={{ background: '#F1F5F9', borderColor: PALETTE.ui.border, borderLeftColor: color, borderLeftWidth: '3px', borderLeftStyle: 'solid' }}>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 flex-wrap mb-2">
-                              <span className="text-sm font-semibold" style={{ color }}>Vacunación</span>
+                              <span className="text-sm font-semibold" style={{ color }}>{v.vaccine_types?.name ?? 'Vacunación'}</span>
                             </div>
                             <div className="text-xs mb-1" style={{ color: PALETTE.text.primary }}>
                               <span className="font-medium">{v.vet_name}{licenseMap[v.vet_name] ? ` · Lic. ${licenseMap[v.vet_name]}` : ''}</span>{v.profiles?.license_number ? <span> · Lic. {v.profiles.license_number}</span> : ''}
                               {v.notas && <span> · {v.notas}</span>}
                             </div>
                             <div className="text-xs" style={{ color: PALETTE.text.secondary }}>
-                              Próxima: {nextVaccinationDate}
+                              Próxima: {(() => {
+                                const validityDays = v.vaccine_types?.validity_days ?? 365
+                                return new Date(new Date(v.fecha).getTime() + validityDays * 24 * 60 * 60 * 1000)
+                                  .toISOString()
+                                  .split('T')[0]
+                              })()}
                             </div>
                           </div>
                           <div className="text-xs text-right flex-shrink-0" style={{ color: PALETTE.text.primary }}>
