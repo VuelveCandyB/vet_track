@@ -15,7 +15,7 @@ Sistema interno de registro médico veterinario del Hipódromo Camarero, Puerto 
 | Auth | Supabase Auth (email/password, SSR cookies) |
 | Storage | Supabase Storage (`med-attachments` bucket) |
 | Deploy | Vercel |
-| Scraping | cheerio (sync de caballos desde web del hipódromo) |
+| Importación de datos | Excel parsing via XLSX (sincronización manual de caballos desde CRIO) |
 
 ---
 
@@ -59,7 +59,9 @@ vet_next/
 │   │   ├── vetlist-modal.tsx             # Modal: agregar a vetlist
 │   │   ├── vetlist-release-modal.tsx     # Modal: liberar de vetlist
 │   │   ├── euthanasia-modal.tsx          # Modal: registrar eutanasia
-│   │   └── sync-button.tsx              # Botón para sincronizar caballos desde web externa
+│   │   ├── vaccination-modal.tsx         # Modal: registrar vacuna
+│   │   ├── red-flag-modal.tsx            # Modal: marcar caballo como referido
+│   │   └── horse-import-modal.tsx        # Modal: subir Excel de CRIO con preview + confirmación
 │   ├── admin/
 │   │   ├── admin-tabs.tsx               # Tabs de navegación de admin
 │   │   ├── drug-manager.tsx             # CRUD de fármacos
@@ -74,8 +76,9 @@ vet_next/
 │   │   ├── medications.ts               # createMedication, deleteMedication
 │   │   ├── vetlist.ts                   # createVetlistEntry, releaseVetlistEntry
 │   │   ├── euthanasia.ts                # createEuthanasia (role-gated)
+│   │   ├── vaccinations.ts              # createVaccination
 │   │   ├── horses.ts                    # createHorse
-│   │   ├── sync.ts                      # syncHorses (scraping + upsert)
+│   │   ├── horse-import.ts              # parseHorseExcel, matchHorseRows, commitHorseImport
 │   │   └── admin.ts                     # CRUD catalog, drugs, users, roles
 │   ├── supabase/
 │   │   ├── server.ts                    # Cliente Supabase SSR (cookies)
@@ -97,7 +100,7 @@ vet_next/
 
 | Tabla | Columnas clave | Propósito |
 |-------|---------------|-----------|
-| `horses` | id, name, color, status, registration, owner, trainer, birth_date, microchip, gender, last_seen_at | Inventario equino |
+| `horses` | id, name, color, status, registration, owner, trainer, birth_date, microchip, gender, crio_id, padre, madre, raza, categoria, excel_imported_at, last_seen_at, crio_not_found_since | Inventario equino |
 | `medications` | id, horse_id, vet_name, **type** (vía admin), **proposito**, drug, dose, notes, administered_at, drug_categoria, withdrawal_time_horas, detection_time_horas, tipo_restriccion, attachment_url | Registros de medicación |
 | `vetlist` | id, horse_id, motivo, fecha_ingreso, fecha_egreso, fecha_inicio/fin_descanso, vet_ingreso/egreso, resultado_examen, condiciones_post | Caballos en clínica |
 | `euthanasia` | id, horse_id, vet_name, fecha, motivo, propietario_notificado, attachment_url | Registros de eutanasia |
@@ -124,10 +127,13 @@ Browser (Server Component)
       │           └── createMedication() [Server Action]
       │               ├── supabase.storage.upload()
       │               └── supabase.from('medications').insert()
-      └── sync.ts
-          ├── fetch(hipódromo_url)
-          ├── cheerio.load(html)
-          └── supabase.from('horses').upsert()
+      └── HorseImportModal (Client Component)
+          ├── parseHorseExcel() [Server Action]
+          │   └── XLSX.read() + column parsing
+          ├── matchHorseRows() [Server Action]
+          │   └── cascading match (crio_id → microchip → name+date)
+          └── commitHorseImport() [Server Action]
+              └── supabase.from('horses').upsert()
 ```
 
 ---
@@ -156,7 +162,9 @@ Browser (Server Component)
 
 ### Implementado
 - [x] Inventario de caballos con estados y badge de color
-- [x] Sync automático desde web del hipódromo
+- [x] Importación de caballos desde Excel (CRIO): parse, match en cascada (crio_id → microchip → name+date), preview + confirmación
+- [x] Flagging de caballos faltantes en Excel (admin-only, no destructivo, revisable)
+- [x] Dashboard KPI + grid (admin-only) de caballos no encontrados en CRIO
 - [x] Modal de medicamentos: cascade Categoría → Medicamento → Unidad (auto-inferida), Vía de administración, Propósito
 - [x] Compliance panel: withdrawal time, detection time, tipo de restricción por fármaco
 - [x] Vetlist: agregar con motivo + descanso, liberar con resultado del examen

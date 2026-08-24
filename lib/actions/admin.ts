@@ -3,6 +3,7 @@ import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { requireUser, isAdmin } from '@/lib/auth'
+import { logActivity } from '@/lib/actions/activity-log'
 
 async function requireAdmin() {
   const user = await requireUser()
@@ -87,7 +88,7 @@ export async function deleteDrug(drugId: string) {
 
 // ── VACUNAS ──────────────────────────────────────────────────
 export async function createVaccineType(formData: FormData) {
-  await requireAdmin()
+  const user = await requireAdmin()
   const supabase = await createClient()
   const name = (formData.get('name') as string).trim()
   const validity_days = intOrNull(formData.get('validity_days') as string) || 365
@@ -97,18 +98,30 @@ export async function createVaccineType(formData: FormData) {
 
   if (!name) return
 
-  await supabase.from('vaccine_types').insert({
+  const { data: vaccineType, error } = await supabase.from('vaccine_types').insert({
     name,
     validity_days,
     warning_days,
     required,
     sort_order,
+  }).select('id').single()
+
+  if (error) throw error
+
+  // Log activity
+  await logActivity({
+    user,
+    action: 'vaccine_type.create',
+    entityType: 'vaccine_type',
+    entityId: vaccineType?.id,
+    description: `Creó tipo de vacuna: ${name}`,
   })
+
   revalidatePath('/admin/vaccines')
 }
 
 export async function updateVaccineType(vaccineTypeId: string, formData: FormData) {
-  await requireAdmin()
+  const user = await requireAdmin()
   const supabase = await createClient()
   const name = (formData.get('name') as string).trim()
   const validity_days = intOrNull(formData.get('validity_days') as string) || 365
@@ -116,13 +129,25 @@ export async function updateVaccineType(vaccineTypeId: string, formData: FormDat
   const required = formData.get('required') === 'on'
   const sort_order = intOrNull(formData.get('sort_order') as string) || 0
 
-  await supabase.from('vaccine_types').update({
+  const { error } = await supabase.from('vaccine_types').update({
     name,
     validity_days,
     warning_days,
     required,
     sort_order,
   }).eq('id', vaccineTypeId)
+
+  if (error) throw error
+
+  // Log activity
+  await logActivity({
+    user,
+    action: 'vaccine_type.update',
+    entityType: 'vaccine_type',
+    entityId: vaccineTypeId,
+    description: `Actualizó tipo de vacuna: ${name}`,
+  })
+
   revalidatePath('/admin/vaccines')
 }
 

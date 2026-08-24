@@ -7,6 +7,7 @@ const TABS = [
   { href: '/admin/drugs', label: 'Medicamentos', key: 'drugs' },
   { href: '/admin/vaccines', label: 'Vacunas',   key: 'vaccines' },
   { href: '/admin/users', label: 'Usuarios',     key: 'users' },
+  { href: '/admin/logs',  label: 'Logs',         key: 'logs' },
 ]
 
 export default function AdminTabs({ active }: { active: string }) {

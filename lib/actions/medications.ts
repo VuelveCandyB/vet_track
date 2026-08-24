@@ -3,6 +3,7 @@ import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { requireUser, isAdmin, can } from '@/lib/auth'
 import { getVetName } from './shared'
+import { logActivity } from './activity-log'
 
 const ALLOWED_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf'])
 const MAX_SIZE = 10 * 1024 * 1024
@@ -36,7 +37,7 @@ export async function createMedication(horseId: string, formData: FormData) {
   const detHoras = formData.get('detection_time_horas') as string
   const wdHoras  = formData.get('withdrawal_time_horas') as string
 
-  await supabase.from('medications').insert({
+  const { data: medication, error } = await supabase.from('medications').insert({
     horse_id:              horseId,
     vet_name:              vetName,
     type:                  formData.get('type'),
@@ -53,6 +54,18 @@ export async function createMedication(horseId: string, formData: FormData) {
     tipo_restriccion:      (formData.get('tipo_restriccion') as string) || null,
     drug_notas:            (formData.get('drug_notas') as string) || null,
     created_by:            user.id,
+  }).select('id').single()
+
+  if (error) throw error
+
+  // Log activity
+  await logActivity({
+    user,
+    action: 'medication.create',
+    entityType: 'medication',
+    entityId: medication?.id,
+    horseId,
+    description: `Registró medicación: ${formData.get('drug') || 'sin medicamento'}`,
   })
 
   revalidatePath(`/horses/${horseId}`)
@@ -62,7 +75,20 @@ export async function deleteMedication(horseId: string, medId: string) {
   const user = await requireUser()
   if (!await isAdmin(user.id, user.email!)) throw new Error('Acceso denegado')
   const supabase = await createClient()
-  await supabase.from('medications').delete().eq('id', medId)
+  const { error } = await supabase.from('medications').delete().eq('id', medId)
+
+  if (error) throw error
+
+  // Log activity
+  await logActivity({
+    user,
+    action: 'medication.delete',
+    entityType: 'medication',
+    entityId: medId,
+    horseId,
+    description: 'Eliminó medicación',
+  })
+
   revalidatePath(`/horses/${horseId}`)
 }
 

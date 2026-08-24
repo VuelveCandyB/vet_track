@@ -1,8 +1,8 @@
-import { requirePageAccess } from '@/lib/auth'
+import { requirePageAccess, requireUser, isAdmin } from '@/lib/auth'
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
-import SyncButton from '@/components/horses/sync-button'
+import HorseImportModal from '@/components/horses/horse-import-modal'
 import SearchForm from '@/components/horses/search-form'
 import { PALETTE } from '@/lib/palette'
 
@@ -16,38 +16,61 @@ const STATUS_COLOR: Record<string, string> = {
   deceased: 'bg-gray-100 text-gray-700 border-gray-300',
 }
 const COLOR_DOT: Record<string, string> = {
-  'Bay':      '#c2852c',
-  'Dark Bay': '#5a4a2a',
-  'Chestnut': '#c05a1e',
-  'Grey':     '#8a9ab0',
-  'Roan':     '#9a6a8a',
-  'Black':    '#4a4a5a',
+  'BAY':      '#c2852c',
+  'DKBAY':    '#5a4a2a',
+  'CHEST':    '#c05a1e',
+  'GREY':     '#8a9ab0',
+  'PAINT':    '#a89968',
+  'ROAN':     '#9a6a8a',
+  'BLACK':    '#4a4a5a',
 }
+
+const COLOR_LABEL: Record<string, string> = {
+  'BAY':      'Bayo',
+  'DKBAY':    'Bayo Oscuro',
+  'CHEST':    'Alazán',
+  'GREY':     'Gris',
+  'PAINT':    'Pinto',
+  'ROAN':     'Ruano',
+  'BLACK':    'Negro',
+}
+
+const PAGE_SIZE = 50
+
+const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('')
 
 export default async function HorsesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string }>
+  searchParams: Promise<{ q?: string; page?: string; letter?: string }>
 }) {
   await requirePageAccess('page.horses')
-  const { q = '' } = await searchParams
+  const user = await requireUser()
+  const admin = await isAdmin(user.id, user.email!)
+  const { q = '', page = '1', letter = '' } = await searchParams
+  const currentPage = Math.max(1, parseInt(page, 10))
+  const offset = (currentPage - 1) * PAGE_SIZE
   const supabase = await createClient()
 
   const query = supabase
     .from('horses')
-    .select('id, name, color, status, microchip, birth_date, gender, red_flag')
+    .select('id, name, color, status, microchip, birth_date, gender, red_flag', { count: 'exact' })
     .order('name')
-    .limit(q ? 2000 : 200)
+    .limit(PAGE_SIZE)
+    .range(offset, offset + PAGE_SIZE - 1)
 
   if (q) query.or(`name.ilike.%${q}%,microchip.ilike.%${q}%`)
+  if (letter) query.ilike('name', `${letter}%`)
 
-  const [{ data: horses }, { count: total }, { data: vetlistData }, { data: vetlistAllData }, { data: referidosData }] = await Promise.all([
+  const [{ data: horses, count: paginatedCount }, { count: total }, { data: vetlistData }, { data: vetlistAllData }, { data: referidosData }] = await Promise.all([
     query,
     supabase.from('horses').select('id', { count: 'exact', head: true }),
     supabase.from('vetlist').select('horse_id').is('fecha_egreso', null),
     supabase.from('vetlist').select('horse_id'),
     supabase.from('horse_referidos').select('horse_id'),
   ])
+
+  const totalPages = Math.ceil((paginatedCount || 0) / PAGE_SIZE)
 
   const vetlistActiveIds = new Set((vetlistData || []).map((v: any) => v.horse_id))
 
@@ -77,18 +100,59 @@ export default async function HorsesPage({
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          <SyncButton />
+          {admin && <HorseImportModal />}
         </div>
       </div>
 
       {/* Search */}
       <SearchForm />
 
+      {/* Alphabet Filter */}
+      <div className="mb-4 p-4 rounded-lg flex flex-wrap gap-2 hidden md:flex" style={{ background: PALETTE.background.white, border: `1px solid ${PALETTE.ui.border}` }}>
+        <div style={{ color: PALETTE.text.secondary }} className="text-xs font-semibold self-center mr-2">
+          Filtrar por letra:
+        </div>
+        <div className="flex flex-wrap gap-1.5">
+          {letter && (
+            <Link
+              href={`/horses?page=1${q ? `&q=${encodeURIComponent(q)}` : ''}`}
+              className="px-2.5 py-1 text-xs font-medium rounded border transition-all"
+              style={{
+                borderColor: PALETTE.ui.border,
+                color: PALETTE.text.secondary,
+                background: 'transparent',
+              }}
+            >
+              ✕ Limpiar
+            </Link>
+          )}
+          {ALPHABET.map((char) => (
+            <Link
+              key={char}
+              href={`/horses?page=1&letter=${char}${q ? `&q=${encodeURIComponent(q)}` : ''}`}
+              className="px-2.5 py-1 text-xs font-medium rounded border transition-all"
+              style={{
+                borderColor: letter === char ? PALETTE.primary.green : PALETTE.ui.border,
+                color: letter === char ? PALETTE.primary.green : PALETTE.text.primary,
+                background: 'transparent',
+              }}
+            >
+              {char}
+            </Link>
+          ))}
+        </div>
+      </div>
+
       {/* Table */}
       <div className="rounded-lg overflow-hidden" style={{ background: PALETTE.background.white, border: `1px solid ${PALETTE.ui.border}` }}>
-        <div className="px-5 py-3 border-b text-xs" style={{ borderColor: PALETTE.ui.border, color: PALETTE.text.secondary }}>
-          {horses?.length ?? 0} resultado{horses?.length !== 1 ? 's' : ''}
-          {q && ` para "${q}"`}
+        <div className="px-5 py-3 border-b text-xs flex items-center justify-between" style={{ borderColor: PALETTE.ui.border, color: PALETTE.text.secondary }}>
+          <div>
+            {horses?.length ?? 0} resultado{horses?.length !== 1 ? 's' : ''}
+            {q && ` para "${q}"`}
+          </div>
+          <div style={{ color: PALETTE.text.secondary }} className="text-xs">
+            Página {currentPage} de {totalPages || 1}
+          </div>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm border-collapse">
@@ -125,7 +189,7 @@ export default async function HorsesPage({
                     <div className="flex items-center gap-2">
                       <div className="w-3 h-3 rounded-full flex-shrink-0"
                         style={{ background: COLOR_DOT[horse.color] ?? '#6b7399' }} />
-                      <span style={{ color: PALETTE.text.secondary }}>{horse.color || '—'}</span>
+                      <span style={{ color: PALETTE.text.secondary }}>{COLOR_LABEL[horse.color] || horse.color || '—'}</span>
                     </div>
                   </td>
                   <td className="px-4 py-3">
@@ -158,7 +222,19 @@ export default async function HorsesPage({
                       )}
                     </div>
                   </td>
-                  <td className="px-4 py-3" style={{ color: PALETTE.text.secondary }}>{horse.gender || '—'}</td>
+                  <td className="px-4 py-3">
+                    {horse.gender === 'M' && (
+                      <span className="px-2 py-0.5 rounded text-xs font-semibold" style={{ background: '#e0f2fe', color: '#0369a1' }}>
+                        M
+                      </span>
+                    )}
+                    {horse.gender === 'H' && (
+                      <span className="px-2 py-0.5 rounded text-xs font-semibold" style={{ background: '#fce7f3', color: '#9d174d' }}>
+                        H
+                      </span>
+                    )}
+                    {!horse.gender && <span style={{ color: PALETTE.text.secondary }}>—</span>}
+                  </td>
                   <td className="px-4 py-3" style={{ color: PALETTE.text.secondary }}>
                     {horse.birth_date
                       ? `${todayYear - new Date(horse.birth_date).getFullYear()} años`
@@ -177,6 +253,41 @@ export default async function HorsesPage({
             </tbody>
           </table>
         </div>
+
+        {/* Pagination Controls */}
+        {totalPages > 1 && (
+          <div className="px-5 py-4 border-t flex items-center justify-between" style={{ borderColor: PALETTE.ui.border }}>
+            <div style={{ color: PALETTE.text.secondary }} className="text-xs">
+              Mostrando {(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, paginatedCount || 0)} de {paginatedCount || 0}
+            </div>
+            <div className="flex gap-2">
+              {currentPage > 1 && (
+                <Link
+                  href={`/horses?page=${currentPage - 1}${q ? `&q=${encodeURIComponent(q)}` : ''}${letter ? `&letter=${letter}` : ''}`}
+                  className="px-3 py-2 text-sm rounded border transition-all hover:opacity-80"
+                  style={{
+                    borderColor: PALETTE.ui.border,
+                    color: PALETTE.primary.green,
+                  }}
+                >
+                  ← Anterior
+                </Link>
+              )}
+              {currentPage < totalPages && (
+                <Link
+                  href={`/horses?page=${currentPage + 1}${q ? `&q=${encodeURIComponent(q)}` : ''}${letter ? `&letter=${letter}` : ''}`}
+                  className="px-3 py-2 text-sm rounded border transition-all hover:opacity-80"
+                  style={{
+                    borderColor: PALETTE.ui.border,
+                    color: PALETTE.primary.green,
+                  }}
+                >
+                  Siguiente →
+                </Link>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

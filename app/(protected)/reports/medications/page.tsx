@@ -53,15 +53,27 @@ export default async function MedicationsReportPage({
 
   // Main query
   if (!noResults) {
-    let q = supabase.from('treatment_reports').select('*, horses(name, status), drugs(nombre, categoria, dosis_ruta, tipo_restriccion)')
+    let q = supabase.from('treatment_reports').select('*, horses(name, status), medications:treatment_report_medications(*, drug:drugs(id, nombre, categoria, dosis_ruta, tipo_restriccion))')
     if (filters.date_from) q = q.gte('fecha_tratamiento', filters.date_from)
     if (filters.date_to)   q = q.lte('fecha_tratamiento', filters.date_to)
     if (filters.vet)       q = q.ilike('vet_autorizado_nombre', `%${filters.vet}%`)
     if (horseIds.length)   q = q.in('horse_id', horseIds)
-    if (drugIds.length)    q = q.in('drug_id', drugIds)
     const { data, error } = await q.order('fecha_tratamiento', { ascending: false }).order('hora_tratamiento', { ascending: false }).limit(500)
     if (error) console.error('Treatment reports query error:', error)
-    rows = data ?? []
+
+    // Flatten medications into rows for backward compat
+    const flatRows = (data ?? []).flatMap((t: any) =>
+      (t.medications ?? []).map((med: any) => ({
+        ...t,
+        drugs: med.drug,
+        dosis: med.dosis,
+        dosis_unidad: med.dosis_unidad,
+        tiempo_restriccion: med.tiempo_restriccion,
+      }))
+    )
+
+    // Filter by drug if needed (now done in JS since we're on medications)
+    rows = drugIds.length > 0 ? flatRows.filter(r => drugIds.includes(r.drugs?.id)) : flatRows
   }
 
   const hasFilters = Object.values(filters).some(f => f)

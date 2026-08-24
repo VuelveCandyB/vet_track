@@ -49,6 +49,7 @@ export const PERMISSIONS: Record<string, Partial<Record<Role, Level>>> = {
     authorized_vet: 'full',
     official_vet: 'full',
     director: 'full',
+    technician: 'full',
   },
   'horses.vetlist_modal': {
     authorized_vet: 'view',

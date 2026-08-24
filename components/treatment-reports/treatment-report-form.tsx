@@ -85,27 +85,31 @@ const ConfirmationModal = ({
   )
 }
 
+interface MedicationRow {
+  id: string
+  drug_id: string
+  dosis: string
+  dosis_unidad: string
+  nivel_dosificacion: string
+  selectedCategoria: string
+}
+
 interface TreatmentReportFormProps {
   horses: Horse[]
   drugs: Drug[]
   vetName: string
   itemCodes?: CatalogItem[]
   initialSelectedItemCodeIds?: string[]
+  initialMedications?: MedicationRow[]
   defaultValues?: {
     id?: string
     horse_id?: string
-    drug_id?: string
     numero_identificacion_caballo?: string
     establo?: string
     tratamiento?: string
     diagnostico?: string
     fecha_tratamiento?: string
     hora_tratamiento?: string
-    dosis?: number
-    dosis_unidad?: string
-    nivel_dosificacion?: string
-    tiempo_restriccion?: number
-    hasta_cuando?: string | null
     notas?: string
     vet_autorizado_nombre?: string
   }
@@ -115,12 +119,22 @@ interface TreatmentReportFormProps {
   updateAction?: typeof updateTreatmentReport | typeof updatePMFRecord
 }
 
+const makeEmptyRow = (): MedicationRow => ({
+  id: Math.random().toString(36).substring(7),
+  drug_id: '',
+  dosis: '',
+  dosis_unidad: 'mg',
+  nivel_dosificacion: '',
+  selectedCategoria: '',
+})
+
 export default function TreatmentReportForm({
   horses,
   drugs,
   vetName,
   itemCodes = [],
   initialSelectedItemCodeIds = [],
+  initialMedications,
   defaultValues,
   mode = 'create',
   onSuccess,
@@ -130,22 +144,12 @@ export default function TreatmentReportForm({
   const formRef = useRef<HTMLFormElement>(null)
   const router = useRouter()
   const [pending, startTransition] = useTransition()
-  const [selectedCategory, setSelectedCategory] = useState<string>('')
-  const [selectedDrugId, setSelectedDrugId] = useState<string>(defaultValues?.drug_id ?? '')
-  const [withdrawalTime, setWithdrawalTime] = useState<string>(defaultValues?.tiempo_restriccion?.toString() ?? '')
-  const [fechaFin, setFechaFin] = useState<string>('')
-  const [horaFin, setHoraFin] = useState<string>('')
+  const [rows, setRows] = useState<MedicationRow[]>(initialMedications?.length ? initialMedications : [makeEmptyRow()])
   const [showConfirmation, setShowConfirmation] = useState(false)
   const [formDataToSubmit, setFormDataToSubmit] = useState<FormData | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
-  // Get unique categories from drugs
   const categories = Array.from(new Set(drugs.map(d => d.categoria).filter(Boolean)))
-
-  // Filter drugs by selected category
-  const filteredDrugs = selectedCategory ? drugs.filter(d => d.categoria === selectedCategory) : drugs
-
-  const selectedDrug = drugs.find(d => d.id === selectedDrugId)
-  const tieneRestriccion = selectedDrug?.tipo_restriccion != null
 
   // Auto-fill microchip when horse is pre-selected
   useEffect(() => {
@@ -158,89 +162,82 @@ export default function TreatmentReportForm({
     }
   }, [defaultValues?.horse_id, horses])
 
-  // Update withdrawal time when drug changes
-  useEffect(() => {
-    if (selectedDrug?.withdrawal_time_horas) {
-      setWithdrawalTime(selectedDrug.withdrawal_time_horas.toString())
-    } else {
-      setWithdrawalTime('')
+  const updateRow = (index: number, updates: Partial<MedicationRow>) => {
+    setRows(rows.map((row, i) => i === index ? { ...row, ...updates } : row))
+  }
+
+  const handleCategoriaChange = (index: number, categoria: string) => {
+    updateRow(index, { selectedCategoria: categoria, drug_id: '' })
+  }
+
+  const handleDrugChange = (index: number, drugId: string) => {
+    updateRow(index, { drug_id: drugId })
+  }
+
+  const addRow = () => {
+    setRows([...rows, makeEmptyRow()])
+  }
+
+  const removeRow = (index: number) => {
+    if (rows.length > 1) {
+      setRows(rows.filter((_, i) => i !== index))
     }
-  }, [selectedDrug])
-
-  const handleDrugChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const drugId = e.target.value
-    const selectedDrug = drugs.find(d => d.id === drugId)
-    setSelectedDrugId(drugId)
-
-    // Auto-fill tiempo_restriccion from drug withdrawal_time_horas
-    const tiempoInput = formRef.current?.querySelector<HTMLInputElement>('input[name="tiempo_restriccion"]')
-    if (tiempoInput && selectedDrug?.withdrawal_time_horas) {
-      tiempoInput.value = selectedDrug.withdrawal_time_horas.toString()
-    }
-
-    calcularFechaFin(
-      formRef.current?.querySelector<HTMLInputElement>('input[name="fecha_tratamiento"]')?.value ?? '',
-      selectedDrug?.withdrawal_time_horas ?? null
-    )
-  }
-
-  const handleFechaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    calcularFechaFin(e.target.value, selectedDrug?.withdrawal_time_horas ?? null)
-  }
-
-  const handleTiempoRestriccionChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const fecha = formRef.current?.querySelector<HTMLInputElement>('input[name="fecha_tratamiento"]')?.value
-    calcularFechaFin(fecha ?? '', parseInt(e.target.value) || null)
-  }
-
-  const handleHoraChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const fecha = formRef.current?.querySelector<HTMLInputElement>('input[name="fecha_tratamiento"]')?.value
-    const tiempo = formRef.current?.querySelector<HTMLInputElement>('input[name="tiempo_restriccion"]')?.value
-    calcularFechaFin(fecha ?? '', tiempo ? parseInt(tiempo) : null)
-  }
-
-  const calcularFechaFin = (fechaStr: string, horas: number | null) => {
-    if (!fechaStr || !horas) {
-      setFechaFin('')
-      setHoraFin('')
-      return
-    }
-
-    // Get hora_tratamiento from form
-    const horaInput = formRef.current?.querySelector<HTMLInputElement>('input[name="hora_tratamiento"]')
-    const horaStr = horaInput?.value || '00:00'
-
-    // Parse fecha and hora
-    const [year, month, day] = fechaStr.split('-')
-    const [horaNum, minNum] = horaStr.split(':')
-
-    // Create date with time
-    const fecha = new Date(parseInt(year), parseInt(month) - 1, parseInt(day), parseInt(horaNum), parseInt(minNum))
-
-    // Add hours
-    fecha.setHours(fecha.getHours() + horas)
-
-    // Format fecha_fin and hora_fin
-    const fechaFinStr = fecha.toISOString().split('T')[0]
-    const horaFinStr = fecha.toISOString().split('T')[1].slice(0, 5)
-
-    setFechaFin(fechaFinStr)
-    setHoraFin(horaFinStr)
   }
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
+    setError(null)
+
+    // Validar que cada fila tenga los campos requeridos
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i]
+      if (!row.drug_id?.trim()) {
+        setError(`Fila ${i + 1}: Debe seleccionar un medicamento`)
+        return
+      }
+      if (!row.dosis?.trim()) {
+        setError(`Fila ${i + 1}: Debe ingresar la dosis`)
+        return
+      }
+    }
 
     if (mode === 'create') {
-      // Para crear, mostrar confirmación
       const formData = new FormData(formRef.current!)
       formData.set('vet_autorizado_nombre', vetName)
+
+      // Serializar medicamentos a JSON
+      const medicationsPayload = rows.map(row => {
+        const drug = drugs.find(d => d.id === row.drug_id)
+        return {
+          drug_id: row.drug_id,
+          dosis: parseFloat(row.dosis),
+          dosis_unidad: row.dosis_unidad || 'mg',
+          nivel_dosificacion: row.nivel_dosificacion || null,
+          tiempo_restriccion: drug?.withdrawal_time_horas || null,
+          hasta_cuando: null,
+        }
+      })
+
+      formData.set('medications', JSON.stringify(medicationsPayload))
       setFormDataToSubmit(formData)
       setShowConfirmation(true)
     } else {
-      // Para editar, proceder directamente
       const formData = new FormData(formRef.current!)
       formData.set('vet_autorizado_nombre', vetName)
+
+      const medicationsPayload = rows.map(row => {
+        const drug = drugs.find(d => d.id === row.drug_id)
+        return {
+          drug_id: row.drug_id,
+          dosis: parseFloat(row.dosis),
+          dosis_unidad: row.dosis_unidad || 'mg',
+          nivel_dosificacion: row.nivel_dosificacion || null,
+          tiempo_restriccion: drug?.withdrawal_time_horas || null,
+          hasta_cuando: null,
+        }
+      })
+
+      formData.set('medications', JSON.stringify(medicationsPayload))
 
       startTransition(async () => {
         try {
@@ -250,7 +247,6 @@ export default function TreatmentReportForm({
             onSuccess?.()
           }
         } catch (err) {
-          console.error(err)
           alert(`Error: ${err instanceof Error ? err.message : 'Unknown error'}`)
         }
       })
@@ -266,12 +262,12 @@ export default function TreatmentReportForm({
         formRef.current?.reset()
         setShowConfirmation(false)
         setFormDataToSubmit(null)
+        setRows([makeEmptyRow()])
         if (redirectUrl) {
           router.push(redirectUrl)
         }
       } catch (err) {
-        console.error(err)
-        alert(`Error: ${err instanceof Error ? err.message : 'Unknown error'}`)
+        setError(err instanceof Error ? err.message : 'Unknown error')
         setShowConfirmation(false)
       }
     })
@@ -374,187 +370,210 @@ export default function TreatmentReportForm({
         </div>
       </div>
 
-      {/* SECCIÓN: ADMINISTRACIÓN DEL MEDICAMENTO */}
+      {/* SECCIÓN: MEDICAMENTOS */}
       <div className="p-6 rounded-lg" style={{ background: PALETTE.background.white, border: `1px solid #E2E8F0`, boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
         <h3 className="text-sm font-semibold uppercase tracking-wider mb-6" style={{ color: PALETTE.primary.green }}>
-          Administración del Medicamento
+          Medicamentos
         </h3>
 
-        {/* Categoría y Medicamento */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 pb-6" style={{ borderBottom: `1px solid ${PALETTE.ui.border}` }}>
-          <div>
-            <Label htmlFor="categoria" style={{ color: PALETTE.text.primary }}>Categoría *</Label>
-            <select
-              id="categoria"
-              value={selectedCategory}
-              onChange={(e) => {
-                setSelectedCategory(e.target.value)
-                setSelectedDrugId('')
-              }}
-              required
-              className="flex h-9 w-full rounded-md border px-3 py-1 text-sm mt-1"
-              style={{
-                borderColor: PALETTE.ui.border,
-                backgroundColor: '#FFFFFF',
-                color: PALETTE.text.primary,
-              }}
-            >
-              <option value="">Seleccionar categoría...</option>
-              {categories.map(cat => (
-                <option key={cat} value={cat}>
-                  {cat}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <Label htmlFor="drug_id" style={{ color: PALETTE.text.primary }}>Medicamento *</Label>
-            <select
-              id="drug_id"
-              name="drug_id"
-              value={selectedDrugId}
-              onChange={handleDrugChange}
-              required
-              disabled={!selectedCategory}
-              className="flex h-9 w-full rounded-md border px-3 py-1 text-sm mt-1"
-              style={{
-                borderColor: PALETTE.ui.border,
-                backgroundColor: !selectedCategory ? '#F3F4F6' : '#FFFFFF',
-                color: PALETTE.text.primary,
-                cursor: !selectedCategory ? 'not-allowed' : 'pointer',
-                opacity: !selectedCategory ? 0.6 : 1,
-              }}
-            >
-              <option value="">Seleccionar medicamento...</option>
-              {filteredDrugs.map(d => (
-                <option key={d.id} value={d.id}>
-                  {d.nombre} {d.tipo_restriccion ? `(${d.tipo_restriccion})` : ''}
-                </option>
-              ))}
-            </select>
-            {selectedDrug && (
-              <p className="text-xs mt-2 p-2 rounded" style={{ background: '#f0fdf4', color: PALETTE.text.secondary }}>
-                {selectedDrug.tipo_restriccion && <><strong>Tipo de restricción:</strong> {selectedDrug.tipo_restriccion}</>}
-              </p>
-            )}
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="fecha_tratamiento" style={{ color: PALETTE.text.primary }}>Fecha de Tratamiento *</Label>
-              <Input
-                id="fecha_tratamiento"
-                name="fecha_tratamiento"
-                type="date"
-                defaultValue={defaultValues?.fecha_tratamiento ?? ''}
-                required
-                onChange={handleFechaChange}
-                className="mt-1"
-              />
-            </div>
-            <div>
-              <Label htmlFor="hora_tratamiento" style={{ color: PALETTE.text.primary }}>Hora de Tratamiento *</Label>
-              <Input
-                id="hora_tratamiento"
-                name="hora_tratamiento"
-                type="time"
-                defaultValue={defaultValues?.hora_tratamiento ?? ''}
-                required
-                onChange={handleHoraChange}
-                className="mt-1"
-              />
-            </div>
-          </div>
-
-          <div>
-            <Label htmlFor="dosis" style={{ color: PALETTE.text.primary }}>Dosis *</Label>
-            <Input
-              id="dosis"
-              name="dosis"
-              type="number"
-              step="0.01"
-              defaultValue={defaultValues?.dosis ?? ''}
-              required
-              placeholder={selectedDrug && selectedDrug.dosis_min !== null && selectedDrug.dosis_max !== null
-                ? `Ej: ${selectedDrug.dosis_min}–${selectedDrug.dosis_max}`
-                : 'Ej: 500'}
-              className="mt-1"
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="dosis_unidad" style={{ color: PALETTE.text.primary }}>Unidad *</Label>
-            <select
-              id="dosis_unidad"
-              name="dosis_unidad"
-              defaultValue={defaultValues?.dosis_unidad ?? (selectedDrug?.dosis_unidad || 'mg')}
-              required
-              className="flex h-9 w-full rounded-md border px-3 py-1 text-sm mt-1"
-              style={{
-                borderColor: PALETTE.ui.border,
-                backgroundColor: '#FFFFFF',
-                color: PALETTE.text.primary,
-              }}
-            >
-              {selectedDrug?.dosis_unidad ? (
-                <option value={selectedDrug.dosis_unidad}>{selectedDrug.dosis_unidad}</option>
-              ) : (
-                <>
-                  <option value="mg">mg</option>
-                  <option value="ml">ml</option>
-                  <option value="cc">cc</option>
-                  <option value="g">g</option>
-                  <option value="IU">IU</option>
-                  <option value="mg/kg">mg/kg</option>
-                  <option value="mcg/kg">mcg/kg</option>
-                  <option value="g/kg">g/kg</option>
-                  <option value="IU/kg">IU/kg</option>
-                </>
-              )}
-            </select>
-          </div>
-
-          <div>
-            <Label htmlFor="nivel_dosificacion" style={{ color: PALETTE.text.primary }}>Nivel de Dosificación</Label>
-            <Input
-              id="nivel_dosificacion"
-              name="nivel_dosificacion"
-              placeholder="Ej: Terapéutico, Profiláctico, etc."
-              defaultValue={defaultValues?.nivel_dosificacion ?? ''}
-              className="mt-1"
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="withdrawal_time" style={{ color: PALETTE.text.primary }}>Retiro Restricción (horas)</Label>
-            <Input
-              id="withdrawal_time"
-              name="tiempo_restriccion"
-              type="number"
-              value={withdrawalTime}
-              onChange={(e) => setWithdrawalTime(e.target.value)}
-              placeholder="Auto-completado..."
-              readOnly={!!selectedDrug?.withdrawal_time_horas}
-              className="mt-1"
-              style={{ backgroundColor: selectedDrug?.withdrawal_time_horas ? '#F3F4F6' : '#FFFFFF', opacity: selectedDrug?.withdrawal_time_horas ? 0.7 : 1 }}
-            />
-            {selectedDrug?.withdrawal_time_dias && (
-              <p className="text-xs mt-1" style={{ color: PALETTE.text.secondary }}>
-                ≈ {selectedDrug.withdrawal_time_dias} días
-              </p>
-            )}
-          </div>
-        </div>
-
-        {/* Info: Medicamento tiene restricción */}
-        {tieneRestriccion && (
-          <div style={{ padding: '12px 16px', background: '#fffbeb', border: `1px solid #fcd34d`, borderRadius: '8px', marginTop: '16px' }}>
-            <p className="text-xs" style={{ color: '#92400e' }}>
-              <strong>⚠ Restricción de participación:</strong> Este medicamento requiere {selectedDrug?.withdrawal_time_horas} horas de restricción
-            </p>
+        {error && (
+          <div style={{ padding: '12px', background: '#fee2e2', border: '1px solid #dc2626', borderRadius: '8px', marginBottom: '16px' }}>
+            <p className="text-sm" style={{ color: '#7f1d1d' }}>⚠️ {error}</p>
           </div>
         )}
+
+        {rows.map((row, idx) => {
+          const filteredDrugs = row.selectedCategoria ? drugs.filter(d => d.categoria === row.selectedCategoria) : drugs
+          const selectedDrug = drugs.find(d => d.id === row.drug_id)
+
+          return (
+            <div key={row.id} style={{ marginBottom: '24px', paddingBottom: '24px', borderBottom: `1px solid ${PALETTE.ui.border}` }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                <h4 className="text-sm font-semibold" style={{ color: PALETTE.text.primary }}>Medicamento {idx + 1}</h4>
+                {rows.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => removeRow(idx)}
+                    disabled={pending}
+                    style={{
+                      background: '#fee2e2',
+                      color: '#dc2626',
+                      border: '1px solid #dc2626',
+                      borderRadius: '4px',
+                      padding: '4px 8px',
+                      fontSize: '12px',
+                      cursor: pending ? 'not-allowed' : 'pointer',
+                      opacity: pending ? 0.6 : 1,
+                    }}
+                  >
+                    ✕ Quitar
+                  </button>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                  <Label style={{ color: PALETTE.text.primary }}>Categoría *</Label>
+                  <select
+                    value={row.selectedCategoria}
+                    onChange={(e) => handleCategoriaChange(idx, e.target.value)}
+                    required
+                    disabled={pending}
+                    className="flex h-9 w-full rounded-md border px-3 py-1 text-sm mt-1"
+                    style={{
+                      borderColor: PALETTE.ui.border,
+                      backgroundColor: '#FFFFFF',
+                      color: PALETTE.text.primary,
+                      opacity: pending ? 0.6 : 1,
+                    }}
+                  >
+                    <option value="">Seleccionar categoría...</option>
+                    {categories.map(cat => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <Label style={{ color: PALETTE.text.primary }}>Medicamento *</Label>
+                  <select
+                    value={row.drug_id}
+                    onChange={(e) => handleDrugChange(idx, e.target.value)}
+                    required
+                    disabled={!row.selectedCategoria || pending}
+                    className="flex h-9 w-full rounded-md border px-3 py-1 text-sm mt-1"
+                    style={{
+                      borderColor: PALETTE.ui.border,
+                      backgroundColor: !row.selectedCategoria ? '#F3F4F6' : '#FFFFFF',
+                      color: PALETTE.text.primary,
+                      cursor: !row.selectedCategoria ? 'not-allowed' : 'pointer',
+                      opacity: (!row.selectedCategoria || pending) ? 0.6 : 1,
+                    }}
+                  >
+                    <option value="">Seleccionar medicamento...</option>
+                    {filteredDrugs.map(d => (
+                      <option key={d.id} value={d.id}>
+                        {d.nombre} {d.tipo_restriccion ? `(${d.tipo_restriccion})` : ''}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <Label style={{ color: PALETTE.text.primary }}>Dosis *</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={row.dosis}
+                    onChange={(e) => updateRow(idx, { dosis: e.target.value })}
+                    placeholder={selectedDrug && selectedDrug.dosis_min !== null && selectedDrug.dosis_max !== null
+                      ? `Ej: ${selectedDrug.dosis_min}–${selectedDrug.dosis_max}`
+                      : 'Ej: 500'}
+                    required
+                    disabled={pending}
+                    className="mt-1"
+                  />
+                </div>
+
+                <div>
+                  <Label style={{ color: PALETTE.text.primary }}>Unidad *</Label>
+                  <select
+                    value={row.dosis_unidad}
+                    onChange={(e) => updateRow(idx, { dosis_unidad: e.target.value })}
+                    required
+                    disabled={pending}
+                    className="flex h-9 w-full rounded-md border px-3 py-1 text-sm mt-1"
+                    style={{
+                      borderColor: PALETTE.ui.border,
+                      backgroundColor: '#FFFFFF',
+                      color: PALETTE.text.primary,
+                    }}
+                  >
+                    <option value="mg">mg</option>
+                    <option value="ml">ml</option>
+                    <option value="cc">cc</option>
+                    <option value="g">g</option>
+                    <option value="IU">IU</option>
+                    <option value="mg/kg">mg/kg</option>
+                    <option value="mcg/kg">mcg/kg</option>
+                    <option value="g/kg">g/kg</option>
+                    <option value="IU/kg">IU/kg</option>
+                  </select>
+                </div>
+
+                <div>
+                  <Label style={{ color: PALETTE.text.primary }}>Nivel de Dosificación</Label>
+                  <Input
+                    value={row.nivel_dosificacion}
+                    onChange={(e) => updateRow(idx, { nivel_dosificacion: e.target.value })}
+                    placeholder="Ej: Terapéutico, Profiláctico, etc."
+                    disabled={pending}
+                    className="mt-1"
+                  />
+                </div>
+              </div>
+
+              {selectedDrug && (
+                <div style={{ padding: '12px 16px', background: '#f0fdf4', border: `1px solid ${PALETTE.ui.border}`, borderRadius: '8px' }}>
+                  <p className="text-xs" style={{ color: PALETTE.text.secondary }}>
+                    {selectedDrug.tipo_restriccion && (
+                      <>
+                        <strong>Tipo de restricción:</strong> {selectedDrug.tipo_restriccion}
+                        {selectedDrug.withdrawal_time_horas && (
+                          <> · {selectedDrug.withdrawal_time_horas}h ({selectedDrug.withdrawal_time_dias} días)</>
+                        )}
+                      </>
+                    )}
+                    {!selectedDrug.tipo_restriccion && <span>Sin restricción</span>}
+                  </p>
+                </div>
+              )}
+            </div>
+          )
+        })}
+
+        <Button
+          type="button"
+          onClick={addRow}
+          disabled={pending}
+          variant="secondary"
+          className="w-full"
+        >
+          + Agregar otro medicamento
+        </Button>
+      </div>
+
+      {/* SECCIÓN: FECHA Y HORA */}
+      <div className="p-6 rounded-lg" style={{ background: PALETTE.background.white, border: `1px solid #E2E8F0`, boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+        <h3 className="text-sm font-semibold uppercase tracking-wider mb-6" style={{ color: PALETTE.primary.green }}>
+          Fecha y Hora
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="fecha_tratamiento" style={{ color: PALETTE.text.primary }}>Fecha de Tratamiento *</Label>
+            <Input
+              id="fecha_tratamiento"
+              name="fecha_tratamiento"
+              type="date"
+              defaultValue={defaultValues?.fecha_tratamiento ?? ''}
+              required
+              disabled={pending}
+              className="mt-1"
+            />
+          </div>
+          <div>
+            <Label htmlFor="hora_tratamiento" style={{ color: PALETTE.text.primary }}>Hora de Tratamiento *</Label>
+            <Input
+              id="hora_tratamiento"
+              name="hora_tratamiento"
+              type="time"
+              defaultValue={defaultValues?.hora_tratamiento ?? ''}
+              required
+              disabled={pending}
+              className="mt-1"
+            />
+          </div>
+        </div>
       </div>
 
       {/* SECCIÓN: NOTAS */}
@@ -569,14 +588,13 @@ export default function TreatmentReportForm({
             name="notas"
             placeholder="Cualquier información adicional requerida o notas sobre el tratamiento..."
             defaultValue={defaultValues?.notas ?? ''}
+            disabled={pending}
             className="mt-1"
           />
         </div>
       </div>
 
-      {/* Hidden inputs para los valores que no son editable directo */}
-      <input type="hidden" name="fecha_fin_tratamiento" value={fechaFin} />
-      <input type="hidden" name="hora_fin_tratamiento" value={horaFin} />
+      {/* Hidden inputs */}
       <input type="hidden" name="vet_autorizado_nombre" value={vetName} />
       {defaultValues?.horse_id && (
         <>
@@ -595,12 +613,13 @@ export default function TreatmentReportForm({
             color: '#fff',
           }}
         >
-          {pending ? 'Guardando...' : mode === 'create' ? 'Someter Informe' : 'Actualizar Informe'}
+          {pending ? 'Guardando...' : mode === 'create' ? `Someter Informe (${rows.length} med.)` : 'Actualizar Informe'}
         </Button>
         <Button
           type="button"
           variant="secondary"
           onClick={() => window.history.back()}
+          disabled={pending}
         >
           Cancelar
         </Button>

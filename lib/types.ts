@@ -14,6 +14,14 @@ export interface Horse {
   red_flag_reason?: string
   red_flag_by?: string
   red_flag_date?: string
+  crio_id?: number
+  padre?: string
+  madre?: string
+  raza?: string
+  categoria?: string
+  excel_imported_at?: string
+  last_seen_at?: string
+  crio_not_found_since?: string
 }
 
 export interface Medication {
@@ -143,20 +151,12 @@ export interface Vaccination {
 export interface TreatmentReport {
   id: string
   horse_id: string
-  drug_id: string
   numero_identificacion_caballo?: string
   establo: string
   tratamiento?: string
   diagnostico: string
   fecha_tratamiento: string
   hora_tratamiento: string
-  dosis: number
-  dosis_unidad?: string
-  nivel_dosificacion?: string
-  tiempo_restriccion?: number | null
-  fecha_fin_tratamiento?: string | null
-  hora_fin_tratamiento?: string | null
-  hasta_cuando?: string | null
   es_auto_generado?: boolean
   informe_padre_id?: string | null
   notas?: string
@@ -166,5 +166,17 @@ export interface TreatmentReport {
   sometido_en?: string | null
   radicado_en?: string | null
   created_by?: string
+  created_at?: string
+}
+
+export interface TreatmentReportMedication {
+  id: string
+  treatment_report_id: string
+  drug_id: string
+  dosis: number
+  dosis_unidad?: string
+  nivel_dosificacion?: string
+  tiempo_restriccion?: number | null
+  hasta_cuando?: string | null
   created_at?: string
 }

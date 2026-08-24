@@ -8,12 +8,16 @@ import type { TreatmentReport } from '@/lib/types'
 interface TreatmentReportsPageClientProps {
   reports: (TreatmentReport & {
     horse?: { name: string; registration?: string }
-    drug?: { nombre: string; tipo_restriccion?: string }
+    medications?: Array<{ drug?: { nombre: string; categoria?: string; tipo_restriccion?: string } }>
   })[]
+  currentUserId: string
+  isAdmin: boolean
 }
 
 export default function TreatmentReportsPageClient({
   reports,
+  currentUserId,
+  isAdmin,
 }: TreatmentReportsPageClientProps) {
   return (
     <div>
@@ -44,7 +48,7 @@ export default function TreatmentReportsPageClient({
           <table className="w-full text-sm border-collapse">
             <thead>
               <tr style={{ borderBottom: `1px solid ${PALETTE.ui.border}` }}>
-                {['Caballo', 'Medicamento', 'Fecha fin restricción', 'Hasta cuándo', 'Establo', 'Fecha', 'Vet', 'Acciones'].map(h => (
+                {['Caballo', 'Medicamento', 'Establo', 'Fecha', 'Vet', 'Acciones'].map(h => (
                   <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider"
                     style={{ color: PALETTE.text.secondary }}>
                     {h}
@@ -55,14 +59,11 @@ export default function TreatmentReportsPageClient({
             <tbody>
               {!reports.length ? (
                 <tr>
-                  <td colSpan={8} className="px-4 py-12 text-center" style={{ color: PALETTE.text.secondary }}>
+                  <td colSpan={6} className="px-4 py-12 text-center" style={{ color: PALETTE.text.secondary }}>
                     Sin informes
                   </td>
                 </tr>
               ) : reports.map(report => {
-                const isExpired = report.fecha_fin_tratamiento && new Date(report.fecha_fin_tratamiento) < new Date()
-                const isUrgent = report.fecha_fin_tratamiento && new Date(report.fecha_fin_tratamiento).getTime() - new Date().getTime() < 24 * 60 * 60 * 1000
-
                 const formatDate = (dateStr: string | null) => {
                   if (!dateStr) return '—'
                   const [year, month, day] = dateStr.split('-')
@@ -77,34 +78,13 @@ export default function TreatmentReportsPageClient({
                       {report.horse?.name || '—'}
                     </td>
                     <td className="px-4 py-3">
-                      <span style={{ color: PALETTE.primary.green }}>{report.drug?.nombre || '—'}</span>
-                      {report.drug?.tipo_restriccion && (
-                        <span className="text-xs ml-1" style={{ color: PALETTE.text.secondary }}>
-                          [{report.drug.tipo_restriccion}]
+                      {report.medications && report.medications.length > 0 ? (
+                        <span style={{ color: PALETTE.primary.green }}>
+                          {report.medications.length} medicamento{report.medications.length !== 1 ? 's' : ''}
                         </span>
+                      ) : (
+                        <span style={{ color: PALETTE.text.secondary }}>—</span>
                       )}
-                    </td>
-                    <td className="px-4 py-3 text-xs">
-                      {report.fecha_fin_tratamiento ? (
-                        <span style={{
-                          color: isExpired ? '#10b981' : isUrgent ? '#f97316' : PALETTE.text.primary,
-                          fontWeight: isUrgent ? '600' : 'normal'
-                        }}>
-                          {formatDate(report.fecha_fin_tratamiento)}
-                          {isExpired && ' ✓'}
-                          {isUrgent && !isExpired && ' ⚠'}
-                        </span>
-                      ) : '—'}
-                    </td>
-                    <td className="px-4 py-3 text-xs">
-                      {report.hasta_cuando ? (
-                        <div>
-                          <div>{formatDate(report.hasta_cuando)}</div>
-                          {report.es_auto_generado && (
-                            <span style={{ color: '#0891b2', fontSize: '0.7rem' }}>⚙️ auto</span>
-                          )}
-                        </div>
-                      ) : '—'}
                     </td>
                     <td className="px-4 py-3">{report.establo || '—'}</td>
                     <td className="px-4 py-3 text-xs">{formatDate(report.fecha_tratamiento)}</td>
@@ -115,6 +95,13 @@ export default function TreatmentReportsPageClient({
                           Ver
                         </Button>
                       </Link>
+                      {report.estado === 'borrador' && (report.created_by === currentUserId || isAdmin) && (
+                        <Link href={`/treatment-reports/${report.id}/edit`}>
+                          <Button variant="ghost" size="sm" style={{ color: PALETTE.primary.green }}>
+                            Editar
+                          </Button>
+                        </Link>
+                      )}
                     </td>
                   </tr>
                 )

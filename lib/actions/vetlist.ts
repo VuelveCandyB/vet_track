@@ -3,6 +3,7 @@ import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { requireUser, can } from '@/lib/auth'
 import { getVetName } from './shared'
+import { logActivity } from './activity-log'
 
 const ALLOWED_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf'])
 const MAX_SIZE = 10 * 1024 * 1024
@@ -33,20 +34,31 @@ export async function createVetlistEntry(horseId: string, formData: FormData) {
   const file = formData.get('attachment') as File | null
   const attachmentUrl = file ? await uploadAttachment(supabase, horseId, file, 'ingreso') : null
 
-  await Promise.all([
-    supabase.from('vetlist').insert({
-      horse_id:               horseId,
-      motivo:                 formData.get('motivo'),
-      descripcion:            (formData.get('descripcion') as string) || null,
-      fecha_ingreso:          formData.get('fecha_ingreso'),
-      fecha_inicio_descanso:  (formData.get('fecha_inicio_descanso') as string) || null,
-      fecha_fin_descanso:     (formData.get('fecha_fin_descanso') as string) || null,
-      vet_ingreso:            vetName,
-      attachment_ingreso_url: attachmentUrl,
-      created_by:             user.id,
-    }),
-    supabase.from('horses').update({ status: 'injury' }).eq('id', horseId),
-  ])
+  const { data: vetlistEntry, error } = await supabase.from('vetlist').insert({
+    horse_id:               horseId,
+    motivo:                 formData.get('motivo'),
+    descripcion:            (formData.get('descripcion') as string) || null,
+    fecha_ingreso:          formData.get('fecha_ingreso'),
+    fecha_inicio_descanso:  (formData.get('fecha_inicio_descanso') as string) || null,
+    fecha_fin_descanso:     (formData.get('fecha_fin_descanso') as string) || null,
+    vet_ingreso:            vetName,
+    attachment_ingreso_url: attachmentUrl,
+    created_by:             user.id,
+  }).select('id').single()
+
+  if (error) throw error
+
+  await supabase.from('horses').update({ status: 'injury' }).eq('id', horseId)
+
+  // Log activity
+  await logActivity({
+    user,
+    action: 'vetlist.create',
+    entityType: 'vetlist',
+    entityId: vetlistEntry?.id,
+    horseId,
+    description: `Ingresó caballo a vetlist: ${formData.get('motivo') || 'sin motivo especificado'}`,
+  })
 
   revalidatePath(`/horses/${horseId}`)
 }
@@ -61,16 +73,27 @@ export async function releaseVetlistEntry(horseId: string, entryId: string, form
   const file = formData.get('attachment') as File | null
   const attachmentUrl = file ? await uploadAttachment(supabase, horseId, file, 'egreso') : null
 
-  await Promise.all([
-    supabase.from('vetlist').update({
-      fecha_egreso:          formData.get('fecha_egreso'),
-      vet_egreso:            vetName,
-      resultado_examen:      (formData.get('resultado_examen') as string) || null,
-      condiciones_post:      (formData.get('condiciones_post') as string) || null,
-      attachment_egreso_url: attachmentUrl,
-    }).eq('id', entryId),
-    supabase.from('horses').update({ status: 'active' }).eq('id', horseId),
-  ])
+  const { error } = await supabase.from('vetlist').update({
+    fecha_egreso:          formData.get('fecha_egreso'),
+    vet_egreso:            vetName,
+    resultado_examen:      (formData.get('resultado_examen') as string) || null,
+    condiciones_post:      (formData.get('condiciones_post') as string) || null,
+    attachment_egreso_url: attachmentUrl,
+  }).eq('id', entryId)
+
+  if (error) throw error
+
+  await supabase.from('horses').update({ status: 'active' }).eq('id', horseId)
+
+  // Log activity
+  await logActivity({
+    user,
+    action: 'vetlist.release',
+    entityType: 'vetlist',
+    entityId: entryId,
+    horseId,
+    description: `Egresó caballo de vetlist: ${formData.get('resultado_examen') || 'sin resultado'}`,
+  })
 
   revalidatePath(`/horses/${horseId}`)
 }

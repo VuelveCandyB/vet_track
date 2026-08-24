@@ -30,12 +30,21 @@ export default function LoginForm() {
     setError('')
 
     const supabase = createClient()
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
 
     if (error) {
       setError('Credenciales incorrectas. Verifica tu email y contraseña.')
       setLoading(false)
       return
+    }
+
+    // Log login activity asynchronously (never block the login flow)
+    if (data?.user) {
+      fetch('/api/log-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: data.user.id }),
+      }).catch(() => {})
     }
 
     router.push('/dashboard')

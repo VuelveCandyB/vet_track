@@ -3,6 +3,7 @@ import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { requireUser, can } from '@/lib/auth'
 import { getVetName } from './shared'
+import { logActivity } from './activity-log'
 
 export async function getVaccinationPdfUrl(vaccinationId: string, pdfPath: string) {
   const user = await requireUser()
@@ -143,7 +144,7 @@ export async function createVaccination(horseId: string, formData: FormData) {
     pdfName = pdfFile.name
   }
 
-  const { error } = await supabase.from('vaccinations').insert({
+  const { data: vaccination, error } = await supabase.from('vaccinations').insert({
     horse_id:       horseId,
     vaccine_type_id: vaccineTypeId,
     vet_name:       vetName,
@@ -153,11 +154,21 @@ export async function createVaccination(horseId: string, formData: FormData) {
     pdf_path:       pdfPath,
     pdf_name:       pdfName,
     created_by:     user.id,
-  })
+  }).select('id').single()
 
   if (error) throw error
 
   sendVaccinationEmail(supabase, horse?.name ?? 'Caballo', fecha, vaccineType.name, horse?.microchip)
+
+  // Log activity
+  await logActivity({
+    user,
+    action: 'vaccination.create',
+    entityType: 'vaccination',
+    entityId: vaccination?.id,
+    horseId,
+    description: `Registró vacunación: ${vaccineType.name} el ${fecha}`,
+  })
 
   revalidatePath(`/horses/${horseId}`)
 }

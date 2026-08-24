@@ -9,11 +9,19 @@ import type { TreatmentReport } from '@/lib/types'
 interface DownloadPdfButtonProps {
   report: TreatmentReport & {
     horse?: { name: string; registration?: string; microchip?: string }
-    drug?: { nombre: string; categoria: string; tipo_restriccion?: string; withdrawal_time_horas?: number }
   }
+  medications?: Array<{
+    id: string
+    drug_id: string
+    dosis: number
+    dosis_unidad?: string
+    nivel_dosificacion?: string
+    tiempo_restriccion?: number | null
+    drug?: { nombre: string; categoria: string; tipo_restriccion?: string }
+  }>
 }
 
-export default function DownloadPdfButton({ report }: DownloadPdfButtonProps) {
+export default function DownloadPdfButton({ report, medications = [] }: DownloadPdfButtonProps) {
   const [isGenerating, setIsGenerating] = useState(false)
 
   const generatePDF = async () => {
@@ -51,6 +59,17 @@ export default function DownloadPdfButton({ report }: DownloadPdfButtonProps) {
         return `${day}/${month}/${year} ${hoursStr}:${minutes} ${ampm}`
       }
 
+      const medicamentosHTML = medications.length > 0 ? medications.map((med, idx) => `
+        <div style="margin-bottom: 15px; padding: 10px; background: #f9f9f9; border-left: 3px solid #059669;">
+          <strong>Medicamento ${idx + 1}:</strong> ${med.drug?.nombre || '—'}<br/>
+          <strong>Categoría:</strong> ${med.drug?.categoria || '—'}<br/>
+          <strong>Dosis:</strong> ${med.dosis} ${med.dosis_unidad || 'mg'}<br/>
+          ${med.nivel_dosificacion ? `<strong>Nivel:</strong> ${med.nivel_dosificacion}<br/>` : ''}
+          ${med.drug?.tipo_restriccion ? `<strong>Restricción:</strong> ${med.drug.tipo_restriccion}<br/>` : ''}
+          ${med.tiempo_restriccion ? `<strong>Tiempo Restricción:</strong> ${med.tiempo_restriccion}h` : ''}
+        </div>
+      `).join('') : '<p>Sin medicamentos registrados</p>'
+
       element.innerHTML = `
         <div style="text-align: center; margin-bottom: 40px; padding-bottom: 20px; border-bottom: 2px solid #333;">
           <img src="${logoBase64}" style="max-width: 190px; height: auto; margin-bottom: 15px; display: block; margin-left: 0;" alt="Logo" />
@@ -81,29 +100,18 @@ export default function DownloadPdfButton({ report }: DownloadPdfButtonProps) {
         </div>
 
         <div style="margin-bottom: 30px;">
+          <h2 style="font-size: 14px; font-weight: bold; margin-bottom: 15px; color: #059669;">Medicamentos Registrados</h2>
+          ${medicamentosHTML}
+        </div>
+
+        <div style="margin-bottom: 30px;">
           <h2 style="font-size: 14px; font-weight: bold; margin-bottom: 15px; color: #059669;">Información del Tratamiento</h2>
           <table style="width: 100%; border-collapse: collapse;">
             <tr>
               <td style="width: 50%; padding: 8px; border-bottom: 1px solid #ddd;">
-                <strong>Medicamento:</strong> ${report.drug?.nombre || '—'}
-              </td>
-              <td style="width: 50%; padding: 8px; border-bottom: 1px solid #ddd;">
-                <strong>Categoría:</strong> ${report.drug?.categoria || '—'}
-              </td>
-            </tr>
-            <tr>
-              <td style="padding: 8px; border-bottom: 1px solid #ddd;">
-                <strong>Dosis:</strong> ${report.dosis} ${report.dosis_unidad || 'mg'}
-              </td>
-              <td style="padding: 8px; border-bottom: 1px solid #ddd;">
-                <strong>Nivel de Dosificación:</strong> ${report.nivel_dosificacion || '—'}
-              </td>
-            </tr>
-            <tr>
-              <td style="padding: 8px; border-bottom: 1px solid #ddd;">
                 <strong>Fecha:</strong> ${formatDate(report.fecha_tratamiento)}
               </td>
-              <td style="padding: 8px; border-bottom: 1px solid #ddd;">
+              <td style="width: 50%; padding: 8px; border-bottom: 1px solid #ddd;">
                 <strong>Hora:</strong> ${report.hora_tratamiento || '—'}
               </td>
             </tr>
@@ -124,34 +132,6 @@ export default function DownloadPdfButton({ report }: DownloadPdfButtonProps) {
           </div>
         ` : ''}
 
-        ${report.drug?.tipo_restriccion ? `
-          <div style="margin-bottom: 30px;">
-            <h3 style="font-size: 12px; font-weight: bold; margin-bottom: 8px;">Restricciones:</h3>
-            <table style="width: 100%; border-collapse: collapse;">
-              <tr>
-                <td style="padding: 8px; border-bottom: 1px solid #ddd;">
-                  <strong>Tipo:</strong> ${report.drug?.tipo_restriccion || '—'}
-                </td>
-                <td style="padding: 8px; border-bottom: 1px solid #ddd;">
-                  <strong>Tiempo (horas):</strong> ${report.tiempo_restriccion || '—'}
-                </td>
-                <td style="padding: 8px; border-bottom: 1px solid #ddd;">
-                  <strong>Fin de Restricción:</strong> ${formatDate(report.fecha_fin_tratamiento || null)}
-                </td>
-              </tr>
-            </table>
-          </div>
-        ` : ''}
-
-        ${report.hasta_cuando ? `
-          <div style="margin-bottom: 30px;">
-            <h3 style="font-size: 12px; font-weight: bold; margin-bottom: 8px;">Duración del Tratamiento (Art. 811d):</h3>
-            <p style="margin: 0; padding: 10px; background: #f0f9ff; border-left: 3px solid #0891b2;">
-              <strong>Hasta cuándo:</strong> ${formatDate(report.hasta_cuando)}
-              ${report.es_auto_generado ? ' <em>(Auto-generado)</em>' : ''}
-            </p>
-          </div>
-        ` : ''}
 
         <div style="margin-bottom: 30px;">
           <h3 style="font-size: 12px; font-weight: bold; margin-bottom: 8px;">Veterinario Autorizado:</h3>

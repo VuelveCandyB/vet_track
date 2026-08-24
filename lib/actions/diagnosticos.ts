@@ -3,6 +3,7 @@ import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { requireUser, can, isTechnician } from '@/lib/auth'
 import { getVetName } from '@/lib/actions/shared'
+import { logActivity } from '@/lib/actions/activity-log'
 
 const ALLOWED_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf'])
 const MAX_SIZE = 10 * 1024 * 1024
@@ -35,7 +36,7 @@ export async function createDiagnostico(horseId: string, formData: FormData) {
     const file = formData.get('attachment') as File | null
     const attachmentUrl = file ? await uploadAttachment(supabase, horseId, file, 'diag') : null
 
-    const { error } = await supabase.from('diagnosticos').insert({
+    const { data: diagnostico, error } = await supabase.from('diagnosticos').insert({
       horse_id: horseId,
       vet_name: vetName,
       created_by: user.id,
@@ -48,9 +49,19 @@ export async function createDiagnostico(horseId: string, formData: FormData) {
       notas: (formData.get('notas') as string) || null,
       recomendar_vetlist: formData.get('recomendar_vetlist') === 'on',
       attachment_url: attachmentUrl,
-    })
+    }).select('id').single()
 
     if (error) throw error
+
+    // Log activity
+    await logActivity({
+      user,
+      action: 'diagnostico.create',
+      entityType: 'diagnostico',
+      entityId: diagnostico?.id,
+      horseId,
+      description: `Registró diagnóstico: ${formData.get('tipo') || 'sin tipo'}`,
+    })
 
     revalidatePath(`/horses/${horseId}`)
   } catch (err) {

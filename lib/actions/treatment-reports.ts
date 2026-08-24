@@ -1,53 +1,55 @@
 'use server'
 import { revalidatePath } from 'next/cache'
-import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { requireUser } from '@/lib/auth'
+import { requireUser, isAdmin } from '@/lib/auth'
 import { getVetName, getCreatedForVetId } from '@/lib/actions/shared'
+import { logActivity } from '@/lib/actions/activity-log'
+
+interface MedicationRow {
+  drug_id: string
+  dosis: number
+  dosis_unidad: string
+  nivel_dosificacion?: string
+  tiempo_restriccion?: number | null
+  hasta_cuando?: string | null
+}
 
 export async function createTreatmentReport(formData: FormData) {
   const user = await requireUser()
   const supabase = await createClient()
 
   const horse_id = formData.get('horse_id') as string
-  const drug_id = formData.get('drug_id') as string
+  const medicationsJson = formData.get('medications') as string
   const itemCodeIds = formData.getAll('item_code_ids') as string[]
 
   // Validación de campos requeridos
   if (!horse_id?.trim()) {
     throw new Error('Debe seleccionar un caballo')
   }
-  if (!drug_id?.trim()) {
-    throw new Error('Debe seleccionar un medicamento')
+
+  let medications: MedicationRow[] = []
+  if (medicationsJson) {
+    try {
+      medications = JSON.parse(medicationsJson)
+    } catch {
+      throw new Error('Formato de medicamentos inválido')
+    }
+  }
+
+  if (medications.length === 0) {
+    throw new Error('Debe agregar al menos un medicamento')
   }
 
   const numero_identificacion_caballo = formData.get('numero_identificacion_caballo') as string | null
   const establo = (formData.get('establo') as string) || ''
   const fecha_tratamiento = formData.get('fecha_tratamiento') as string
   const hora_tratamiento = (formData.get('hora_tratamiento') as string) || '00:00'
-  const dosis = parseFloat(formData.get('dosis') as string)
-  const dosis_unidad = formData.get('dosis_unidad') as string | null
-  const nivel_dosificacion = formData.get('nivel_dosificacion') as string | null
-  const tiempo_restriccion_str = formData.get('tiempo_restriccion') as string
   const notas = formData.get('notas') as string | null
   const from_horse = formData.get('from_horse') as string | null
 
   // Calcular el nombre del médico y el ID del médico para el que se crea
   const vet_autorizado_nombre = await getVetName(supabase, user)
   const created_for_vet_id = await getCreatedForVetId(supabase, user)
-
-  const tiempo_restriccion = tiempo_restriccion_str ? parseInt(tiempo_restriccion_str) : null
-
-  let fecha_fin_tratamiento: string | null = null
-  let hora_fin_tratamiento: string | null = null
-  if (tiempo_restriccion && fecha_tratamiento) {
-    const [year, month, day] = fecha_tratamiento.split('-')
-    const [horaNum, minNum] = hora_tratamiento.split(':')
-    const fecha = new Date(parseInt(year), parseInt(month) - 1, parseInt(day), parseInt(horaNum), parseInt(minNum))
-    fecha.setHours(fecha.getHours() + tiempo_restriccion)
-    fecha_fin_tratamiento = fecha.toISOString().split('T')[0]
-    hora_fin_tratamiento = fecha.toISOString().split('T')[1].slice(0, 5)
-  }
 
   // Obtener nombres de los códigos seleccionados para concatenar en diagnostico
   const { data: codeItems } = await supabase
@@ -57,26 +59,18 @@ export async function createTreatmentReport(formData: FormData) {
 
   const diagnostico = codeItems?.map(item => item.name).join(', ') || ''
 
+  // Crear el treatment report (sin medicamentos)
   const { data: insertedReport, error } = await supabase.from('treatment_reports').insert({
     horse_id,
-    drug_id,
     numero_identificacion_caballo,
     establo,
     tratamiento: null,
     diagnostico,
     fecha_tratamiento,
     hora_tratamiento,
-    dosis,
-    dosis_unidad,
-    nivel_dosificacion,
-    tiempo_restriccion,
-    fecha_fin_tratamiento,
-    hora_fin_tratamiento,
     notas,
     vet_autorizado_nombre,
     created_for_vet_id,
-    estado: 'sometido',
-    sometido_en: new Date().toISOString(),
     es_auto_generado: false,
     created_by: user.id,
   }).select('id').single()
@@ -84,19 +78,53 @@ export async function createTreatmentReport(formData: FormData) {
   if (error) throw new Error(error.message)
   if (!insertedReport) throw new Error('No se pudo crear el informe')
 
-  // Insertar enlaces en la tabla de junction
-  const junctionData = itemCodeIds.map(catalogItemId => ({
+  // Insertar medicamentos en la tabla junction
+  const medicationData = medications.map(med => ({
     treatment_report_id: insertedReport.id,
-    catalog_item_id: catalogItemId,
+    drug_id: med.drug_id,
+    dosis: med.dosis,
+    dosis_unidad: med.dosis_unidad || 'mg',
+    nivel_dosificacion: med.nivel_dosificacion || null,
+    tiempo_restriccion: med.tiempo_restriccion || null,
   }))
 
-  const { error: junctionError } = await supabase
-    .from('treatment_report_item_codes')
-    .insert(junctionData)
+  console.log('📝 Inserting medications:', medicationData)
+  const { error: medError } = await supabase
+    .from('treatment_report_medications')
+    .insert(medicationData)
 
-  if (junctionError) throw new Error(junctionError.message)
+  if (medError) {
+    console.error('❌ Error inserting medications:', medError)
+    throw new Error(`Error al guardar medicamentos: ${medError.message}`)
+  }
+  console.log('✅ Medications inserted successfully')
+
+  // Insertar enlaces de códigos en la tabla de junction
+  if (itemCodeIds.length > 0) {
+    const junctionData = itemCodeIds.map(catalogItemId => ({
+      treatment_report_id: insertedReport.id,
+      catalog_item_id: catalogItemId,
+    }))
+
+    const { error: junctionError } = await supabase
+      .from('treatment_report_item_codes')
+      .insert(junctionData)
+
+    if (junctionError) throw new Error(junctionError.message)
+  }
+
+  // Log activity
+  await logActivity({
+    user,
+    action: 'treatment_report.create',
+    entityType: 'treatment_report',
+    entityId: insertedReport.id,
+    horseId: horse_id,
+    description: `Creó informe de tratamiento con ${medications.length} medicamento(s) para el caballo`,
+  })
 
   revalidatePath('/treatment-reports')
+  revalidatePath(`/treatment-reports/${insertedReport.id}`)
   if (from_horse && from_horse.trim()) {
     revalidatePath(`/horses/${from_horse}`)
   }
@@ -111,43 +139,41 @@ export async function updateTreatmentReport(id: string, formData: FormData) {
 
   const { data: report } = await supabase
     .from('treatment_reports')
-    .select('estado')
+    .select('created_by')
     .eq('id', id)
     .single()
 
-  if (report?.estado !== 'borrador') {
-    throw new Error('Solo se pueden editar informes en estado borrador')
+  const isUserAdmin = await isAdmin(user.id, user.email!)
+  if (report?.created_by !== user.id && !isUserAdmin) {
+    throw new Error('No tienes permiso para editar este informe')
   }
 
   const horse_id = formData.get('horse_id') as string
-  const drug_id = formData.get('drug_id') as string
+  const medicationsJson = formData.get('medications') as string
   const itemCodeIds = formData.getAll('item_code_ids') as string[]
+
+  let medications: MedicationRow[] = []
+  if (medicationsJson) {
+    try {
+      medications = JSON.parse(medicationsJson)
+    } catch {
+      throw new Error('Formato de medicamentos inválido')
+    }
+  }
+
+  if (medications.length === 0) {
+    throw new Error('Debe agregar al menos un medicamento')
+  }
+
   const numero_identificacion_caballo = formData.get('numero_identificacion_caballo') as string | null
   const establo = (formData.get('establo') as string) || ''
   const fecha_tratamiento = formData.get('fecha_tratamiento') as string
   const hora_tratamiento = (formData.get('hora_tratamiento') as string) || '00:00'
-  const dosis = parseFloat(formData.get('dosis') as string)
-  const dosis_unidad = formData.get('dosis_unidad') as string | null
-  const nivel_dosificacion = formData.get('nivel_dosificacion') as string | null
-  const tiempo_restriccion_str = formData.get('tiempo_restriccion') as string
   const notas = formData.get('notas') as string | null
 
   // Calcular el nombre del médico y el ID del médico para el que se edita
   const vet_autorizado_nombre = await getVetName(supabase, user)
   const created_for_vet_id = await getCreatedForVetId(supabase, user)
-
-  const tiempo_restriccion = tiempo_restriccion_str ? parseInt(tiempo_restriccion_str) : null
-
-  let fecha_fin_tratamiento: string | null = null
-  let hora_fin_tratamiento: string | null = null
-  if (tiempo_restriccion && fecha_tratamiento) {
-    const [year, month, day] = fecha_tratamiento.split('-')
-    const [horaNum, minNum] = hora_tratamiento.split(':')
-    const fecha = new Date(parseInt(year), parseInt(month) - 1, parseInt(day), parseInt(horaNum), parseInt(minNum))
-    fecha.setHours(fecha.getHours() + tiempo_restriccion)
-    fecha_fin_tratamiento = fecha.toISOString().split('T')[0]
-    hora_fin_tratamiento = fecha.toISOString().split('T')[1].slice(0, 5)
-  }
 
   // Obtener nombres de los códigos seleccionados para concatenar en diagnostico
   const { data: codeItems } = await supabase
@@ -161,19 +187,12 @@ export async function updateTreatmentReport(id: string, formData: FormData) {
     .from('treatment_reports')
     .update({
       horse_id,
-      drug_id,
       numero_identificacion_caballo,
       establo,
       tratamiento: null,
       diagnostico,
       fecha_tratamiento,
       hora_tratamiento,
-      dosis,
-      dosis_unidad,
-      nivel_dosificacion,
-      tiempo_restriccion,
-      fecha_fin_tratamiento,
-      hora_fin_tratamiento,
       notas,
       vet_autorizado_nombre,
       created_for_vet_id,
@@ -181,6 +200,27 @@ export async function updateTreatmentReport(id: string, formData: FormData) {
     .eq('id', id)
 
   if (error) throw new Error(error.message)
+
+  // Borrar y recrear medicamentos
+  await supabase
+    .from('treatment_report_medications')
+    .delete()
+    .eq('treatment_report_id', id)
+
+  const medicationData = medications.map(med => ({
+    treatment_report_id: id,
+    drug_id: med.drug_id,
+    dosis: med.dosis,
+    dosis_unidad: med.dosis_unidad || 'mg',
+    nivel_dosificacion: med.nivel_dosificacion || null,
+    tiempo_restriccion: med.tiempo_restriccion || null,
+  }))
+
+  const { error: medError } = await supabase
+    .from('treatment_report_medications')
+    .insert(medicationData)
+
+  if (medError) throw new Error(medError.message)
 
   // Borrar y recrear enlaces de códigos en la tabla de junction
   await supabase
@@ -201,16 +241,26 @@ export async function updateTreatmentReport(id: string, formData: FormData) {
     if (junctionError) throw new Error(junctionError.message)
   }
 
+  // Log activity
+  await logActivity({
+    user,
+    action: 'treatment_report.update',
+    entityType: 'treatment_report',
+    entityId: id,
+    horseId: horse_id,
+    description: `Editó informe de tratamiento con ${medications.length} medicamento(s)`,
+  })
+
   revalidatePath('/treatment-reports')
 }
 
 export async function deleteTreatmentReport(id: string) {
-  await requireUser()
+  const user = await requireUser()
   const supabase = await createClient()
 
   const { data: report } = await supabase
     .from('treatment_reports')
-    .select('estado')
+    .select('estado, horse_id')
     .eq('id', id)
     .single()
 
@@ -225,6 +275,16 @@ export async function deleteTreatmentReport(id: string) {
 
   if (error) throw new Error(error.message)
 
+  // Log activity
+  await logActivity({
+    user,
+    action: 'treatment_report.delete',
+    entityType: 'treatment_report',
+    entityId: id,
+    horseId: report?.horse_id,
+    description: 'Eliminó informe de tratamiento',
+  })
+
   revalidatePath('/treatment-reports')
 }
 
@@ -238,8 +298,6 @@ export async function replicateDailyTreatmentReports() {
     .from('treatment_reports')
     .select('*')
     .eq('estado', 'borrador')
-    .not('hasta_cuando', 'is', null)
-    .gte('hasta_cuando', today)
     .eq('es_auto_generado', false)
 
   if (!activeReports || activeReports.length === 0) return { replicated: 0 }
@@ -247,13 +305,25 @@ export async function replicateDailyTreatmentReports() {
   let replicated = 0
 
   for (const report of activeReports) {
-    // Verificar si ya existe un informe para hoy para este caballo y medicamento
+    // Obtener medicamentos del informe original
+    const { data: originalMeds } = await supabase
+      .from('treatment_report_medications')
+      .select('*')
+      .eq('treatment_report_id', report.id)
+
+    if (!originalMeds || originalMeds.length === 0) {
+      // Sin medicamentos, skip
+      continue
+    }
+
+    // Verificar si ya existe un informe para hoy para este caballo
     const { data: existingToday } = await supabase
       .from('treatment_reports')
       .select('id')
       .eq('horse_id', report.horse_id)
-      .eq('drug_id', report.drug_id)
       .eq('fecha_tratamiento', today)
+      .eq('es_auto_generado', true)
+      .eq('informe_padre_id', report.id)
       .single()
 
     if (existingToday) {
@@ -264,19 +334,12 @@ export async function replicateDailyTreatmentReports() {
     // Crear copia del informe para hoy
     const { data: newReport, error } = await supabase.from('treatment_reports').insert({
       horse_id: report.horse_id,
-      drug_id: report.drug_id,
       numero_identificacion_caballo: report.numero_identificacion_caballo,
       establo: report.establo,
       tratamiento: null,
       diagnostico: report.diagnostico,
       fecha_tratamiento: today,
       hora_tratamiento: report.hora_tratamiento,
-      dosis: report.dosis,
-      dosis_unidad: report.dosis_unidad,
-      nivel_dosificacion: report.nivel_dosificacion,
-      tiempo_restriccion: report.tiempo_restriccion,
-      fecha_fin_tratamiento: report.fecha_fin_tratamiento,
-      hasta_cuando: report.hasta_cuando,
       notas: report.notas,
       vet_autorizado_nombre: report.vet_autorizado_nombre,
       estado: 'sometido', // Auto-generado ya sale sometido
@@ -286,6 +349,20 @@ export async function replicateDailyTreatmentReports() {
     }).select('id').single()
 
     if (!error && newReport) {
+      // Copiar medicamentos del informe original
+      const newMeds = originalMeds.map(med => ({
+        treatment_report_id: newReport.id,
+        drug_id: med.drug_id,
+        dosis: med.dosis,
+        dosis_unidad: med.dosis_unidad,
+        nivel_dosificacion: med.nivel_dosificacion,
+        tiempo_restriccion: med.tiempo_restriccion,
+      }))
+
+      await supabase
+        .from('treatment_report_medications')
+        .insert(newMeds)
+
       // Copiar también los enlaces de códigos del informe original
       const { data: originalCodes } = await supabase
         .from('treatment_report_item_codes')

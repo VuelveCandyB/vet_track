@@ -1,4 +1,4 @@
-import { requireUser } from '@/lib/auth'
+import { requireUser, isAdmin } from '@/lib/auth'
 import { createClient } from '@/lib/supabase/server'
 import { deleteTreatmentReport } from '@/lib/actions/treatment-reports'
 import Link from 'next/link'
@@ -18,14 +18,24 @@ export default async function TreatmentReportDetailPage({
   params: Promise<{ id: string }>
 }) {
   const user = await requireUser()
+  const userIsAdmin = await isAdmin(user.id, user.email!)
   const { id } = await params
   const supabase = await createClient()
 
-  const { data: report, error } = await supabase
-    .from('treatment_reports')
-    .select('*, horse:horses(id, name, registration, microchip), drug:drugs(nombre, categoria, tipo_restriccion, withdrawal_time_horas, withdrawal_time_dias)')
-    .eq('id', id)
-    .single()
+  const [reportRes, medicationsRes] = await Promise.all([
+    supabase
+      .from('treatment_reports')
+      .select('*, horse:horses(id, name, registration, microchip)')
+      .eq('id', id)
+      .single(),
+    supabase
+      .from('treatment_report_medications')
+      .select('*, drug:drugs(nombre, categoria, tipo_restriccion, withdrawal_time_horas, withdrawal_time_dias)')
+      .eq('treatment_report_id', id),
+  ])
+
+  const { data: report, error } = reportRes
+  const { data: medications } = medicationsRes
 
   if (error || !report) {
     return (
@@ -83,8 +93,12 @@ export default async function TreatmentReportDetailPage({
 
   const typed = report as TreatmentReport & {
     horse?: { id: string; name: string; registration?: string; microchip?: string }
-    drug?: { nombre: string; categoria: string; tipo_restriccion?: string; withdrawal_time_horas?: number; withdrawal_time_dias?: number }
   }
+
+  const typedMeds = (medications || []).map(m => ({
+    ...m,
+    drug: m.drug as { nombre: string; categoria: string; tipo_restriccion?: string; withdrawal_time_horas?: number; withdrawal_time_dias?: number } | null
+  }))
 
   return (
     <div className="max-w-3xl mx-auto">
@@ -105,8 +119,15 @@ export default async function TreatmentReportDetailPage({
             {typed.horse?.name} • {new Date(typed.fecha_tratamiento).toLocaleDateString('es-ES')}
           </p>
         </div>
-        <div>
-          <DownloadPdfButton report={typed} />
+        <div className="flex gap-2">
+          {(typed.created_by === user.id || userIsAdmin) && (
+            <Link href={`/treatment-reports/${id}/edit`}>
+              <Button style={{ background: PALETTE.primary.green, color: '#fff' }}>
+                Editar
+              </Button>
+            </Link>
+          )}
+          <DownloadPdfButton report={typed} medications={typedMeds} />
         </div>
       </div>
 
@@ -134,28 +155,57 @@ export default async function TreatmentReportDetailPage({
           </div>
         </div>
 
-        {/* Sección: Tratamiento */}
+        {/* Sección: Medicamentos */}
         <div className="mb-8 pb-8" style={{ borderBottom: `1px solid ${PALETTE.ui.border}` }}>
           <h2 className="text-sm font-semibold uppercase tracking-wider mb-4" style={{ color: PALETTE.text.secondary }}>
-            Información del Tratamiento
+            Medicamentos ({typedMeds.length})
           </h2>
-          <div className="grid grid-cols-2 gap-4 mb-4">
-            <div>
-              <p className="text-xs" style={{ color: PALETTE.text.secondary }}>Medicamento</p>
-              <p className="text-lg font-semibold">{typed.drug?.nombre || '—'}</p>
+
+          {typedMeds.map((med, idx) => (
+            <div key={med.id} className="mb-6 pb-6" style={{ borderBottom: idx < typedMeds.length - 1 ? `1px solid ${PALETTE.ui.border}` : 'none' }}>
+              <h3 className="text-sm font-semibold mb-3" style={{ color: PALETTE.text.primary }}>Medicamento {idx + 1}</h3>
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <div>
+                  <p className="text-xs" style={{ color: PALETTE.text.secondary }}>Medicamento</p>
+                  <p className="text-lg font-semibold">{med.drug?.nombre || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-xs" style={{ color: PALETTE.text.secondary }}>Categoría</p>
+                  <p className="text-lg font-semibold">{med.drug?.categoria || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-xs" style={{ color: PALETTE.text.secondary }}>Dosis</p>
+                  <p className="text-lg font-semibold">{med.dosis} {med.dosis_unidad || 'mg'}</p>
+                </div>
+                {med.nivel_dosificacion && (
+                  <div>
+                    <p className="text-xs" style={{ color: PALETTE.text.secondary }}>Nivel de Dosificación</p>
+                    <p className="text-lg font-semibold">{med.nivel_dosificacion}</p>
+                  </div>
+                )}
+                {med.drug?.tipo_restriccion && (
+                  <div>
+                    <p className="text-xs" style={{ color: PALETTE.text.secondary }}>Restricción</p>
+                    <p className="text-lg font-semibold" style={{ color: '#b91c1c' }}>{med.drug.tipo_restriccion}</p>
+                  </div>
+                )}
+                {med.tiempo_restriccion && (
+                  <div>
+                    <p className="text-xs" style={{ color: PALETTE.text.secondary }}>Tiempo de Restricción</p>
+                    <p className="text-lg font-semibold">{med.tiempo_restriccion}h ({Math.round(med.tiempo_restriccion / 24 * 10) / 10} días)</p>
+                  </div>
+                )}
+                {med.created_at && (
+                  <div>
+                    <p className="text-xs" style={{ color: PALETTE.text.secondary }}>Fecha de Entrada</p>
+                    <p className="text-sm font-semibold">{new Date(med.created_at).toLocaleString('es-ES')}</p>
+                  </div>
+                )}
+              </div>
             </div>
-            <div>
-              <p className="text-xs" style={{ color: PALETTE.text.secondary }}>Categoría</p>
-              <p className="text-lg font-semibold">{typed.drug?.categoria || '—'}</p>
-            </div>
-            <div>
-              <p className="text-xs" style={{ color: PALETTE.text.secondary }}>Dosis</p>
-              <p className="text-lg font-semibold">{typed.dosis} {typed.dosis_unidad || 'mg'}</p>
-            </div>
-            <div>
-              <p className="text-xs" style={{ color: PALETTE.text.secondary }}>Nivel de Dosificación</p>
-              <p className="text-lg font-semibold">{typed.nivel_dosificacion || '—'}</p>
-            </div>
+          ))}
+
+          <div className="grid grid-cols-2 gap-4 mt-6">
             <div>
               <p className="text-xs" style={{ color: PALETTE.text.secondary }}>Fecha</p>
               <p className="text-lg font-semibold">{new Date(typed.fecha_tratamiento).toLocaleDateString('es-ES')}</p>
@@ -165,70 +215,24 @@ export default async function TreatmentReportDetailPage({
               <p className="text-lg font-semibold">{formatTo12Hour(typed.hora_tratamiento)}</p>
             </div>
           </div>
-          <div className="mb-4">
-            <p className="text-xs mb-1" style={{ color: PALETTE.text.secondary }}>Diagnóstico</p>
-            <p className="text-base whitespace-pre-wrap">{typed.diagnostico || '—'}</p>
-          </div>
-          {typed.tratamiento && (
-            <div>
-              <p className="text-xs mb-1" style={{ color: PALETTE.text.secondary }}>Tratamiento</p>
-              <p className="text-base whitespace-pre-wrap">{typed.tratamiento}</p>
+
+          {typed.diagnostico && (
+            <div className="mt-6">
+              <p className="text-xs mb-1" style={{ color: PALETTE.text.secondary }}>Diagnóstico</p>
+              <p className="text-base whitespace-pre-wrap">{typed.diagnostico}</p>
             </div>
           )}
         </div>
 
-        {/* Sección: Restricciones (si aplica) */}
-        {typed.drug?.tipo_restriccion && (
-          <div className="mb-8 pb-8 bg-yellow-50 p-4 rounded-md" style={{ borderBottom: `1px solid ${PALETTE.ui.border}` }}>
-            <h2 className="text-sm font-semibold uppercase tracking-wider mb-4" style={{ color: PALETTE.text.secondary }}>
-              Restricciones
-            </h2>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-xs" style={{ color: PALETTE.text.secondary }}>Tipo de Restricción</p>
-                <p className="text-lg font-semibold">{typed.drug?.tipo_restriccion || '—'}</p>
-              </div>
-              <div>
-                <p className="text-xs" style={{ color: PALETTE.text.secondary }}>Tiempo de Restricción (horas)</p>
-                <p className="text-lg font-semibold">{typed.tiempo_restriccion || '—'}</p>
-                {typed.drug?.withdrawal_time_dias && (
-                  <p className="text-xs" style={{ color: PALETTE.text.secondary }}>
-                    ≈ {typed.drug.withdrawal_time_dias} días
-                  </p>
-                )}
-              </div>
-              {typed.fecha_fin_tratamiento && (
-                <div>
-                  <p className="text-xs" style={{ color: PALETTE.text.secondary }}>Fecha Fin de Restricción</p>
-                  <p className="text-lg font-semibold">
-                    {new Date(typed.fecha_fin_tratamiento).toLocaleDateString('es-ES')} {formatTo12Hour(typed.hora_fin_tratamiento)}
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Sección: Duración del Tratamiento (Art. 811d) */}
-        {typed.hasta_cuando && (
+        {/* Sección: Auto-generado (si aplica) */}
+        {typed.es_auto_generado && (
           <div className="mb-8 pb-8 bg-blue-50 p-4 rounded-md" style={{ borderBottom: `1px solid ${PALETTE.ui.border}` }}>
             <h2 className="text-sm font-semibold uppercase tracking-wider mb-4" style={{ color: PALETTE.text.secondary }}>
-              Duración del Tratamiento (Art. 811d)
+              Generación
             </h2>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-xs" style={{ color: PALETTE.text.secondary }}>Hasta cuándo</p>
-                <p className="text-lg font-semibold">{new Date(typed.hasta_cuando).toLocaleDateString('es-ES')}</p>
-              </div>
-              {typed.es_auto_generado && (
-                <div>
-                  <p className="text-xs" style={{ color: PALETTE.text.secondary }}>Generación</p>
-                  <p className="text-lg font-semibold" style={{ color: '#0891b2' }}>
-                    ⚙️ Auto-generado
-                  </p>
-                </div>
-              )}
-            </div>
+            <p className="text-lg font-semibold" style={{ color: '#0891b2' }}>
+              ⚙️ Auto-generado
+            </p>
           </div>
         )}
 

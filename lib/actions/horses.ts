@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { requireUser, can } from '@/lib/auth'
 import { getVetName } from './shared'
+import { logActivity } from './activity-log'
 
 export async function createHorse(formData: FormData) {
   const user = await requireUser()
@@ -23,6 +24,17 @@ export async function createHorse(formData: FormData) {
 
   const { data, error } = await supabase.from('horses').insert(payload).select('id').single()
   if (error) throw new Error(error.message)
+
+  // Log activity
+  await logActivity({
+    user,
+    action: 'horse.create',
+    entityType: 'horse',
+    entityId: data.id,
+    horseId: data.id,
+    description: `Creó caballo: ${payload.name}`,
+  })
+
   redirect(`/horses/${data.id}`)
 }
 

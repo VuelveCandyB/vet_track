@@ -1,4 +1,4 @@
-import { requireUser, isOfficialVet } from '@/lib/auth'
+import { requireUser, isOfficialVet, isAdmin } from '@/lib/auth'
 import { createClient } from '@/lib/supabase/server'
 import { PALETTE } from '@/lib/palette'
 import Link from 'next/link'
@@ -9,10 +9,11 @@ export default async function DashboardPage() {
   const supabase = await createClient()
   const today = new Date().toISOString().split('T')[0]
   const officialVet = await isOfficialVet(user.id, user.email!)
+  const admin = await isAdmin(user.id, user.email!)
 
   const [
     statsRes, recentMedsRes, vetlistRes, medsHoyRes, fallecidosRes, diagRes, redFlagCountRes, redFlagListRes,
-    vaccineTypesRes, horsesRes, vaccinationsRes
+    vaccineTypesRes, horsesRes, vaccinationsRes, noEncontradosCountRes, noEncontradosListRes
   ] = await Promise.all([
     supabase.rpc('get_horse_stats'),
     supabase.from('treatment_reports').select('id, drug:drugs(nombre), fecha_tratamiento, hora_tratamiento, vet_autorizado_nombre, horse_id, horses(name)').order('fecha_tratamiento', { ascending: false }).limit(8),
@@ -25,6 +26,8 @@ export default async function DashboardPage() {
     supabase.from('vaccine_types').select('*').eq('active', true).eq('required', true),
     supabase.from('horses').select('id, name').eq('status', 'active'),
     supabase.from('vaccinations').select('id, horse_id, vaccine_type_id, fecha, vaccine_types(validity_days, warning_days)'),
+    admin ? supabase.from('horses').select('id', { count: 'exact', head: true }).not('crio_not_found_since', 'is', null) : Promise.resolve({ count: 0 }),
+    admin ? supabase.from('horses').select('id, name, crio_not_found_since').not('crio_not_found_since', 'is', null).order('crio_not_found_since', { ascending: false }).limit(8) : Promise.resolve({ data: [] }),
   ])
 
   const statsRaw = statsRes.data || {}
@@ -38,6 +41,8 @@ export default async function DashboardPage() {
   const vaccineTypes = vaccineTypesRes.data || []
   const activeHorses = horsesRes.data || []
   const vaccinations = vaccinationsRes.data || []
+  const noEncontradosCount = noEncontradosCountRes.count || 0
+  const noEncontradosList = noEncontradosListRes.data || []
 
   // Calculate horses with expired/expiring vaccines
   const vaccineStatusByHorse: { horse_id: string; horse_name: string; vencida_count: number; por_vencer_count: number }[] = []
@@ -118,6 +123,7 @@ export default async function DashboardPage() {
           { label: 'Meds. Hoy',        value: stats.meds_hoy,   color: '#0ea5e9' },
           { label: 'Referidos',        value: stats.red_flag,   color: '#dc2626' },
           { label: 'Fallecidos',       value: stats.deceased,   color: '#6b7280' },
+          ...(admin ? [{ label: 'No en CRIO', value: noEncontradosCount, color: '#dc2626' }] : []),
         ].map(({ label, value, color }) => (
           <div key={label} className="text-center">
             <div className="text-3xl md:text-4xl font-bold tabular-nums mb-1" style={{ color }}>
@@ -166,6 +172,44 @@ export default async function DashboardPage() {
                       <div></div>
                       <div className="text-sm text-right" style={{ color: PALETTE.text.primary }}>
                         {r.red_flag_date?.slice(0, 10) ?? '—'}
+                      </div>
+                    </Link>
+                  ))}
+                </>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* No en CRIO (admin only) */}
+        {admin && noEncontradosList.length > 0 && (
+          <div className="section">
+            <span className="text-sm font-semibold uppercase tracking-wider mb-3 block" style={{ color: PALETTE.text.secondary }}>
+              Caballos no encontrados en última importación de CRIO
+            </span>
+            <div className="rounded-lg border overflow-hidden" style={{ background: PALETTE.background.white, borderColor: PALETTE.ui.border, display: 'flex', flexDirection: 'column', maxHeight: '400px' }}>
+              {/* Header */}
+              <div className="grid gap-4 px-4 py-2.5 flex-shrink-0" style={{ gridTemplateColumns: '200px 1fr 120px', background: '#f8fafc', borderBottom: `1px solid ${PALETTE.ui.border}` }}>
+                <div className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: PALETTE.text.secondary }}>Caballo</div>
+                <div></div>
+                <div className="text-[11px] font-semibold uppercase tracking-wider text-right" style={{ color: PALETTE.text.secondary }}>Desde</div>
+              </div>
+              {/* Body */}
+              <div style={{ overflowY: 'auto', flex: 1 }}>
+                <>
+                  {noEncontradosList.map((h: any, idx: number) => (
+                    <Link key={h.id} href={`/horses/${h.id}`}
+                      className="grid gap-4 px-4 py-3 transition-colors hover:bg-slate-50"
+                      style={{
+                        gridTemplateColumns: '200px 1fr 120px',
+                        borderBottom: idx < noEncontradosList.length - 1 ? `1px solid ${PALETTE.ui.border}` : 'none'
+                      }}>
+                      <div className="text-sm font-medium truncate" style={{ color: PALETTE.text.primary }}>
+                        {h.name ?? '—'}
+                      </div>
+                      <div></div>
+                      <div className="text-sm text-right" style={{ color: PALETTE.text.primary }}>
+                        {h.crio_not_found_since?.slice(0, 10) ?? '—'}
                       </div>
                     </Link>
                   ))}

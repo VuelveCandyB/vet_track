@@ -5,6 +5,7 @@ import { deleteMedication } from '@/lib/actions/medications'
 import { getVaccinationPdfUrl } from '@/lib/actions/vaccinations'
 import HorseActions from '@/components/horses/horse-actions'
 import { Badge } from '@/components/ui/badge'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import AnimatedCapsuleDot from '@/components/timeline/animated-capsule-dot'
 import AnimatedDiagnosticoDot from '@/components/timeline/animated-diagnostico-dot'
 import AnimatedVaccinationDot from '@/components/timeline/animated-vaccination-dot'
@@ -82,7 +83,7 @@ export default async function HorseDetailPage({
     supabase.from('drugs').select('*').eq('active', true).order('nombre'),
     supabase.from('vaccine_types').select('*').eq('active', true).order('sort_order'),
     supabase.from('diagnosticos').select('*').eq('horse_id', id).order('fecha', { ascending: false }),
-    supabase.from('treatment_reports').select('*, drug:drugs(nombre, categoria, tipo_restriccion)').eq('horse_id', id).order('fecha_tratamiento', { ascending: false }).limit(10),
+    supabase.from('treatment_reports').select('*, medications:treatment_report_medications(*, drug:drugs(nombre, categoria, tipo_restriccion))').eq('horse_id', id).order('fecha_tratamiento', { ascending: false }).limit(10),
     supabase.from('pmf_records').select('*, drug:drugs(nombre, categoria, tipo_restriccion)').eq('horse_id', id).order('fecha_tratamiento', { ascending: false }).limit(5),
     supabase.from('vaccinations').select('*, vaccine_types(name, validity_days)').eq('horse_id', id).order('fecha', { ascending: false }),
     supabase.from('treatment_report_item_codes').select('treatment_report_id, catalog_item_id'),
@@ -272,6 +273,61 @@ export default async function HorseDetailPage({
                 </span>
               </div>
             ))}
+
+            {/* Pedigrí section */}
+            {((horse as any).padre || (horse as any).madre || (horse as any).raza || (horse as any).categoria) && (
+              <div className="pt-3 mt-3 border-t" style={{ borderColor: PALETTE.ui.border }}>
+                <h4 className="text-xs font-semibold mb-2" style={{ color: PALETTE.text.primary }}>Pedigrí</h4>
+                <div className="flex flex-wrap gap-2">
+                  <TooltipProvider>
+                    {(horse as any).padre && (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="text-xs px-2 py-1 rounded cursor-help"
+                            style={{ background: `${PALETTE.primary.green}20`, color: PALETTE.primary.green, border: `1px solid ${PALETTE.primary.green}40` }}>
+                            Padre
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent>{(horse as any).padre}</TooltipContent>
+                      </Tooltip>
+                    )}
+                    {(horse as any).madre && (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="text-xs px-2 py-1 rounded cursor-help"
+                            style={{ background: `#f97316` + '20', color: '#f97316', border: '1px solid #f9731640' }}>
+                            Madre
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent>{(horse as any).madre}</TooltipContent>
+                      </Tooltip>
+                    )}
+                    {(horse as any).raza && (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="text-xs px-2 py-1 rounded cursor-help"
+                            style={{ background: '#8b5cf6' + '20', color: '#8b5cf6', border: '1px solid #8b5cf640' }}>
+                            Raza
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent>{(horse as any).raza}</TooltipContent>
+                      </Tooltip>
+                    )}
+                    {(horse as any).categoria && (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="text-xs px-2 py-1 rounded cursor-help"
+                            style={{ background: '#06b6d4' + '20', color: '#06b6d4', border: '1px solid #06b6d440' }}>
+                            Categoría
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent>{(horse as any).categoria}</TooltipContent>
+                      </Tooltip>
+                    )}
+                  </TooltipProvider>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Vetlist history */}
@@ -574,26 +630,27 @@ export default async function HorseDetailPage({
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 flex-wrap mb-2">
                               <span className="text-sm font-semibold" style={{ color: PALETTE.primary.green }}>
-                                {t.drug?.nombre || 'Medicamento'}
+                                {t.medications && t.medications.length > 1 ? `${t.medications.length} medicamentos` : 'Medicamento'}
                               </span>
-                              {t.drug?.tipo_restriccion && (
-                                <Badge className="text-xs" style={{ background: '#fef3c722', color: '#92400e', border: 'none' }}>
-                                  {t.drug.tipo_restriccion}
-                                </Badge>
-                              )}
                               {artLabel && (
                                 <span className="text-xs" style={{ color: PALETTE.text.secondary }}>{artLabel}</span>
                               )}
                             </div>
-                            <div className="text-xs mb-2" style={{ color: PALETTE.text.primary }}>
-                              <span className="font-semibold">{t.dosis} {t.dosis_unidad}</span> · {t.vet_autorizado_nombre}{licenseMap[t.vet_autorizado_nombre] ? ` · Lic. ${licenseMap[t.vet_autorizado_nombre]}` : ''}{t.profiles?.license_number ? ` · Lic. ${t.profiles.license_number}` : ''}
+
+                            {/* Veterinario */}
+                            <div className="text-xs mb-2" style={{ color: PALETTE.text.secondary }}>
+                              {t.vet_autorizado_nombre}{licenseMap[t.vet_autorizado_nombre] ? ` · Lic. ${licenseMap[t.vet_autorizado_nombre]}` : ''}{t.profiles?.license_number ? ` · Lic. ${t.profiles.license_number}` : ''}
                             </div>
+
+                            {/* Diagnóstico */}
                             <div className="text-xs mb-2" style={{ color: PALETTE.text.secondary }}>
                               <span className="font-medium" style={{ color: PALETTE.text.primary }}>Dx:</span> {t.diagnostico.substring(0, 80)}
                               {t.diagnostico.length > 80 ? '...' : ''}
                             </div>
+
+                            {/* Códigos */}
                             {reportCodes.length > 0 && (
-                              <div className="flex gap-1.5 flex-wrap mb-2">
+                              <div className="flex gap-1.5 flex-wrap mb-3">
                                 {reportCodes.map((codeName: string) => {
                                   const codePart = codeName.split(' — ')[0]
                                   return (
@@ -604,9 +661,30 @@ export default async function HorseDetailPage({
                                 })}
                               </div>
                             )}
-                            {t.tiempo_restriccion && (
-                              <div className="text-xs" style={{ color: '#f97316' }}>
-                                Restricción: {t.tiempo_restriccion}h {t.fecha_fin_tratamiento && `· Vence: ${t.fecha_fin_tratamiento}`}
+
+                            {/* Medicamentos */}
+                            {t.medications && t.medications.length > 0 ? (
+                              <div className="space-y-2">
+                                {t.medications.map((med: any, idx: number) => (
+                                  <div key={med.id} className="text-xs p-2 rounded" style={{ background: '#f0f9ff', borderLeft: `2px solid ${PALETTE.primary.green}` }}>
+                                    <div style={{ color: PALETTE.text.primary }}>
+                                      <span className="font-semibold">{med.drug?.nombre || '—'}</span>
+                                      {med.drug?.categoria && <span style={{ color: PALETTE.text.secondary }}> · {med.drug.categoria}</span>}
+                                    </div>
+                                    <div style={{ color: PALETTE.text.secondary }}>
+                                      {med.dosis} {med.dosis_unidad || 'mg'}{med.nivel_dosificacion ? ` · ${med.nivel_dosificacion}` : ''}
+                                    </div>
+                                    {med.drug?.tipo_restriccion && (
+                                      <div style={{ color: '#f97316', fontSize: '0.75rem' }}>
+                                        Restricción: {med.drug.tipo_restriccion}{med.tiempo_restriccion ? ` · ${med.tiempo_restriccion}h` : ''}
+                                      </div>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <div className="text-xs" style={{ color: PALETTE.text.primary }}>
+                                <span className="font-semibold">{t.dosis} {t.dosis_unidad}</span>
                               </div>
                             )}
                           </div>
@@ -622,29 +700,30 @@ export default async function HorseDetailPage({
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 flex-wrap mb-2">
                                 <span className="text-sm font-semibold" style={{ color: PALETTE.primary.green }}>
-                                  {t.drug?.nombre || 'Medicamento'}
+                                  {t.medications && t.medications.length > 1 ? `${t.medications.length} medicamentos` : 'Medicamento'}
                                 </span>
                                 <Badge className="text-xs" style={{ background: bgColor, color: textColor, border: 'none' }}>
                                   {t.estado.charAt(0).toUpperCase() + t.estado.slice(1)}
                                 </Badge>
-                                {t.drug?.tipo_restriccion && (
-                                  <Badge className="text-xs" style={{ background: '#fef3c722', color: '#92400e', border: 'none' }}>
-                                    {t.drug.tipo_restriccion}
-                                  </Badge>
-                                )}
                                 {artLabel && (
                                   <span className="text-xs" style={{ color: PALETTE.text.secondary }}>{artLabel}</span>
                                 )}
                               </div>
-                              <div className="text-xs mb-2" style={{ color: PALETTE.text.primary }}>
-                                <span className="font-semibold">{t.dosis} {t.dosis_unidad}</span> · {t.vet_autorizado_nombre}{licenseMap[t.vet_autorizado_nombre] ? ` · Lic. ${licenseMap[t.vet_autorizado_nombre]}` : ''}{t.profiles?.license_number ? ` · Lic. ${t.profiles.license_number}` : ''}
+
+                              {/* Veterinario */}
+                              <div className="text-xs mb-2" style={{ color: PALETTE.text.secondary }}>
+                                {t.vet_autorizado_nombre}{licenseMap[t.vet_autorizado_nombre] ? ` · Lic. ${licenseMap[t.vet_autorizado_nombre]}` : ''}{t.profiles?.license_number ? ` · Lic. ${t.profiles.license_number}` : ''}
                               </div>
+
+                              {/* Diagnóstico */}
                               <div className="text-xs mb-2" style={{ color: PALETTE.text.secondary }}>
                                 <span className="font-medium" style={{ color: PALETTE.text.primary }}>Dx:</span> {t.diagnostico.substring(0, 80)}
                                 {t.diagnostico.length > 80 ? '...' : ''}
                               </div>
+
+                              {/* Códigos */}
                               {reportCodes.length > 0 && (
-                                <div className="flex gap-1.5 flex-wrap mb-2">
+                                <div className="flex gap-1.5 flex-wrap mb-3">
                                   {reportCodes.map((codeName: string) => {
                                     const codePart = codeName.split(' — ')[0]
                                     return (
@@ -655,14 +734,49 @@ export default async function HorseDetailPage({
                                   })}
                                 </div>
                               )}
-                              {t.tiempo_restriccion && (
-                                <div className="text-xs" style={{ color: '#f97316' }}>
-                                  Restricción: {t.tiempo_restriccion}h {t.fecha_fin_tratamiento && `· Vence: ${t.fecha_fin_tratamiento}`}
+
+                              {/* Medicamentos */}
+                              {t.medications && t.medications.length > 0 ? (
+                                <div className="space-y-2">
+                                  {t.medications.map((med: any, idx: number) => (
+                                    <div key={med.id} className="text-xs p-2 rounded" style={{ background: '#f0f9ff', borderLeft: `2px solid ${PALETTE.primary.green}` }}>
+                                      <div style={{ color: PALETTE.text.primary }}>
+                                        <span className="font-semibold">{med.drug?.nombre || '—'}</span>
+                                        {med.drug?.categoria && <span style={{ color: PALETTE.text.secondary }}> · {med.drug.categoria}</span>}
+                                      </div>
+                                      <div style={{ color: PALETTE.text.secondary }}>
+                                        {med.dosis} {med.dosis_unidad || 'mg'}{med.nivel_dosificacion ? ` · ${med.nivel_dosificacion}` : ''}
+                                      </div>
+                                      {med.created_at && (
+                                        <div style={{ color: PALETTE.text.secondary, fontSize: '0.7rem' }}>
+                                          {new Date(med.created_at).toLocaleString('es-ES')}
+                                        </div>
+                                      )}
+                                      {med.drug?.tipo_restriccion && (
+                                        <div style={{ color: '#f97316', fontSize: '0.75rem' }}>
+                                          Restricción: {med.drug.tipo_restriccion}{med.tiempo_restriccion ? ` · ${med.tiempo_restriccion}h` : ''}
+                                        </div>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : (
+                                <div className="text-xs" style={{ color: PALETTE.text.primary }}>
+                                  <span className="font-semibold">{t.dosis} {t.dosis_unidad}</span>
                                 </div>
                               )}
                             </div>
-                            <div className="text-xs text-right flex-shrink-0" style={{ color: PALETTE.text.primary }}>
-                              <div style={{ fontWeight: '600' }}>{t.fecha_tratamiento}</div>
+                            <div className="flex flex-col items-end gap-2 flex-shrink-0">
+                              <div className="text-xs text-right" style={{ color: PALETTE.text.primary, fontWeight: '600' }}>
+                                {t.fecha_tratamiento}
+                              </div>
+                              {(t.created_by === user.id || officialVet) && (
+                                <Link href={`/treatment-reports/${t.id}/edit`}>
+                                  <button className="text-xs px-2 py-1 rounded transition-colors" style={{ background: PALETTE.primary.green + '20', color: PALETTE.primary.green, border: `1px solid ${PALETTE.primary.green}40` }}>
+                                    Editar
+                                  </button>
+                                </Link>
+                              )}
                             </div>
                           </div>
                         )}

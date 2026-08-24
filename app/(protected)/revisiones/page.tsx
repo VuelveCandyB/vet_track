@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { requireUser, can } from '@/lib/auth'
 import { PALETTE } from '@/lib/palette'
 import Link from 'next/link'
-import ReviewMedicationButton from '@/components/revisiones/review-medication-button'
+import RevisionesTree from '@/components/revisiones/revisiones-tree'
 
 export default async function RevisionesPage({
   searchParams,
@@ -106,7 +106,7 @@ export default async function RevisionesPage({
   if (tab === 'pendientes') {
     const { data } = await supabase
       .from('treatment_reports')
-      .select('id, tratamiento, diagnostico, fecha_tratamiento, hora_tratamiento, dosis, dosis_unidad, tiempo_restriccion, horse_id, horses(name), drug_id, created_by')
+      .select('id, tratamiento, diagnostico, fecha_tratamiento, hora_tratamiento, horse_id, horses(name), created_by')
       .eq('created_for_vet_id', user.id)
       .is('reviewed_by', null)
       .order('fecha_tratamiento', { ascending: false })
@@ -115,7 +115,7 @@ export default async function RevisionesPage({
   } else {
     const { data } = await supabase
       .from('treatment_reports')
-      .select('id, tratamiento, diagnostico, fecha_tratamiento, hora_tratamiento, reviewed_at, dosis, dosis_unidad, tiempo_restriccion, horse_id, horses(name), drug_id, created_by')
+      .select('id, tratamiento, diagnostico, fecha_tratamiento, hora_tratamiento, reviewed_at, horse_id, horses(name), created_by')
       .eq('created_for_vet_id', user.id)
       .not('reviewed_by', 'is', null)
       .order('reviewed_at', { ascending: false })
@@ -123,15 +123,47 @@ export default async function RevisionesPage({
     treatments = data ?? []
   }
 
-  // Lookup de nombres y días de drugs
-  const drugIds = treatments.map(t => t.drug_id).filter(Boolean)
-  let drugData: any[] = []
-  if (drugIds.length > 0) {
-    const { data } = await supabase.from('drugs').select('id, nombre, withdrawal_time_dias').in('id', drugIds)
-    drugData = data ?? []
+  // Get all medications for these treatments
+  const treatmentIds = treatments.map(t => t.id)
+  let medicationsMap = new Map<string, any[]>()
+  if (treatmentIds.length > 0) {
+    const { data: meds } = await supabase
+      .from('treatment_report_medications')
+      .select('id, treatment_report_id, drug_id, dosis, dosis_unidad, tiempo_restriccion, drug:drugs(id, nombre, withdrawal_time_dias)')
+      .in('treatment_report_id', treatmentIds)
+
+    if (meds) {
+      meds.forEach(med => {
+        if (!medicationsMap.has(med.treatment_report_id)) {
+          medicationsMap.set(med.treatment_report_id, [])
+        }
+        medicationsMap.get(med.treatment_report_id)!.push(med)
+      })
+    }
   }
-  const drugNames = new Map(drugData.map(d => [d.id, d.nombre]))
-  const drugDias = new Map(drugData.map(d => [d.id, d.withdrawal_time_dias]))
+
+
+  // Add medications to treatments
+  treatments = treatments.map(t => ({
+    ...t,
+    treatment_report_medications: medicationsMap.get(t.id) ?? []
+  }))
+
+  // Group treatments by horse for tree view
+  const treatmentsByHorse = new Map<string, any[]>()
+  treatments.forEach(t => {
+    const horseName = t.horses?.name ?? 'Sin caballo'
+    if (!treatmentsByHorse.has(horseName)) {
+      treatmentsByHorse.set(horseName, [])
+    }
+    treatmentsByHorse.get(horseName)!.push(t)
+  })
+
+  const groupedTreatments = Array.from(treatmentsByHorse.entries()).map(([horseName, hTreatments]) => ({
+    horseName,
+    treatments: hTreatments,
+    medicationCount: hTreatments.reduce((sum, t) => sum + (t.treatment_report_medications?.length ?? 0), 0)
+  }))
 
   return (
     <div className="max-w-7xl mx-auto">
@@ -187,86 +219,7 @@ export default async function RevisionesPage({
           </p>
         </div>
       ) : (
-        <div className="rounded-lg border overflow-hidden" style={{ background: PALETTE.background.white, borderColor: PALETTE.ui.border }}>
-          {/* Header */}
-          <div
-            className="grid gap-4 px-4 py-2.5"
-            style={{
-              gridTemplateColumns: tab === 'pendientes' ? '200px 140px 100px 90px 130px 100px 120px auto' : '200px 140px 100px 90px 130px 100px 120px',
-              background: '#f8fafc',
-              borderBottom: `1px solid ${PALETTE.ui.border}`,
-            }}>
-            <div className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: PALETTE.text.secondary }}>
-              Caballo
-            </div>
-            <div className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: PALETTE.text.secondary }}>
-              Medicamento
-            </div>
-            <div className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: PALETTE.text.secondary }}>
-              Dosis
-            </div>
-            <div className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: PALETTE.text.secondary }}>
-              Restricción
-            </div>
-            <div className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: PALETTE.text.secondary }}>
-              Técnico
-            </div>
-            <div className="text-[11px] font-semibold uppercase tracking-wider text-right" style={{ color: PALETTE.text.secondary }}>
-              {tab === 'pendientes' ? 'Ingresado' : 'Revisado'}
-            </div>
-            <div className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: PALETTE.text.secondary }}>
-              Diagnóstico
-            </div>
-            {tab === 'pendientes' && <div className="text-[11px] font-semibold uppercase tracking-wider text-right" style={{ color: PALETTE.text.secondary }}>Acción</div>}
-          </div>
-
-          {/* Body */}
-          {treatments.map((t, idx) => (
-            <div
-              key={t.id}
-              className="grid gap-4 px-4 py-3 transition-colors hover:bg-slate-50"
-              style={{
-                gridTemplateColumns: tab === 'pendientes' ? '200px 140px 100px 90px 130px 100px 120px auto' : '200px 140px 100px 90px 130px 100px 120px',
-                borderBottom: idx < treatments.length - 1 ? `1px solid ${PALETTE.ui.border}` : 'none',
-                alignItems: 'center',
-              }}>
-              <div className="text-sm font-medium" style={{ color: PALETTE.text.primary }}>
-                {t.horses?.name ?? '—'}
-              </div>
-              <div className="text-sm truncate" style={{ color: PALETTE.text.secondary }}>
-                {drugNames.get(t.drug_id) ?? '—'}
-              </div>
-              <div className="text-sm truncate" style={{ color: PALETTE.text.secondary }}>
-                {t.dosis ? `${t.dosis} ${t.dosis_unidad || 'mg'}` : '—'}
-              </div>
-              <div className="text-sm" style={{ color: PALETTE.text.secondary }}>
-                {t.tiempo_restriccion ? (
-                  <div>
-                    <div>{t.tiempo_restriccion}h</div>
-                    <div className="text-xs">{drugDias.get(t.drug_id) || '—'}d</div>
-                  </div>
-                ) : '—'}
-              </div>
-              <div className="text-sm truncate" style={{ color: PALETTE.text.secondary }}>
-                {technicianMap.get(t.created_by) ?? '—'}
-              </div>
-              <div className="text-sm text-right" style={{ color: PALETTE.text.primary }}>
-                {tab === 'pendientes'
-                  ? (t.fecha_tratamiento && t.hora_tratamiento ? `${t.fecha_tratamiento.slice(5, 10)} ${formatTo12Hour(t.hora_tratamiento)}` : '—')
-                  : (t.reviewed_at ? new Date(t.reviewed_at).toLocaleString('es-ES', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: true }) : '—')
-                }
-              </div>
-              <div className="text-sm truncate text-xs" style={{ color: PALETTE.text.secondary }}>
-                {(t.tratamiento || t.diagnostico) ?? '—'}
-              </div>
-              {tab === 'pendientes' && (
-                <div className="text-right">
-                  <ReviewMedicationButton medId={t.id} />
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
+        <RevisionesTree groups={groupedTreatments} tab={tab} technicianMap={technicianMap} />
       )}
     </div>
   )
