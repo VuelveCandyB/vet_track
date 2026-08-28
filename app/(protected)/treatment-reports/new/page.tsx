@@ -17,16 +17,22 @@ export default async function NewTreatmentReportPage({
   const { horse_id } = await searchParams
   const supabase = await createClient()
 
-  const [{ data: horses }, { data: drugs }, { data: itemCodes }, vetName] = await Promise.all([
-    supabase.from('horses').select('*').eq('status', 'active').order('name'),
+  const [{ data: horses }, { data: drugs }, { data: itemCodes }, vetName, { data: targetHorse }] = await Promise.all([
+    supabase.from('horses').select('id, name, color, status, microchip, birth_date, gender, red_flag').order('name').limit(5000),
     supabase.from('drugs').select('*').eq('active', true).not('nombre', 'ilike', '%furosemide%').not('nombre', 'ilike', '%salix%').order('nombre'),
     supabase.from('catalog_items').select('id, name').eq('category', 'item_code').eq('active', true).order('name'),
     getVetName(supabase, user),
+    horse_id ? supabase.from('horses').select('id, name, color, status, microchip, birth_date, gender, red_flag').eq('id', horse_id).single() : Promise.resolve({ data: null }),
   ])
 
-  const typedHorses = (horses ?? []) as Horse[]
+  let typedHorses = (horses ?? []) as Horse[]
   const typedDrugs = (drugs ?? []) as Drug[]
   const typedItemCodes = (itemCodes ?? []) as CatalogItem[]
+
+  // If horse_id provided and not found in list, add it
+  if (horse_id && targetHorse && !typedHorses.find(h => h.id === horse_id)) {
+    typedHorses = [targetHorse as Horse, ...typedHorses]
+  }
 
   // Pre-select horse if provided
   const preSelectedHorse = horse_id ? typedHorses.find(h => h.id === horse_id) : null

@@ -76,9 +76,9 @@ export default function EuthanasiaModal({ open, onClose, horseId, horseName, vet
                 <input type="checkbox" name="propietario_notificado"
                   className="w-4 h-4 flex-shrink-0" style={{ accentColor: '#818cf8' }} />
                 <div>
-                  <div className="text-sm font-medium text-white">Propietario notificado y autorización obtenida</div>
-                  <div className="text-xs mt-0.5" style={{ color: '#4a5280' }}>
-                    Confirma que el dueño fue informado y otorgó su autorización
+                  <div className="text-sm font-medium" style={{ color: '#059669' }}>Propietario notificado y autorización obtenida</div>
+                  <div className="text-xs mt-0.5" style={{ color: '#334155' }}>
+                    Confirma que el dueño y/o encargado fue informado y otorgó su autorización
                   </div>
                 </div>
               </label>

@@ -28,7 +28,7 @@ export default async function EditTreatmentReportPage({
 
   const [reportRes, { data: horses }, { data: drugs }, { data: itemCodes }, { data: selectedCodes }, { data: medications }, vetName] = await Promise.all([
     supabase.from('treatment_reports').select('*, created_by').eq('id', id).single(),
-    supabase.from('horses').select('*').eq('status', 'active').order('name'),
+    supabase.from('horses').select('id, name, color, status, microchip, birth_date, gender, red_flag').order('name').limit(5000),
     supabase.from('drugs').select('*').eq('active', true).order('nombre'),
     supabase.from('catalog_items').select('id, name').eq('category', 'item_code').eq('active', true).order('name'),
     supabase.from('treatment_report_item_codes').select('catalog_item_id').eq('treatment_report_id', id),
@@ -45,10 +45,18 @@ export default async function EditTreatmentReportPage({
   }
 
   const report = reportRes.data as TreatmentReport
-  const typedHorses = (horses ?? []) as Horse[]
+  let typedHorses = (horses ?? []) as Horse[]
   const typedDrugs = (drugs ?? []) as Drug[]
   const typedItemCodes = (itemCodes ?? []) as CatalogItem[]
   const selectedItemCodeIds = (selectedCodes ?? []).map(s => s.catalog_item_id)
+
+  // Ensure report's horse is in the list
+  if (report.horse_id && !typedHorses.find(h => h.id === report.horse_id)) {
+    const { data: reportHorse } = await supabase.from('horses').select('id, name, color, status, microchip, birth_date, gender, red_flag').eq('id', report.horse_id).single()
+    if (reportHorse) {
+      typedHorses = [reportHorse as Horse, ...typedHorses]
+    }
+  }
 
   // Convert medications to form rows
   const initialMedications: MedicationRow[] = (medications ?? []).map(med => {
