@@ -11,13 +11,14 @@ import RedFlagModal from './red-flag-modal'
 import ConfirmDeleteButton from '@/components/admin/confirm-delete-button'
 import { clearRedFlag } from '@/lib/actions/horses'
 import { PALETTE } from '@/lib/palette'
-import type { Horse, VetlistEntry, Drug, VaccineType } from '@/lib/types'
+import type { Horse, VetlistEntry, HorseReferido, Drug, VaccineType } from '@/lib/types'
 
 type ModalType = 'vetlist' | 'release' | 'euthanasia' | 'vaccination' | 'redflag' | null
 
 interface Props {
   horse: Horse
   vetlistActiva: VetlistEntry | null
+  activeReferido?: HorseReferido | null
   canEuth: boolean
   isAdmin: boolean
   isOfficialVet: boolean
@@ -30,7 +31,7 @@ interface Props {
 }
 
 export default function HorseActions({
-  horse, vetlistActiva, canEuth, isAdmin, isOfficialVet, isTechnician, vetName, today,
+  horse, vetlistActiva, activeReferido, canEuth, isAdmin, isOfficialVet, isTechnician, vetName, today,
   drugs, vaccineTypes, diasRestantes,
 }: Props) {
   const [open, setOpen] = useState<ModalType>(null)
@@ -125,7 +126,7 @@ export default function HorseActions({
               <svg className="mr-1.5" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                 <circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
               </svg>
-              Agregar a Vetlist
+              {activeReferido ? 'Aprobar a Vetlist' : 'Agregar a Vetlist'}
             </Button>
           )}
 
@@ -203,6 +204,7 @@ export default function HorseActions({
         open={open === 'vetlist'} onClose={closeAndRefresh}
         horseId={horse.id} horseName={horse.name}
         vetName={vetName} today={today}
+        activeReferido={activeReferido}
       />
       {vetlistActiva && (
         <VetlistReleaseModal
@@ -224,6 +226,7 @@ export default function HorseActions({
       <RedFlagModal
         open={open === 'redflag'} onClose={closeAndRefresh}
         horseId={horse.id} horseName={horse.name}
+        horseTrainer={horse.trainer}
       />
     </>
   )

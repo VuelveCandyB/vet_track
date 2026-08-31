@@ -3,7 +3,7 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { requireUser, can } from '@/lib/auth'
-import { getVetName } from './shared'
+import { getVetName, resetHorseRedFlagCache } from './shared'
 import { logActivity } from './activity-log'
 
 export async function createHorse(formData: FormData) {
@@ -56,13 +56,21 @@ export async function setRedFlag(horseId: string, formData: FormData) {
 
   if (updateError) throw new Error(updateError.message)
 
-  // Record in horse_referidos history
+  // Record in horse_referidos history with new clinical fields
   const { error: historyError } = await supabase.from('horse_referidos').insert({
     horse_id: horseId,
     motivo: reason,
     marcado_por: vetName,
     fecha_marcado: new Date().toISOString(),
     created_by: user.id,
+    extremidad:          (formData.get('extremidad') as string) || null,
+    grado:               (formData.get('grado') as string) || null,
+    elegible_trabajar:   formData.get('elegible_trabajar') === 'on',
+    requiere_pruebas:    formData.get('requiere_pruebas') === 'on',
+    reclamo_anulado:     formData.get('reclamo_anulado') === 'on',
+    persona_responsable: (formData.get('persona_responsable') as string) || null,
+    tipo_contacto:       (formData.get('tipo_contacto') as string) || null,
+    contacto:            (formData.get('contacto') as string) || null,
   })
 
   if (historyError) throw new Error(historyError.message)
@@ -75,15 +83,8 @@ export async function clearRedFlag(horseId: string) {
   await requireUser()
   const supabase = await createClient()
 
-  // Update horse red_flag state
-  const { error: updateError } = await supabase.from('horses').update({
-    red_flag: false,
-    red_flag_reason: null,
-    red_flag_by: null,
-    red_flag_date: null,
-  }).eq('id', horseId)
-
-  if (updateError) throw new Error(updateError.message)
+  // Update horse red_flag state using the shared helper
+  await resetHorseRedFlagCache(supabase, horseId)
 
   // Mark the latest referido as resolved
   const { data: latestReferido, error: fetchError } = await supabase
@@ -91,6 +92,7 @@ export async function clearRedFlag(horseId: string) {
     .select('id')
     .eq('horse_id', horseId)
     .is('fecha_resuelto', null)
+    .is('vetlist_id', null)
     .order('fecha_marcado', { ascending: false })
     .limit(1)
     .single()

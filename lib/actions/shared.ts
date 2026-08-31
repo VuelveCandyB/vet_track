@@ -25,3 +25,12 @@ export async function getCreatedForVetId(supabase: any, user: any): Promise<stri
   } catch {}
   return user.id
 }
+
+export async function resetHorseRedFlagCache(supabase: any, horseId: string): Promise<void> {
+  await supabase.from('horses').update({
+    red_flag: false,
+    red_flag_reason: null,
+    red_flag_by: null,
+    red_flag_date: null,
+  }).eq('id', horseId)
+}

@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { createVetlistEntry } from '@/lib/actions/vetlist'
 import { MOTIVOS_VETLIST } from '@/lib/constants'
 import { PALETTE } from '@/lib/palette'
+import type { HorseReferido } from '@/lib/types'
 
 interface Props {
   open: boolean
@@ -16,12 +17,14 @@ interface Props {
   horseName: string
   vetName: string
   today: string
+  activeReferido?: HorseReferido | null
 }
 
-export default function VetlistModal({ open, onClose, horseId, horseName, vetName, today }: Props) {
+export default function VetlistModal({ open, onClose, horseId, horseName, vetName, today, activeReferido }: Props) {
   const [pending, startTransition] = useTransition()
   const [fileName, setFileName] = useState('')
   const formRef = useRef<HTMLFormElement>(null)
+  const isApproval = !!activeReferido
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -39,11 +42,70 @@ export default function VetlistModal({ open, onClose, horseId, horseName, vetNam
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto"
         style={{ background: PALETTE.background.white, border: `1px solid ${PALETTE.ui.border}` }}>
         <DialogHeader>
-          <DialogTitle style={{ color: PALETTE.text.dark }}>Agregar a Vetlist</DialogTitle>
+          <DialogTitle style={{ color: PALETTE.text.dark }}>
+            {isApproval ? 'Aprobar a Vetlist' : 'Agregar a Vetlist'}
+          </DialogTitle>
           <p className="text-xs" style={{ color: PALETTE.text.secondary }}>{horseName}</p>
         </DialogHeader>
 
         <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
+          {/* Approval mode: referido summary */}
+          {isApproval && activeReferido && (
+            <>
+              <div className="rounded-lg px-4 py-3" style={{ background: PALETTE.background.lightAlt }}>
+                <div className="space-y-2 text-sm">
+                  <div>
+                    <span className="font-semibold" style={{ color: PALETTE.text.secondary }}>Motivo: </span>
+                    <span style={{ color: PALETTE.text.primary }}>{activeReferido.motivo}</span>
+                  </div>
+                  {activeReferido.extremidad && (
+                    <div>
+                      <span className="font-semibold" style={{ color: PALETTE.text.secondary }}>Extremidad: </span>
+                      <span style={{ color: PALETTE.text.primary }}>{activeReferido.extremidad}</span>
+                    </div>
+                  )}
+                  {activeReferido.grado && (
+                    <div>
+                      <span className="font-semibold" style={{ color: PALETTE.text.secondary }}>Grado: </span>
+                      <span style={{ color: PALETTE.text.primary }}>{activeReferido.grado}</span>
+                    </div>
+                  )}
+                  <div>
+                    <span className="font-semibold" style={{ color: PALETTE.text.secondary }}>Elegible a Trabajar: </span>
+                    <span style={{ color: PALETTE.text.primary }}>{activeReferido.elegible_trabajar ? 'Sí' : 'No'}</span>
+                  </div>
+                  <div>
+                    <span className="font-semibold" style={{ color: PALETTE.text.secondary }}>Requiere Pruebas: </span>
+                    <span style={{ color: PALETTE.text.primary }}>{activeReferido.requiere_pruebas ? 'Sí' : 'No'}</span>
+                  </div>
+                  <div>
+                    <span className="font-semibold" style={{ color: PALETTE.text.secondary }}>Reclamo Anulado: </span>
+                    <span style={{ color: PALETTE.text.primary }}>{activeReferido.reclamo_anulado ? 'Sí' : 'No'}</span>
+                  </div>
+                  {activeReferido.persona_responsable && (
+                    <div>
+                      <span className="font-semibold" style={{ color: PALETTE.text.secondary }}>Persona Responsable: </span>
+                      <span style={{ color: PALETTE.text.primary }}>{activeReferido.persona_responsable}</span>
+                    </div>
+                  )}
+                  {activeReferido.tipo_contacto && (
+                    <div>
+                      <span className="font-semibold" style={{ color: PALETTE.text.secondary }}>Tipo de Contacto: </span>
+                      <span style={{ color: PALETTE.text.primary }}>{activeReferido.tipo_contacto}</span>
+                    </div>
+                  )}
+                  {activeReferido.contacto && (
+                    <div>
+                      <span className="font-semibold" style={{ color: PALETTE.text.secondary }}>Contacto: </span>
+                      <span style={{ color: PALETTE.text.primary }}>{activeReferido.contacto}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+              <input type="hidden" name="referido_id" value={activeReferido.id} />
+            </>
+          )}
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label className="text-xs font-semibold uppercase tracking-wider" style={{ color: PALETTE.text.secondary }}>
@@ -58,24 +120,27 @@ export default function VetlistModal({ open, onClose, horseId, horseName, vetNam
               <Input value={vetName} readOnly style={{ color: PALETTE.text.secondary, cursor: 'default' }} />
             </div>
 
-            <div className="col-span-2 space-y-1.5">
-              <Label className="text-xs font-semibold uppercase tracking-wider" style={{ color: PALETTE.text.secondary }}>
-                Motivo *
-              </Label>
-              <select name="motivo" required
-                className="flex h-9 w-full rounded-md border px-3 py-1 text-sm"
-                style={{ background: PALETTE.background.white, borderColor: PALETTE.ui.border, color: PALETTE.text.primary }}>
-                <option value="" disabled>Seleccionar...</option>
-                {MOTIVOS_VETLIST.map(m => <option key={m} value={m}>{m}</option>)}
-              </select>
-            </div>
+            {/* Motivo select only in direct-entry mode (B) */}
+            {!isApproval && (
+              <div className="col-span-2 space-y-1.5">
+                <Label className="text-xs font-semibold uppercase tracking-wider" style={{ color: PALETTE.text.secondary }}>
+                  Motivo *
+                </Label>
+                <select name="motivo" required
+                  className="flex h-9 w-full rounded-md border px-3 py-1 text-sm"
+                  style={{ background: PALETTE.background.white, borderColor: PALETTE.ui.border, color: PALETTE.text.primary }}>
+                  <option value="" disabled>Seleccionar...</option>
+                  {MOTIVOS_VETLIST.map(m => <option key={m} value={m}>{m}</option>)}
+                </select>
+              </div>
+            )}
 
             <div className="col-span-2 space-y-1.5">
               <Label className="text-xs font-semibold uppercase tracking-wider" style={{ color: PALETTE.text.secondary }}>
-                Descripción clínica
+                {isApproval ? 'Notas adicionales' : 'Descripción clínica'} <span className="font-normal normal-case" style={{ color: '#4a5280' }}>(opcional)</span>
               </Label>
               <Textarea name="descripcion" rows={3}
-                placeholder="Hallazgos clínicos, observaciones, diagnóstico preliminar..." />
+                placeholder={isApproval ? 'Notas del veterinario oficial...' : 'Hallazgos clínicos, observaciones, diagnóstico preliminar...'} />
             </div>
 
             <div className="space-y-1.5">
@@ -120,7 +185,7 @@ export default function VetlistModal({ open, onClose, horseId, horseName, vetNam
           <div className="flex gap-3">
             <Button type="submit" disabled={pending} className="flex-1"
               style={{ background: PALETTE.primary.green, color: '#FFFFFF' }}>
-              {pending ? 'Guardando...' : 'Agregar a Vetlist'}
+              {pending ? 'Guardando...' : (isApproval ? 'Aprobar a Vetlist' : 'Agregar a Vetlist')}
             </Button>
             <Button type="button" variant="ghost" onClick={onClose} disabled={pending}>
               Cancelar

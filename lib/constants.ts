@@ -74,3 +74,15 @@ export const SISTEMAS_AFECTADOS = [
   'Dermatológico',
   'Otro',
 ] as const
+
+export const EXTREMIDADES = [
+  'Delantera Izquierda',
+  'Delantera Derecha',
+  'Trasera Izquierda',
+  'Trasera Derecha',
+  'Múltiples / No aplica',
+] as const
+
+export const GRADOS_REFERIDO = ['Grado 1', 'Grado 2', 'Grado 3', 'Grado 4', 'Grado 5'] as const
+
+export const TIPOS_CONTACTO = ['Entrenador', 'Dueño', 'Mozo', 'Otro'] as const

@@ -61,6 +61,27 @@ export interface VetlistEntry {
   attachment_egreso_url?: string
   created_by?: string
   created_at?: string
+  referido_id?: string
+}
+
+export interface HorseReferido {
+  id: string
+  horse_id: string
+  motivo: string
+  marcado_por?: string
+  fecha_marcado: string
+  fecha_resuelto?: string
+  created_by?: string
+  created_at?: string
+  extremidad?: string
+  grado?: string
+  elegible_trabajar: boolean
+  requiere_pruebas: boolean
+  reclamo_anulado: boolean
+  persona_responsable?: string
+  tipo_contacto?: string
+  contacto?: string
+  vetlist_id?: string
 }
 
 export interface EuthanasiaRecord {

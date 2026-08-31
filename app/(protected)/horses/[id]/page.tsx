@@ -11,7 +11,7 @@ import AnimatedDiagnosticoDot from '@/components/timeline/animated-diagnostico-d
 import AnimatedVaccinationDot from '@/components/timeline/animated-vaccination-dot'
 import VaccinationPdfButton from '@/components/horses/vaccination-pdf-button'
 import Link from 'next/link'
-import type { Horse, Medication, VetlistEntry, EuthanasiaRecord, Drug, Diagnostico, TreatmentReport, Vaccination, VaccineType } from '@/lib/types'
+import type { Horse, Medication, VetlistEntry, HorseReferido, EuthanasiaRecord, Drug, Diagnostico, TreatmentReport, Vaccination, VaccineType } from '@/lib/types'
 import { STATUS_LABEL } from '@/lib/constants'
 import { PALETTE } from '@/lib/palette'
 
@@ -106,7 +106,8 @@ export default async function HorseDetailPage({
   const treatmentReports = (treatmentReportsRes.data ?? []) as (TreatmentReport & { drug?: { nombre: string; categoria?: string; tipo_restriccion?: string } })[]
   const pmfReports = (pmfReportsRes.data ?? []) as (TreatmentReport & { drug?: { nombre: string; categoria?: string; tipo_restriccion?: string } })[]
   const vaccinations = (vacRes.data ?? []) as Vaccination[]
-  const referidos = (referidosRes.data ?? []) as any[]
+  const referidos = (referidosRes.data ?? []) as HorseReferido[]
+  const activeReferido = referidos.find(r => !r.fecha_resuelto && !r.vetlist_id) ?? null
 
   // Create a map of vet_name -> license_number
   const licenseMap: Record<string, string> = {}
@@ -233,6 +234,7 @@ export default async function HorseDetailPage({
       <HorseActions
         horse={horse}
         vetlistActiva={vetlistActiva}
+        activeReferido={activeReferido}
         canEuth={canEuth}
         isAdmin={userIsAdmin}
         isOfficialVet={officialVet}

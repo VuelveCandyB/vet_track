@@ -2,7 +2,7 @@
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { requireUser, can } from '@/lib/auth'
-import { getVetName } from './shared'
+import { getVetName, resetHorseRedFlagCache } from './shared'
 import { logActivity } from './activity-log'
 
 const ALLOWED_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf'])
@@ -31,12 +31,28 @@ export async function createVetlistEntry(horseId: string, formData: FormData) {
   const supabase = await createClient()
   const vetName = await getVetName(supabase, user)
 
+  const referidoId = (formData.get('referido_id') as string) || null
+
+  let motivo = formData.get('motivo') as string | null
+  if (referidoId) {
+    // Validate referido exists and is open
+    const { data: referido, error: refError } = await supabase
+      .from('horse_referidos')
+      .select('id, horse_id, motivo, fecha_resuelto, vetlist_id')
+      .eq('id', referidoId)
+      .single()
+    if (refError || !referido) throw new Error('Referido no encontrado')
+    if (referido.horse_id !== horseId) throw new Error('El referido no pertenece a este caballo')
+    if (referido.fecha_resuelto || referido.vetlist_id) throw new Error('Este referido ya fue resuelto o convertido')
+    motivo = referido.motivo // motivo from referido
+  }
+
   const file = formData.get('attachment') as File | null
   const attachmentUrl = file ? await uploadAttachment(supabase, horseId, file, 'ingreso') : null
 
   const { data: vetlistEntry, error } = await supabase.from('vetlist').insert({
     horse_id:               horseId,
-    motivo:                 formData.get('motivo'),
+    motivo,
     descripcion:            (formData.get('descripcion') as string) || null,
     fecha_ingreso:          formData.get('fecha_ingreso'),
     fecha_inicio_descanso:  (formData.get('fecha_inicio_descanso') as string) || null,
@@ -44,11 +60,23 @@ export async function createVetlistEntry(horseId: string, formData: FormData) {
     vet_ingreso:            vetName,
     attachment_ingreso_url: attachmentUrl,
     created_by:             user.id,
+    referido_id:            referidoId,
   }).select('id').single()
 
   if (error) throw error
 
   await supabase.from('horses').update({ status: 'injury' }).eq('id', horseId)
+
+  // If approving a referido, link and resolve it
+  if (referidoId && vetlistEntry?.id) {
+    const { error: updateRefError } = await supabase.from('horse_referidos').update({
+      vetlist_id: vetlistEntry.id,
+      fecha_resuelto: new Date().toISOString(),
+    }).eq('id', referidoId)
+    if (updateRefError) throw updateRefError
+
+    await resetHorseRedFlagCache(supabase, horseId)
+  }
 
   // Log activity
   await logActivity({
@@ -57,7 +85,9 @@ export async function createVetlistEntry(horseId: string, formData: FormData) {
     entityType: 'vetlist',
     entityId: vetlistEntry?.id,
     horseId,
-    description: `Ingresó caballo a vetlist: ${formData.get('motivo') || 'sin motivo especificado'}`,
+    description: referidoId
+      ? `Aprobó referido a vetlist: ${motivo}`
+      : `Ingresó caballo a vetlist: ${motivo || 'sin motivo especificado'}`,
   })
 
   revalidatePath(`/horses/${horseId}`)
