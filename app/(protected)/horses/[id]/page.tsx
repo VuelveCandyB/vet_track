@@ -770,7 +770,7 @@ export default async function HorseDetailPage({
                               <div className="text-xs text-right" style={{ color: PALETTE.text.primary, fontWeight: '600' }}>
                                 {t.fecha_tratamiento}
                               </div>
-                              {(t.created_by === user.id || officialVet) && (
+                              {(t.created_by === user.id || userIsAdmin) && (
                                 <Link href={`/treatment-reports/${t.id}/edit`}>
                                   <button className="text-xs px-2 py-1 rounded transition-colors" style={{ background: PALETTE.primary.green + '20', color: PALETTE.primary.green, border: `1px solid ${PALETTE.primary.green}40` }}>
                                     Editar

@@ -19,6 +19,8 @@ export default async function RevisionesPage({
     )
   }
 
+  const canReview = await can(user, 'horses.medication_review', 'full')
+
   const supabase = await createClient()
   const tab = (await searchParams).tab || 'pendientes'
   const today = new Date().toISOString().split('T')[0]
@@ -219,7 +221,7 @@ export default async function RevisionesPage({
           </p>
         </div>
       ) : (
-        <RevisionesTree groups={groupedTreatments} tab={tab} technicianMap={technicianMap} />
+        <RevisionesTree groups={groupedTreatments} tab={tab} technicianMap={technicianMap} canReview={canReview} />
       )}
     </div>
   )

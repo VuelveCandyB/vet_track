@@ -139,18 +139,33 @@ export default function HorseActions({
           )}
 
           {/* Medication button — now uses treatment reports form */}
-          <Link href={`/treatment-reports/new?horse_id=${horse.id}`}>
-            <Button size="sm"
+          {isOfficialVet ? (
+            <Button size="sm" disabled
               className="text-sm font-semibold min-w-fit"
-              style={{ background: PALETTE.primary.green, color: '#FFFFFF' }}>
+              style={{ background: '#ccc', color: '#FFFFFF', cursor: 'not-allowed', opacity: 0.6 }}
+              title="Los veterinarios oficiales no pueden registrar medicamentos">
               Registrar Medicamento
             </Button>
-          </Link>
+          ) : (
+            <Link href={`/treatment-reports/new?horse_id=${horse.id}`}>
+              <Button size="sm"
+                className="text-sm font-semibold min-w-fit"
+                style={{ background: PALETTE.primary.green, color: '#FFFFFF' }}>
+                Registrar Medicamento
+              </Button>
+            </Link>
+          )}
 
           {/* Vaccination button */}
-          <Button onClick={() => setOpen('vaccination')} size="sm"
+          <Button onClick={() => setOpen('vaccination')} size="sm" disabled={isOfficialVet}
             className="text-sm font-semibold min-w-fit"
-            style={{ background: PALETTE.primary.green, color: '#FFFFFF' }}>
+            style={{
+              background: isOfficialVet ? '#ccc' : PALETTE.primary.green,
+              color: '#FFFFFF',
+              cursor: isOfficialVet ? 'not-allowed' : 'pointer',
+              opacity: isOfficialVet ? 0.6 : 1,
+            }}
+            title={isOfficialVet ? 'Los veterinarios oficiales no pueden registrar vacunas' : undefined}>
             Registrar Vacuna
           </Button>
 

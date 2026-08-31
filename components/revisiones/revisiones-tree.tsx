@@ -31,6 +31,7 @@ interface RevisionesTreeProps {
   groups: HorseGroup[]
   tab: string
   technicianMap: Map<string, string>
+  canReview: boolean
 }
 
 const formatTo12Hour = (timeStr: string | undefined | null) => {
@@ -42,7 +43,7 @@ const formatTo12Hour = (timeStr: string | undefined | null) => {
   return `${displayHour}:${m} ${isAM ? 'AM' : 'PM'}`
 }
 
-export default function RevisionesTree({ groups, tab, technicianMap }: RevisionesTreeProps) {
+export default function RevisionesTree({ groups, tab, technicianMap, canReview }: RevisionesTreeProps) {
   const [expandedHorses, setExpandedHorses] = useState<Set<string>>(new Set(groups.map(g => g.horseName)))
 
   const toggleHorse = (horseName: string) => {
@@ -89,7 +90,7 @@ export default function RevisionesTree({ groups, tab, technicianMap }: Revisione
                 </div>
                 {tab === 'pendientes' && group.treatments.length > 0 && (
                   <div className="text-right ml-4">
-                    <ReviewMedicationButton medId={group.treatments[0].id} />
+                    <ReviewMedicationButton medId={group.treatments[0].id} canReview={canReview} />
                   </div>
                 )}
               </div>

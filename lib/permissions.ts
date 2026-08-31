@@ -36,18 +36,15 @@ export const PERMISSIONS: Record<string, Partial<Record<Role, Level>>> = {
   // Horses — modals and actions
   'horses.diagnosis_modal': {
     authorized_vet: 'full',
-    official_vet: 'full',
     director: 'full',
   },
   'horses.medication_modal': {
     authorized_vet: 'full',
-    official_vet: 'full',
     director: 'full',
     technician: 'full',
   },
   'horses.vaccination_modal': {
     authorized_vet: 'full',
-    official_vet: 'full',
     director: 'full',
     technician: 'full',
   },
@@ -61,7 +58,6 @@ export const PERMISSIONS: Record<string, Partial<Record<Role, Level>>> = {
     director: 'full',
   },
   'horses.euthanasia_modal': {
-    official_vet: 'special',
     director: 'special',
     euthanasia: 'special',
   },
@@ -78,7 +74,6 @@ export const PERMISSIONS: Record<string, Partial<Record<Role, Level>>> = {
     director: 'view',
   },
   'treatment_reports.edit': {
-    official_vet: 'full',
     director: 'full',
   },
 
@@ -103,7 +98,6 @@ export const PERMISSIONS: Record<string, Partial<Record<Role, Level>>> = {
   // Medication Review — technician medication approval
   'horses.medication_review': {
     authorized_vet: 'full',
-    official_vet: 'full',
     director: 'full',
   },
 
