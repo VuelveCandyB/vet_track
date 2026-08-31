@@ -57,7 +57,7 @@ export default async function ProtectedLayout({ children }: { children: React.Re
   let pendingReviewCount = 0
 
   const canReview = await can(user, 'page.revisiones', 'view')
-  if (canReview) {
+  if (canReview && !officialVet) {
     canAccessRevisiones = true
     const { count } = await supabase
       .from('treatment_reports')
