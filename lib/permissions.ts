@@ -107,6 +107,13 @@ export const PERMISSIONS: Record<string, Partial<Record<Role, Level>>> = {
     official_vet: 'full',
     director: 'full',
   },
+
+  // Horse alternate microchips
+  'horses.microchip_alternate': {
+    authorized_vet: 'full',
+    official_vet: 'full',
+    director: 'full',
+  },
 }
 
 // Level hierarchy for permission evaluation

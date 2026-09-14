@@ -46,6 +46,39 @@ export async function setRedFlag(horseId: string, formData: FormData) {
 
   if (!reason) throw new Error('El motivo es obligatorio')
 
+  let archivoUrl: string | null = null
+
+  // Handle file upload if present
+  const archivo = formData.get('archivo') as File | null
+  if (archivo) {
+    try {
+      const fileName = `${horseId}/${Date.now()}-${archivo.name}`
+      const arrayBuffer = await archivo.arrayBuffer()
+
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('referidos')
+        .upload(fileName, new Uint8Array(arrayBuffer), {
+          upsert: false,
+          contentType: archivo.type
+        })
+
+      if (uploadError) {
+        console.error('Upload error details:', uploadError)
+        throw new Error(`Error subiendo archivo: ${uploadError.message}`)
+      }
+
+      // Get public URL
+      const { data: publicUrl } = supabase.storage
+        .from('referidos')
+        .getPublicUrl(fileName)
+
+      archivoUrl = publicUrl.publicUrl
+    } catch (fileError: any) {
+      console.error('File upload exception:', fileError)
+      throw fileError
+    }
+  }
+
   // Update horse red_flag state
   const { error: updateError } = await supabase.from('horses').update({
     red_flag: true,
@@ -57,12 +90,14 @@ export async function setRedFlag(horseId: string, formData: FormData) {
   if (updateError) throw new Error(updateError.message)
 
   // Record in horse_referidos history with new clinical fields
+  const diasRecomendacion = formData.get('dias_recomendacion') as string
   const { error: historyError } = await supabase.from('horse_referidos').insert({
     horse_id: horseId,
     motivo: reason,
     marcado_por: vetName,
     fecha_marcado: new Date().toISOString(),
     created_by: user.id,
+    dias_recomendacion: diasRecomendacion ? parseInt(diasRecomendacion) : null,
     extremidad:          (formData.get('extremidad') as string) || null,
     grado:               (formData.get('grado') as string) || null,
     elegible_trabajar:   formData.get('elegible_trabajar') === 'on',
@@ -71,6 +106,7 @@ export async function setRedFlag(horseId: string, formData: FormData) {
     persona_responsable: (formData.get('persona_responsable') as string) || null,
     tipo_contacto:       (formData.get('tipo_contacto') as string) || null,
     contacto:            (formData.get('contacto') as string) || null,
+    archivo_url:         archivoUrl,
   })
 
   if (historyError) throw new Error(historyError.message)
@@ -110,5 +146,71 @@ export async function clearRedFlag(horseId: string) {
 
   revalidatePath(`/horses/${horseId}`)
   revalidatePath('/dashboard')
+}
+
+export async function addAlternateMicrochip(horseId: string, formData: FormData) {
+  const user = await requireUser()
+  const allowed = await can(user, 'horses.microchip_alternate', 'full')
+  if (!allowed) throw new Error('Acceso denegado')
+
+  const supabase = await createClient()
+  const microchip = (formData.get('microchip') as string || '').trim()
+
+  if (!microchip) throw new Error('El microchip es obligatorio')
+
+  const { error } = await supabase.from('horse_alternate_microchips').insert({
+    horse_id: horseId,
+    microchip,
+    created_by: user.id,
+  })
+
+  if (error) throw new Error(error.message)
+
+  // Log activity
+  await logActivity({
+    user,
+    action: 'horse.alternate_microchip_add',
+    entityType: 'horse',
+    entityId: horseId,
+    horseId,
+    description: `Agregó microchip alterno: ${microchip}`,
+  })
+
+  revalidatePath(`/horses/${horseId}`)
+  revalidatePath('/horses')
+}
+
+export async function deleteAlternateMicrochip(id: string, horseId: string) {
+  const user = await requireUser()
+  const allowed = await can(user, 'horses.microchip_alternate', 'full')
+  if (!allowed) throw new Error('Acceso denegado')
+
+  const supabase = await createClient()
+
+  // Get the microchip value before deleting (for logging)
+  const { data: altMicrochip } = await supabase
+    .from('horse_alternate_microchips')
+    .select('microchip')
+    .eq('id', id)
+    .single()
+
+  const { error } = await supabase.from('horse_alternate_microchips').delete().eq('id', id)
+
+  if (error) throw new Error(error.message)
+
+  // Log activity
+  if (altMicrochip) {
+    await logActivity({
+      user,
+      action: 'horse.alternate_microchip_delete',
+      entityType: 'horse',
+      entityId: horseId,
+      horseId,
+      description: `Eliminó microchip alterno: ${altMicrochip.microchip}`,
+    })
+  }
+
+  revalidatePath(`/horses/${horseId}`)
+  revalidatePath('/horses')
 }
 

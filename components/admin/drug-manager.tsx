@@ -174,12 +174,12 @@ export default function DrugManager({ drugs }: { drugs: Drug[] }) {
               </div>
               <div className="col-span-2 space-y-1.5">
                 <Label className="text-xs font-semibold uppercase tracking-wider" style={{ color: PALETTE.text.secondary }}>Categoría *</Label>
-                <select name="categoria" required
+                <select name="categoria" required defaultValue={editing?.categoria ?? ''}
                   className="flex h-9 w-full rounded-md border px-3 py-1 text-sm"
                   style={{ background: PALETTE.background.white, borderColor: PALETTE.ui.border, color: PALETTE.text.primary }}>
                   <option value="">Seleccionar...</option>
                   {DRUG_CATEGORIES.map(c => (
-                    <option key={c} value={c} selected={editing?.categoria === c}>{c}</option>
+                    <option key={c} value={c}>{c}</option>
                   ))}
                 </select>
               </div>

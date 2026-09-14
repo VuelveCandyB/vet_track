@@ -3,10 +3,9 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import type { User } from '@supabase/supabase-js'
-import { createClient } from '@/lib/supabase/client'
-import { clearActiveVetOnLogout } from '@/lib/actions/technician'
 import { ADMIN_EMAIL } from '@/lib/constants'
 import { PALETTE } from '@/lib/palette'
+import { logout } from '@/lib/auth-client'
 import { ServiceTicketModal } from '@/components/service/service-ticket-modal'
 import SosLogo from '@/components/SosLogo'
 
@@ -21,13 +20,7 @@ export default function Navbar({ user, isAdmin, isOfficialVet, vetName, canAcces
   const isFromHorses = searchParams.get('horse_id') !== null
 
   async function handleLogout() {
-    // Clear active_vet_id for technicians before logout
-    await clearActiveVetOnLogout()
-
-    const supabase = createClient()
-    await supabase.auth.signOut()
-    router.push('/login')
-    router.refresh()
+    await logout(router)
   }
 
   const userRole = isAdmin ? 'Administrador' : isOfficialVet ? 'Veterinario Oficial' : 'Veterinario'

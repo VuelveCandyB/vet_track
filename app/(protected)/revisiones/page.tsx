@@ -3,6 +3,7 @@ import { requireUser, can } from '@/lib/auth'
 import { PALETTE } from '@/lib/palette'
 import Link from 'next/link'
 import RevisionesTree from '@/components/revisiones/revisiones-tree'
+import ReviewAllButton from '@/components/revisiones/review-all-button'
 
 export default async function RevisionesPage({
   searchParams,
@@ -197,20 +198,25 @@ export default async function RevisionesPage({
         ))}
       </div>
 
-      {/* Tabs */}
-      <div className="mt-8 mb-6 flex gap-4 border-b" style={{ borderColor: PALETTE.ui.border }}>
-        {['pendientes', 'historial'].map((t) => (
-          <Link
-            key={t}
-            href={`/revisiones?tab=${t}`}
-            className="px-4 py-3 font-medium text-sm transition-colors border-b-2"
-            style={{
-              color: tab === t ? PALETTE.primary.green : PALETTE.text.secondary,
-              borderColor: tab === t ? PALETTE.primary.green : 'transparent',
-            }}>
-            {t === 'pendientes' ? 'Pendientes' : 'Historial'}
-          </Link>
-        ))}
+      {/* Tabs + Review All Button */}
+      <div className="mt-8 mb-6 flex items-center justify-between gap-4 border-b" style={{ borderColor: PALETTE.ui.border }}>
+        <div className="flex gap-4">
+          {['pendientes', 'historial'].map((t) => (
+            <Link
+              key={t}
+              href={`/revisiones?tab=${t}`}
+              className="px-4 py-3 font-medium text-sm transition-colors border-b-2"
+              style={{
+                color: tab === t ? PALETTE.primary.green : PALETTE.text.secondary,
+                borderColor: tab === t ? PALETTE.primary.green : 'transparent',
+              }}>
+              {t === 'pendientes' ? 'Pendientes' : 'Historial'}
+            </Link>
+          ))}
+        </div>
+        {tab === 'pendientes' && (
+          <ReviewAllButton pendingCount={stats.pending} canReview={canReview} />
+        )}
       </div>
 
       {/* Content */}

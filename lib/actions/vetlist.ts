@@ -67,7 +67,7 @@ export async function createVetlistEntry(horseId: string, formData: FormData) {
 
   await supabase.from('horses').update({ status: 'injury' }).eq('id', horseId)
 
-  // If approving a referido, link and resolve it
+  // If approving a referido, link, resolve it, and clear red flag
   if (referidoId && vetlistEntry?.id) {
     const { error: updateRefError } = await supabase.from('horse_referidos').update({
       vetlist_id: vetlistEntry.id,
@@ -75,7 +75,14 @@ export async function createVetlistEntry(horseId: string, formData: FormData) {
     }).eq('id', referidoId)
     if (updateRefError) throw updateRefError
 
-    await resetHorseRedFlagCache(supabase, horseId)
+    // Clear the red flag — caballo ya no está en estado referido
+    const { error: flagError } = await supabase.from('horses').update({
+      red_flag: false,
+      red_flag_reason: null,
+      red_flag_by: null,
+      red_flag_date: null,
+    }).eq('id', horseId)
+    if (flagError) throw flagError
   }
 
   // Log activity
@@ -85,9 +92,7 @@ export async function createVetlistEntry(horseId: string, formData: FormData) {
     entityType: 'vetlist',
     entityId: vetlistEntry?.id,
     horseId,
-    description: referidoId
-      ? `Aprobó referido a vetlist: ${motivo}`
-      : `Ingresó caballo a vetlist: ${motivo || 'sin motivo especificado'}`,
+    description: `Aprobó referido a vetlist: ${motivo}`,
   })
 
   revalidatePath(`/horses/${horseId}`)

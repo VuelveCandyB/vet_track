@@ -213,14 +213,35 @@ export async function matchHorseRows(rows: ParsedHorseRow[]): Promise<MatchResul
 
   const supabase = await createClient()
 
-  // Recuperar todos los caballos existentes
-  const { data: existingHorses, error: queryError } = await supabase
-    .from('horses')
-    .select('id, crio_id, microchip, name, birth_date')
+  // Recuperar todos los caballos existentes sin límite de 1000
+  // Paginar en lotes de 1000 para obtener todos
+  let allHorses: any[] = []
+  let page = 0
+  const pageSize = 1000
+  let hasMore = true
 
-  if (queryError) {
-    throw new Error(`Error consultando caballos: ${queryError.message}`)
+  while (hasMore) {
+    const from = page * pageSize
+    const to = from + pageSize - 1
+    const { data, error: queryError } = await supabase
+      .from('horses')
+      .select('id, crio_id, microchip, name, birth_date', { count: 'exact' })
+      .range(from, to)
+
+    if (queryError) {
+      throw new Error(`Error consultando caballos (página ${page}): ${queryError.message}`)
+    }
+
+    if (!data || data.length === 0) {
+      hasMore = false
+    } else {
+      allHorses = allHorses.concat(data)
+      hasMore = data.length === pageSize
+      page++
+    }
   }
+
+  const existingHorses = allHorses
 
   // Construir mapas en memoria
   const byCrioId = new Map<number, string>()
@@ -234,13 +255,23 @@ export async function matchHorseRows(rows: ParsedHorseRow[]): Promise<MatchResul
       byCrioId.set(horse.crio_id, horse.id)
     }
     if (horse.microchip) {
-      byMicrochip.set(horse.microchip.toLowerCase().trim(), horse.id)
+      // Normalizar agresivamente: lowercase, trim, remover espacios y asteriscos
+      const normalizedMc = horse.microchip
+        .toLowerCase()
+        .trim()
+        .replace(/\s+/g, '')
+        .replace(/^\*+/, '')
+        .replace(/\*+$/, '')
+      if (normalizedMc) {
+        byMicrochip.set(normalizedMc, horse.id)
+      }
     }
     if (horse.name && horse.birth_date) {
       const key = `${horse.name.toLowerCase().trim()}|${horse.birth_date}`
       byNameDate.set(key, horse.id)
     }
   }
+
 
   // Matchear cada fila
   const matched: MatchedRow[] = []
@@ -251,12 +282,19 @@ export async function matchHorseRows(rows: ParsedHorseRow[]): Promise<MatchResul
     let matchedHorseId: string | null = null
     let matchKey: 'crio_id' | 'microchip' | 'name+birth_date' | null = null
 
-    // Cascada: crio_id → microchip → name+date
-    if (row.crio_id !== null && byCrioId.has(row.crio_id)) {
-      matchedHorseId = byCrioId.get(row.crio_id)!
-      matchKey = 'crio_id'
-    } else if (row.microchip && byMicrochip.has(row.microchip.toLowerCase().trim())) {
-      matchedHorseId = byMicrochip.get(row.microchip.toLowerCase().trim())!
+    // Cascada: microchip → name+date
+    // Solo usa microchip y nombre+fecha, no CRIO ID
+    const normalizedMicrochip = row.microchip
+      ? row.microchip
+          .toLowerCase()
+          .trim()
+          .replace(/\s+/g, '')
+          .replace(/^\*+/, '')
+          .replace(/\*+$/, '')
+      : ''
+
+    if (normalizedMicrochip && byMicrochip.has(normalizedMicrochip)) {
+      matchedHorseId = byMicrochip.get(normalizedMicrochip)!
       matchKey = 'microchip'
     } else if (row.name && row.birth_date) {
       const key = `${row.name.toLowerCase().trim()}|${row.birth_date}`
@@ -319,7 +357,8 @@ export async function commitHorseImport(matchResult: MatchResult): Promise<Impor
   try {
     // Procesar inserts y updates en batches
     const BATCH_SIZE = 500
-    const toProcess = matchResult.matched
+    // Combinar matched (updates) y unmatched (inserts)
+    const toProcess = [...matchResult.matched, ...matchResult.unmatched]
 
     for (let i = 0; i < toProcess.length; i += BATCH_SIZE) {
       const batch = toProcess.slice(i, i + BATCH_SIZE)
@@ -348,6 +387,7 @@ export async function commitHorseImport(matchResult: MatchResult): Promise<Impor
 
       const updates = batch.filter((m) => m.action === 'update').map((m) => ({
         id: m.matchedHorseId!,
+        name: m.row.name || '',
         color: m.row.color,
         owner: m.row.owner,
         birth_date: m.row.birth_date,
@@ -378,18 +418,15 @@ export async function commitHorseImport(matchResult: MatchResult): Promise<Impor
       }
 
       if (updates.length > 0) {
-        for (const upd of updates) {
-          const { id, ...data } = upd
-          const { error: updateError } = await supabase
-            .from('horses')
-            .update(data)
-            .eq('id', id)
+        const { error: updateError, data: updatedData } = await supabase
+          .from('horses')
+          .upsert(updates, { onConflict: 'id' })
+          .select('id')
 
-          if (updateError) {
-            errors.push(`Error actualizando ${id}: ${updateError.message}`)
-          } else {
-            updated++
-          }
+        if (updateError) {
+          errors.push(`Error actualizando batch: ${updateError.message}`)
+        } else {
+          updated += updatedData?.length || 0
         }
       }
     }

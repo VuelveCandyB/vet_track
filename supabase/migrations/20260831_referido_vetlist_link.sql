@@ -1,3 +1,4 @@
+-- Add clinical fields to horse_referidos
 alter table public.horse_referidos
   add column extremidad          text,
   add column grado                text,
@@ -11,6 +12,7 @@ alter table public.horse_referidos
 
 create index idx_horse_referidos_vetlist on public.horse_referidos(vetlist_id);
 
+-- Link vetlist to referido
 alter table public.vetlist
   add column referido_id uuid references public.horse_referidos(id);
 

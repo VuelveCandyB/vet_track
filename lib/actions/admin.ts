@@ -357,31 +357,52 @@ export async function setUserPassword(userId: string, newPassword: string) {
 
 // ── TÉCNICOS ─────────────────────────────────────────────
 export async function setTechnicianSupervisors(userId: string, vetIds: string[]) {
-  await requireAdmin()
-  const supabase = await createClient()
+  try {
+    await requireAdmin()
+    const supabase = await createClient()
 
-  // Delete existing supervisor assignments for this technician
-  await supabase
-    .from('technician_supervisors')
-    .delete()
-    .eq('technician_id', userId)
+    // Delete existing supervisor assignments for this technician
+    const { error: deleteError } = await supabase
+      .from('technician_supervisors')
+      .delete()
+      .eq('technician_id', userId)
+    if (deleteError) {
+      console.error('Delete error:', deleteError)
+      throw new Error(`Delete failed: ${deleteError.message}`)
+    }
 
-  // Insert new assignments
-  if (vetIds.length > 0) {
-    await supabase.from('technician_supervisors').insert(
-      vetIds.map(vetId => ({
-        technician_id: userId,
-        vet_id: vetId,
-      }))
-    )
+    // Insert new assignments
+    if (vetIds.length > 0) {
+      const { error: insertError } = await supabase.from('technician_supervisors').insert(
+        vetIds.map(vetId => ({
+          technician_id: userId,
+          vet_id: vetId,
+        }))
+      )
+      if (insertError) {
+        console.error('Insert error:', insertError)
+        throw new Error(`Insert failed: ${insertError.message}`)
+      }
+    }
+
+    // If there's exactly 1 supervisor, auto-activate it; otherwise clear active_vet_id
+    if (vetIds.length === 1) {
+      const { error: updateError } = await supabase.from('profiles').update({ active_vet_id: vetIds[0] }).eq('id', userId)
+      if (updateError) {
+        console.error('Update error:', updateError)
+        throw new Error(`Update failed: ${updateError.message}`)
+      }
+    } else {
+      const { error: updateError } = await supabase.from('profiles').update({ active_vet_id: null }).eq('id', userId)
+      if (updateError) {
+        console.error('Update error:', updateError)
+        throw new Error(`Update failed: ${updateError.message}`)
+      }
+    }
+
+    revalidatePath('/admin/users')
+  } catch (error) {
+    console.error('setTechnicianSupervisors error:', error)
+    throw error
   }
-
-  // If there's exactly 1 supervisor, auto-activate it; otherwise clear active_vet_id
-  if (vetIds.length === 1) {
-    await supabase.from('profiles').update({ active_vet_id: vetIds[0] }).eq('id', userId)
-  } else {
-    await supabase.from('profiles').update({ active_vet_id: null }).eq('id', userId)
-  }
-
-  revalidatePath('/admin/users')
 }

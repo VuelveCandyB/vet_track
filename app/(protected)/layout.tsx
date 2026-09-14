@@ -2,6 +2,7 @@ import { requireUser, isAdmin, isOfficialVet, can, isTechnician } from '@/lib/au
 import { getVetName } from '@/lib/actions/shared'
 import { redirect } from 'next/navigation'
 import Navbar from '@/components/layout/navbar'
+import IdleLogoutProvider from '@/components/layout/idle-logout-provider'
 import { createClient } from '@/lib/supabase/server'
 
 export default async function ProtectedLayout({ children }: { children: React.ReactNode }) {
@@ -69,6 +70,7 @@ export default async function ProtectedLayout({ children }: { children: React.Re
 
   return (
     <div className="min-h-[100dvh] flex flex-col w-full">
+      <IdleLogoutProvider />
       <Navbar
         user={user}
         isAdmin={isAdminUser}

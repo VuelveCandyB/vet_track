@@ -24,6 +24,14 @@ export interface Horse {
   crio_not_found_since?: string
 }
 
+export interface HorseAlternateMicrochip {
+  id: string
+  horse_id: string
+  microchip: string
+  created_by?: string
+  created_at?: string
+}
+
 export interface Medication {
   id: string
   horse_id: string

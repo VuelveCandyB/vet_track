@@ -1,4 +1,4 @@
-import { requireUser, canRegisterEuthanasia, isAdmin, isOfficialVet, isTechnician } from '@/lib/auth'
+import { requireUser, canRegisterEuthanasia, isAdmin, isOfficialVet, isTechnician, can } from '@/lib/auth'
 import ConfirmDeleteButton from '@/components/admin/confirm-delete-button'
 import { createClient } from '@/lib/supabase/server'
 import { deleteMedication } from '@/lib/actions/medications'
@@ -10,6 +10,7 @@ import AnimatedCapsuleDot from '@/components/timeline/animated-capsule-dot'
 import AnimatedDiagnosticoDot from '@/components/timeline/animated-diagnostico-dot'
 import AnimatedVaccinationDot from '@/components/timeline/animated-vaccination-dot'
 import VaccinationPdfButton from '@/components/horses/vaccination-pdf-button'
+import AlternateMicrochips from '@/components/horses/alternate-microchips'
 import Link from 'next/link'
 import type { Horse, Medication, VetlistEntry, HorseReferido, EuthanasiaRecord, Drug, Diagnostico, TreatmentReport, Vaccination, VaccineType } from '@/lib/types'
 import { STATUS_LABEL } from '@/lib/constants'
@@ -74,7 +75,7 @@ export default async function HorseDetailPage({
     horseRes, medsRes, vetlistRes, euthRes,
     drugsRes, vaccineTypesRes, diagRes, treatmentReportsRes, pmfReportsRes, vacRes,
     itemCodesRes, catalogItemsRes, vetName, canEuth, officialVet, isTech, profilesRes,
-    referidosRes,
+    referidosRes, alternatesMicrochipsRes, canManageMicrochip,
   ] = await Promise.all([
     supabase.from('horses').select('*').eq('id', id).single(),
     supabase.from('medications').select('*').eq('horse_id', id).order('administered_at', { ascending: sort === 'asc' }),
@@ -94,6 +95,8 @@ export default async function HorseDetailPage({
     isTechnician(user.id, user.email!),
     supabase.from('profiles').select('id, first_name, last_name, license_number'),
     supabase.from('horse_referidos').select('*').eq('horse_id', id).order('fecha_marcado', { ascending: false }),
+    supabase.from('horse_alternate_microchips').select('*').eq('horse_id', id).order('created_at'),
+    can(user, 'horses.microchip_alternate', 'full'),
   ])
 
   const horse = horseRes.data as Horse
@@ -108,6 +111,7 @@ export default async function HorseDetailPage({
   const vaccinations = (vacRes.data ?? []) as Vaccination[]
   const referidos = (referidosRes.data ?? []) as HorseReferido[]
   const activeReferido = referidos.find(r => !r.fecha_resuelto && !r.vetlist_id) ?? null
+  const alternateMicrochips = (alternatesMicrochipsRes.data ?? []) as any[]
 
   // Create a map of vet_name -> license_number
   const licenseMap: Record<string, string> = {}
@@ -275,6 +279,18 @@ export default async function HorseDetailPage({
                 </span>
               </div>
             ))}
+
+            {/* Alternate microchips */}
+            {(alternateMicrochips.length > 0 || canManageMicrochip) && (
+              <div className="py-2" style={{ borderBottom: `1px solid ${PALETTE.ui.border}` }}>
+                <span className="text-xs" style={{ color: PALETTE.text.secondary }}>Microchips Alternos</span>
+                <AlternateMicrochips
+                  horseId={id}
+                  alternates={alternateMicrochips}
+                  canManage={canManageMicrochip}
+                />
+              </div>
+            )}
 
             {/* Pedigrí section */}
             {((horse as any).padre || (horse as any).madre || (horse as any).raza || (horse as any).categoria) && (
@@ -616,6 +632,7 @@ export default async function HorseDetailPage({
                     const artLabel = item.recordType === 'pmfReport' ? 'Art. 1412' : null
                     const reportCodes = isTreatmentReport ? reportItemCodesMap[t.id] || [] : []
                     const reportHref = isTreatmentReport ? `/treatment-reports/${t.id}` : undefined
+                    const esPendienteRevision = isTreatmentReport && t.created_for_vet_id && t.created_for_vet_id !== t.created_by && !t.reviewed_by
 
                     return (
                       <div key={`report-${t.id}`} className={`relative ${i < combinedRecords.length - 1 ? 'mb-5' : ''}`}>
@@ -634,6 +651,11 @@ export default async function HorseDetailPage({
                               <span className="text-sm font-semibold" style={{ color: PALETTE.primary.green }}>
                                 {t.medications && t.medications.length > 1 ? `${t.medications.length} medicamentos` : 'Medicamento'}
                               </span>
+                              {esPendienteRevision && (
+                                <Badge className="text-xs" style={{ background: '#fffbeb', color: '#dc2626', border: 'none' }}>
+                                  Pendiente Revisión
+                                </Badge>
+                              )}
                               {artLabel && (
                                 <span className="text-xs" style={{ color: PALETTE.text.secondary }}>{artLabel}</span>
                               )}

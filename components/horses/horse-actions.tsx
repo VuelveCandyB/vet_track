@@ -18,7 +18,7 @@ type ModalType = 'vetlist' | 'release' | 'euthanasia' | 'vaccination' | 'redflag
 interface Props {
   horse: Horse
   vetlistActiva: VetlistEntry | null
-  activeReferido?: HorseReferido | null
+  activeReferido: HorseReferido | null
   canEuth: boolean
   isAdmin: boolean
   isOfficialVet: boolean
@@ -108,8 +108,8 @@ export default function HorseActions({
         <div className="flex items-center gap-2 flex-wrap mb-6">
           <div className="flex-1" />
 
-          {/* Vetlist button */}
-          {!vetlistActiva && (
+          {/* Vetlist button — only if referido exists */}
+          {!vetlistActiva && activeReferido && (
             <Button
               onClick={() => setOpen('vetlist')}
               size="sm"
@@ -126,7 +126,7 @@ export default function HorseActions({
               <svg className="mr-1.5" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                 <circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
               </svg>
-              {activeReferido ? 'Aprobar a Vetlist' : 'Agregar a Vetlist'}
+              Approve to Vetlist
             </Button>
           )}
 
@@ -140,7 +140,7 @@ export default function HorseActions({
           )}
 
           {/* Medication button — now uses treatment reports form */}
-          {isOfficialVet ? (
+          {isOfficialVet && !isAdmin ? (
             <Button size="sm" disabled
               className="text-sm font-semibold min-w-fit"
               style={{ background: '#ccc', color: '#FFFFFF', cursor: 'not-allowed', opacity: 0.6 }}
@@ -158,32 +158,20 @@ export default function HorseActions({
           )}
 
           {/* Vaccination button */}
-          <Button onClick={() => setOpen('vaccination')} size="sm" disabled={isOfficialVet}
+          <Button onClick={() => setOpen('vaccination')} size="sm" disabled={isOfficialVet && !isAdmin}
             className="text-sm font-semibold min-w-fit"
             style={{
-              background: isOfficialVet ? '#ccc' : PALETTE.primary.green,
+              background: isOfficialVet && !isAdmin ? '#ccc' : PALETTE.primary.green,
               color: '#FFFFFF',
-              cursor: isOfficialVet ? 'not-allowed' : 'pointer',
-              opacity: isOfficialVet ? 0.6 : 1,
+              cursor: isOfficialVet && !isAdmin ? 'not-allowed' : 'pointer',
+              opacity: isOfficialVet && !isAdmin ? 0.6 : 1,
             }}
-            title={isOfficialVet ? 'Los veterinarios oficiales no pueden registrar vacunas' : undefined}>
+            title={isOfficialVet && !isAdmin ? 'Los veterinarios oficiales no pueden registrar vacunas' : undefined}>
             Registrar Vacuna
           </Button>
 
           {/* Referido buttons */}
-          {!horse.red_flag ? (
-            <Button onClick={() => setOpen('redflag')} size="sm" disabled={isTechnician}
-              className="text-sm font-semibold min-w-fit"
-              style={{
-                background: isTechnician ? '#ccc' : '#dc2626',
-                color: '#FFFFFF',
-                cursor: isTechnician ? 'not-allowed' : 'pointer',
-                opacity: isTechnician ? 0.6 : 1,
-              }}
-              title={isTechnician ? 'Los técnicos no pueden referir caballos' : undefined}>
-              Marcar Referido
-            </Button>
-          ) : (
+          {horse.red_flag || vetlistActiva ? (
             <ConfirmDeleteButton
               action={async () => {
                 await clearRedFlag(horse.id)
@@ -195,6 +183,18 @@ export default function HorseActions({
             >
               Quitar Referido
             </ConfirmDeleteButton>
+          ) : (
+            <Button onClick={() => setOpen('redflag')} size="sm" disabled={isTechnician}
+              className="text-sm font-semibold min-w-fit"
+              style={{
+                background: isTechnician ? '#ccc' : '#dc2626',
+                color: '#FFFFFF',
+                cursor: isTechnician ? 'not-allowed' : 'pointer',
+                opacity: isTechnician ? 0.6 : 1,
+              }}
+              title={isTechnician ? 'Los técnicos no pueden referir caballos' : undefined}>
+              Marcar Referido
+            </Button>
           )}
         </div>
       )}

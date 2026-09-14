@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { Globe } from '@phosphor-icons/react'
 import ItemCodesSelect from './item-codes-select'
 import { TreatmentReportFormSkeleton } from './treatment-report-form-skeleton'
 import { PALETTE } from '@/lib/palette'
@@ -148,6 +149,11 @@ export default function TreatmentReportForm({
   const [showConfirmation, setShowConfirmation] = useState(false)
   const [formDataToSubmit, setFormDataToSubmit] = useState<FormData | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [horaTratamiento, setHoraTratamiento] = useState('12:00')
+
+  // Get today's date in YYYY-MM-DD format
+  const getTodayDate = () => new Date().toISOString().split('T')[0]
+  const [fechaTratamiento, setFechaTratamiento] = useState(getTodayDate())
 
   const categories = Array.from(new Set(drugs.map(d => d.categoria).filter(Boolean)))
 
@@ -161,6 +167,16 @@ export default function TreatmentReportForm({
       }
     }
   }, [defaultValues?.horse_id, horses])
+
+  // Sincronizar hora_tratamiento desde defaultValues
+  useEffect(() => {
+    setHoraTratamiento(defaultValues?.hora_tratamiento || '12:00')
+  }, [defaultValues?.hora_tratamiento])
+
+  // Sincronizar fecha_tratamiento desde defaultValues
+  useEffect(() => {
+    setFechaTratamiento(defaultValues?.fecha_tratamiento || getTodayDate())
+  }, [defaultValues?.fecha_tratamiento])
 
   const updateRow = (index: number, updates: Partial<MedicationRow>) => {
     setRows(rows.map((row, i) => i === index ? { ...row, ...updates } : row))
@@ -435,7 +451,18 @@ export default function TreatmentReportForm({
                 </div>
 
                 <div>
-                  <Label style={{ color: PALETTE.text.primary }}>Medicamento *</Label>
+                  <div className="flex items-center gap-2 mb-1">
+                    <Label style={{ color: PALETTE.text.primary }}>Medicamento *</Label>
+                    <a
+                      href="https://docs.pr.gov/files/ComJuegos/Negociado%20del%20Deporte%20Hipico/Medicacion%20Controlada/JH-18-17-Tabla%20de%20Drogas%20Rmc%20Enmendada%2018%20Oct%202018.pdf"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="transition-opacity hover:opacity-75"
+                      title="Ver drogas oficiales por la Comisión de Juegos de Puerto Rico"
+                      style={{ color: '#60a5fa', display: 'flex', alignItems: 'center' }}>
+                      <Globe size={18} weight="regular" />
+                    </a>
+                  </div>
                   <select
                     value={row.drug_id}
                     onChange={(e) => handleDrugChange(idx, e.target.value)}
@@ -555,7 +582,8 @@ export default function TreatmentReportForm({
               id="fecha_tratamiento"
               name="fecha_tratamiento"
               type="date"
-              defaultValue={defaultValues?.fecha_tratamiento ?? ''}
+              value={fechaTratamiento}
+              onChange={(e) => setFechaTratamiento(e.target.value)}
               required
               disabled={pending}
               className="mt-1"
@@ -567,7 +595,8 @@ export default function TreatmentReportForm({
               id="hora_tratamiento"
               name="hora_tratamiento"
               type="time"
-              defaultValue={defaultValues?.hora_tratamiento ?? ''}
+              value={horaTratamiento}
+              onChange={(e) => setHoraTratamiento(e.target.value)}
               required
               disabled={pending}
               className="mt-1"

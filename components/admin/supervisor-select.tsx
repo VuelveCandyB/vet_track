@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { setTechnicianSupervisors } from '@/lib/actions/admin'
 import { Button } from '@/components/ui/button'
@@ -16,6 +16,13 @@ export default function SupervisorSelect({ userId, currentVetIds, vets }: Superv
   const [isOpen, setIsOpen] = useState(false)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set(currentVetIds))
   const [isLoading, setIsLoading] = useState(false)
+
+  // Sync selectedIds with currentVetIds when props change
+  useEffect(() => {
+    if (!isOpen) {
+      setSelectedIds(new Set(currentVetIds))
+    }
+  }, [currentVetIds, isOpen])
 
   const handleToggleVet = (vetId: string) => {
     const newSet = new Set(selectedIds)

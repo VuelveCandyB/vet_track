@@ -110,3 +110,42 @@ export async function reviewMedication(medId: string) {
   revalidatePath('/revisiones')
   revalidatePath(`/horses/${treatment.horse_id}`)
 }
+
+export async function reviewAllPending() {
+  const user = await requireUser()
+  const allowed = await can(user, 'horses.medication_review', 'full')
+  if (!allowed) throw new Error('Acceso denegado')
+
+  const supabase = await createClient()
+
+  // Get all pending treatments for this vet
+  const { data: pendingTreatments, error: fetchError } = await supabase
+    .from('treatment_reports')
+    .select('id, horse_id')
+    .eq('created_for_vet_id', user.id)
+    .is('reviewed_by', null)
+
+  if (fetchError) throw fetchError
+  if (!pendingTreatments || pendingTreatments.length === 0) {
+    return { count: 0 }
+  }
+
+  // Update all pending treatments
+  const { error: updateError } = await supabase
+    .from('treatment_reports')
+    .update({ reviewed_by: user.id, reviewed_at: new Date().toISOString() })
+    .eq('created_for_vet_id', user.id)
+    .is('reviewed_by', null)
+
+  if (updateError) throw updateError
+
+  // Revalidate paths
+  revalidatePath('/revisiones')
+
+  // Revalidate all affected horse pages
+  for (const treatment of pendingTreatments) {
+    revalidatePath(`/horses/${treatment.horse_id}`)
+  }
+
+  return { count: pendingTreatments.length }
+}

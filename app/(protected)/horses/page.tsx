@@ -2,6 +2,8 @@ import { requirePageAccess, requireUser, isAdmin } from '@/lib/auth'
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { Info } from '@phosphor-icons/react/dist/ssr'
 import HorseImportModal from '@/components/horses/horse-import-modal'
 import SearchForm from '@/components/horses/search-form'
 import { PALETTE } from '@/lib/palette'
@@ -26,12 +28,12 @@ const COLOR_DOT: Record<string, string> = {
 }
 
 const COLOR_LABEL: Record<string, string> = {
-  'BAY':      'Bayo',
-  'DKBAY':    'Bayo Oscuro',
+  'BAY':      'Zaino',
+  'DKBAY':    'Cebruno',
   'CHEST':    'Alazán',
-  'GREY':     'Gris',
+  'GREY':     'Rucio',
   'PAINT':    'Pinto',
-  'ROAN':     'Ruano',
+  'ROAN':     'Roano',
   'BLACK':    'Negro',
 }
 
@@ -52,6 +54,17 @@ export default async function HorsesPage({
   const offset = (currentPage - 1) * PAGE_SIZE
   const supabase = await createClient()
 
+  let matchingHorseIds: string[] | null = null
+
+  // If searching, also check for alternate microchips
+  if (q) {
+    const { data: altMicrochipMatches } = await supabase
+      .from('horse_alternate_microchips')
+      .select('horse_id')
+      .ilike('microchip', `%${q}%`)
+    matchingHorseIds = altMicrochipMatches?.map(m => m.horse_id) ?? []
+  }
+
   const query = supabase
     .from('horses')
     .select('id, name, color, status, microchip, birth_date, gender, red_flag', { count: 'exact' })
@@ -59,7 +72,15 @@ export default async function HorsesPage({
     .limit(PAGE_SIZE)
     .range(offset, offset + PAGE_SIZE - 1)
 
-  if (q) query.or(`name.ilike.%${q}%,microchip.ilike.%${q}%`)
+  if (q) {
+    // Combine regular search with alternate microchip search
+    const baseFilter = `name.ilike.%${q}%,microchip.ilike.%${q}%`
+    if (matchingHorseIds && matchingHorseIds.length > 0) {
+      query.or(`${baseFilter},id.in.(${matchingHorseIds.join(',')})`)
+    } else {
+      query.or(baseFilter)
+    }
+  }
   if (letter) query.ilike('name', `${letter}%`)
 
   const [{ data: horses, count: paginatedCount }, { count: total }, { data: vetlistData }, { data: vetlistAllData }, { data: referidosData }] = await Promise.all([
@@ -69,6 +90,16 @@ export default async function HorsesPage({
     supabase.from('vetlist').select('horse_id'),
     supabase.from('horse_referidos').select('horse_id'),
   ])
+
+  // Fetch alternate microchips for the horses in this page
+  let alternatesMicrochipsData: any[] = []
+  if (horses && horses.length > 0) {
+    const { data: alts } = await supabase
+      .from('horse_alternate_microchips')
+      .select('horse_id, microchip')
+      .in('horse_id', horses.map(h => h.id))
+    alternatesMicrochipsData = alts ?? []
+  }
 
   const totalPages = Math.ceil((paginatedCount || 0) / PAGE_SIZE)
 
@@ -83,6 +114,15 @@ export default async function HorsesPage({
   const referidoCounts = new Map<string, number>()
   for (const r of referidosData || []) {
     referidoCounts.set(r.horse_id, (referidoCounts.get(r.horse_id) ?? 0) + 1)
+  }
+
+  // Build map of alternate microchips per horse
+  const alternatesMicrochipsMap = new Map<string, string[]>()
+  for (const alt of alternatesMicrochipsData || []) {
+    if (!alternatesMicrochipsMap.has(alt.horse_id)) {
+      alternatesMicrochipsMap.set(alt.horse_id, [])
+    }
+    alternatesMicrochipsMap.get(alt.horse_id)!.push(alt.microchip)
   }
 
   const todayYear = new Date().getFullYear()
@@ -241,12 +281,37 @@ export default async function HorsesPage({
                       : '—'}
                   </td>
                   <td className="px-4 py-3">
-                    {horse.microchip
-                      ? <span className="font-mono text-xs px-2 py-0.5 rounded"
+                    {horse.microchip ? (
+                      <div className="flex items-center gap-1">
+                        <span className="font-mono text-xs px-2 py-0.5 rounded"
                           style={{ background: PALETTE.background.lightAlt, color: PALETTE.primary.green }}>
                           {horse.microchip}
                         </span>
-                      : <span style={{ color: PALETTE.text.secondary }}>—</span>}
+                        {alternatesMicrochipsMap.has(horse.id) && (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <button className="p-0.5 rounded cursor-help transition-opacity hover:opacity-75"
+                                  style={{ color: PALETTE.primary.green }}
+                                  aria-label="Microchips alternos">
+                                  <Info size={14} weight="fill" />
+                                </button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <div className="text-xs space-y-1">
+                                  <div className="font-semibold">Microchips alternos:</div>
+                                  {alternatesMicrochipsMap.get(horse.id)!.map((alt, i) => (
+                                    <div key={i} className="font-mono">{alt}</div>
+                                  ))}
+                                </div>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )}
+                      </div>
+                    ) : (
+                      <span style={{ color: PALETTE.text.secondary }}>—</span>
+                    )}
                   </td>
                 </tr>
               ))}
