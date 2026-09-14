@@ -153,6 +153,11 @@ export default function TreatmentReportForm({
 
   // Get today's date in YYYY-MM-DD format
   const getTodayDate = () => new Date().toISOString().split('T')[0]
+  const getMinDateFor72Hours = () => {
+    const now = new Date()
+    const seventyTwoHoursAgo = new Date(now.getTime() - 72 * 60 * 60 * 1000)
+    return seventyTwoHoursAgo.toISOString().split('T')[0]
+  }
   const [fechaTratamiento, setFechaTratamiento] = useState(getTodayDate())
 
   const categories = Array.from(new Set(drugs.map(d => d.categoria).filter(Boolean)))
@@ -577,13 +582,15 @@ export default function TreatmentReportForm({
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <Label htmlFor="fecha_tratamiento" style={{ color: PALETTE.text.primary }}>Fecha de Tratamiento *</Label>
+            <Label htmlFor="fecha_tratamiento" style={{ color: PALETTE.text.primary }}>Fecha de Tratamiento * (máx. 72 horas atrás)</Label>
             <Input
               id="fecha_tratamiento"
               name="fecha_tratamiento"
               type="date"
               value={fechaTratamiento}
               onChange={(e) => setFechaTratamiento(e.target.value)}
+              min={getMinDateFor72Hours()}
+              max={getTodayDate()}
               required
               disabled={pending}
               className="mt-1"

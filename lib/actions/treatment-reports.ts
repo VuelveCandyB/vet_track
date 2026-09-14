@@ -47,6 +47,22 @@ export async function createTreatmentReport(formData: FormData) {
   const notas = formData.get('notas') as string | null
   const from_horse = formData.get('from_horse') as string | null
 
+  // Validar que la fecha no sea más de 72 horas atrás
+  if (fecha_tratamiento) {
+    const fechaTratamientoDate = new Date(fecha_tratamiento)
+    const ahora = new Date()
+    const diferenciaMilisegundos = ahora.getTime() - fechaTratamientoDate.getTime()
+    const diferenciasHoras = diferenciaMilisegundos / (1000 * 60 * 60)
+
+    if (diferenciasHoras > 72) {
+      throw new Error('La fecha del tratamiento no puede ser más de 72 horas atrás')
+    }
+
+    if (fechaTratamientoDate > ahora) {
+      throw new Error('La fecha del tratamiento no puede ser en el futuro')
+    }
+  }
+
   // Calcular el nombre del médico y el ID del médico para el que se crea
   const vet_autorizado_nombre = await getVetName(supabase, user)
   const created_for_vet_id = await getCreatedForVetId(supabase, user)
