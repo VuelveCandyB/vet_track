@@ -26,9 +26,15 @@ async function main() {
 
     // Statement 1: Add tattoo column
     console.log('\n[1] Agregando columna tattoo...')
-    const { error: e1 } = await supabase.rpc('exec', {
-      command: 'ALTER TABLE public.horses ADD COLUMN IF NOT EXISTS tattoo TEXT',
-    }).catch(() => ({ error: null }))
+    let e1 = null
+    try {
+      const result = await supabase.rpc('exec', {
+        command: 'ALTER TABLE public.horses ADD COLUMN IF NOT EXISTS tattoo TEXT',
+      })
+      e1 = result.error
+    } catch (err) {
+      e1 = null
+    }
     console.log(e1 ? `  ✗ ${e1}` : '  ✓ OK')
 
     // Verify column was created
@@ -46,7 +52,13 @@ async function main() {
 
     // Statement 2: Create horse_markings table
     console.log('\n[3] Creando tabla horse_markings...')
-    const { error: e2 } = await supabase.from('horse_markings').select('count()').limit(1).catch(() => ({ error: null }))
+    let e2 = null
+    try {
+      const result = await supabase.from('horse_markings').select('count()').limit(1)
+      e2 = result.error
+    } catch (err) {
+      e2 = null
+    }
     if (e2 && 'code' in e2 && e2.code === 'PGRST116') {
       // Table doesn't exist, create it
       const createTableError = await supabase.rpc('exec', {
@@ -66,14 +78,26 @@ async function main() {
 
     // Statement 3: Create index on horse_markings
     console.log('\n[4] Creando índice en horse_markings...')
-    const { error: e3 } = await supabase.rpc('exec', {
-      command: 'CREATE INDEX IF NOT EXISTS idx_horse_markings_horse ON public.horse_markings(horse_id)',
-    }).catch(() => ({ error: null }))
+    let e3 = null
+    try {
+      const result = await supabase.rpc('exec', {
+        command: 'CREATE INDEX IF NOT EXISTS idx_horse_markings_horse ON public.horse_markings(horse_id)',
+      })
+      e3 = result.error
+    } catch (err) {
+      e3 = null
+    }
     console.log(e3 ? `  ✗ ${e3}` : '  ✓ OK')
 
     // Statement 4: Create incompass_sync_runs table
     console.log('\n[5] Creando tabla incompass_sync_runs...')
-    const { error: e4 } = await supabase.from('incompass_sync_runs').select('count()').limit(1).catch(() => ({ error: null }))
+    let e4 = null
+    try {
+      const result = await supabase.from('incompass_sync_runs').select('count()').limit(1)
+      e4 = result.error
+    } catch (err) {
+      e4 = null
+    }
     if (e4 && 'code' in e4 && e4.code === 'PGRST116') {
       const createSyncError = await supabase.rpc('exec', {
         command: `CREATE TABLE IF NOT EXISTS public.incompass_sync_runs (
@@ -97,9 +121,15 @@ async function main() {
 
     // Statement 5 & 6: Create indexes
     console.log('\n[6] Creando índices en incompass_sync_runs...')
-    const { error: e5 } = await supabase.rpc('exec', {
-      command: 'CREATE INDEX IF NOT EXISTS idx_incompass_sync_runs_status ON public.incompass_sync_runs(status)',
-    }).catch(() => ({ error: null }))
+    let e5 = null
+    try {
+      const result = await supabase.rpc('exec', {
+        command: 'CREATE INDEX IF NOT EXISTS idx_incompass_sync_runs_status ON public.incompass_sync_runs(status)',
+      })
+      e5 = result.error
+    } catch (err) {
+      e5 = null
+    }
     console.log(e5 ? `  ✗ ${e5}` : '  ✓ OK')
 
     console.log('\n' + '─'.repeat(80))
