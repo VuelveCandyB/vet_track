@@ -65,6 +65,7 @@ export default async function MedicationsReportPage({
     const flatRows = (data ?? []).flatMap((t: any) =>
       (t.medications ?? []).map((med: any) => ({
         ...t,
+        medication_id: med.id,
         drugs: med.drug,
         dosis: med.dosis,
         dosis_unidad: med.dosis_unidad,
@@ -167,7 +168,7 @@ export default async function MedicationsReportPage({
                 {rows.map((r: any) => {
                   const [rfg, rbg] = r.drugs?.tipo_restriccion ? (RESTRICTION_STYLE[r.drugs.tipo_restriccion] ?? ['#9ca3af', '#1e2235']) : ['#9ca3af', '#1e2235']
                   return (
-                    <tr key={r.id} className="transition-colors hover:bg-gray-50" style={{ borderBottom: `1px solid ${PALETTE.ui.border}` }}>
+                    <tr key={r.medication_id} className="transition-colors hover:bg-gray-50" style={{ borderBottom: `1px solid ${PALETTE.ui.border}` }}>
                       <td className="px-4 py-3">
                         <Link href={`/horses/${r.horse_id}`} className="font-medium transition-colors" style={{ color: PALETTE.primary.green }}>
                           {r.horses?.name ?? '—'}
