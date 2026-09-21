@@ -405,13 +405,18 @@ export async function commitHorseImport(matchResult: MatchResult): Promise<Impor
       }))
 
       if (inserts.length > 0) {
+        // Usar upsert para evitar duplicados de crio_id
+        // Si crio_id existe, actualiza; si no existe, inserta
         const { error: insertError, data: insertedData } = await supabase
           .from('horses')
-          .insert(inserts)
+          .upsert(inserts, {
+            onConflict: 'crio_id',
+            ignoreDuplicates: false
+          })
           .select('id')
 
         if (insertError) {
-          errors.push(`Error insertando: ${insertError.message}`)
+          errors.push(`Error insertando/actualizando: ${insertError.message}`)
         } else {
           inserted += insertedData?.length || 0
         }
