@@ -67,9 +67,8 @@ async function main() {
         const data = result.data!
         matched++
 
-        // Map fields
+        // Map fields (keep existing name if InCompass returns empty)
         const updates: Record<string, any> = {
-          name: data.horseName,
           registration: data.registrationNumber,
           birth_date: data.dob ? parseDateFromIncompass(data.dob) || data.dob : null,
           raza: data.breed,
@@ -77,6 +76,11 @@ async function main() {
           color: data.color,
           madre: data.dam?.horseName,
           tattoo: data.tattoo || null,
+        }
+
+        // Only update name if InCompass has a value
+        if (data.horseName && data.horseName.trim()) {
+          updates.name = data.horseName
         }
 
         // Update horse
