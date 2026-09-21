@@ -405,24 +405,33 @@ export async function commitHorseImport(matchResult: MatchResult): Promise<Impor
       }))
 
       if (inserts.length > 0) {
-        // Para cada insert, buscar si existe un caballo con ese crio_id
-        // Si existe, usar su ID para upsert; si no, insertar nuevo
+        // Buscar caballos existentes por crio_id
+        const crioIds = inserts.map(r => r.crio_id).filter(id => id !== null)
+        const existingByCrio: Record<number, string> = {}
+
+        if (crioIds.length > 0) {
+          const { data: existing } = await supabase
+            .from('horses')
+            .select('id, crio_id')
+            .in('crio_id', crioIds)
+
+          if (existing) {
+            for (const horse of existing) {
+              existingByCrio[horse.crio_id as number] = horse.id
+            }
+          }
+        }
+
+        // Separar: caballos existentes (update) y nuevos (insert)
         const toUpsert = []
         const toInsertNew = []
 
         for (const row of inserts) {
-          if (row.crio_id !== null) {
-            // Buscar si existe un caballo con este crio_id
-            const existing = existingHorses.find((h: any) => h.crio_id === row.crio_id)
-            if (existing) {
-              // Existe por crio_id, agregar ID para upsert
-              toUpsert.push({ ...row, id: existing.id })
-            } else {
-              // No existe, insertar nuevo
-              toInsertNew.push(row)
-            }
+          if (row.crio_id !== null && existingByCrio[row.crio_id]) {
+            // Existe por crio_id, agregar ID para upsert
+            toUpsert.push({ ...row, id: existingByCrio[row.crio_id] })
           } else {
-            // Sin crio_id, insertar nuevo
+            // No existe, insertar nuevo
             toInsertNew.push(row)
           }
         }
