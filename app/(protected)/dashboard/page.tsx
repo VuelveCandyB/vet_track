@@ -21,7 +21,7 @@ export default async function DashboardPage() {
     supabase.from('vetlist').select('id, horse_id, motivo, fecha_ingreso, horses(name)').is('fecha_egreso', null).order('fecha_ingreso', { ascending: false }).limit(5),
     supabase.from('treatment_reports').select('id', { count: 'exact', head: true }).eq('fecha_tratamiento', today),
     supabase.from('horses').select('id', { count: 'exact', head: true }).eq('status', 'deceased'),
-    officialVet ? supabase.from('diagnosticos').select('id, horse_id, diagnostico, vet_name, fecha, horses(name)').eq('recomendar_vetlist', true).order('fecha', { ascending: false }).limit(10) : Promise.resolve({ data: [] }),
+    officialVet ? supabase.from('horse_referidos').select('id, horse_id, motivo, marcado_por, fecha_marcado, horses(name)').is('fecha_resuelto', null).order('fecha_marcado', { ascending: false }).limit(10) : Promise.resolve({ data: [] }),
     supabase.from('horses').select('id', { count: 'exact', head: true }).eq('red_flag', true),
     supabase.from('horses').select('id, name, red_flag_reason, red_flag_by, red_flag_date').eq('red_flag', true).order('red_flag_date', { ascending: false }).limit(8),
     supabase.from('vaccine_types').select('*').eq('active', true).eq('required', true),
@@ -307,13 +307,13 @@ export default async function DashboardPage() {
                           {d.horses?.name ?? '—'}
                         </div>
                         <div className="text-sm truncate" style={{ color: PALETTE.text.secondary }}>
-                          {d.diagnostico ?? '—'}
+                          {d.motivo ?? '—'}
                         </div>
                         <div className="text-sm truncate" style={{ color: PALETTE.text.secondary }}>
-                          {d.vet_name ?? '—'}
+                          {d.marcado_por ?? '—'}
                         </div>
                         <div className="text-sm text-right" style={{ color: PALETTE.text.primary }}>
-                          {d.fecha ?? '—'}
+                          {d.fecha_marcado?.slice(0, 10) ?? '—'}
                         </div>
                       </Link>
                     ))}
