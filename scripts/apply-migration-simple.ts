@@ -61,16 +61,21 @@ async function main() {
     }
     if (e2 && 'code' in e2 && e2.code === 'PGRST116') {
       // Table doesn't exist, create it
-      const createTableError = await supabase.rpc('exec', {
-        command: `CREATE TABLE IF NOT EXISTS public.horse_markings (
-          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-          horse_id UUID NOT NULL REFERENCES public.horses(id) ON DELETE CASCADE,
-          mark_part_id TEXT,
-          text1 TEXT,
-          text2 TEXT,
-          created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-        )`,
-      }).then(() => null).catch(err => err)
+      let createTableError = null
+      try {
+        await supabase.rpc('exec', {
+          command: `CREATE TABLE IF NOT EXISTS public.horse_markings (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            horse_id UUID NOT NULL REFERENCES public.horses(id) ON DELETE CASCADE,
+            mark_part_id TEXT,
+            text1 TEXT,
+            text2 TEXT,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+          )`,
+        })
+      } catch (err) {
+        createTableError = err
+      }
       console.log(createTableError ? `  ✗ ${createTableError}` : '  ✓ OK')
     } else {
       console.log('  ✓ Tabla ya existe')
