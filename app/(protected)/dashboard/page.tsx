@@ -126,21 +126,37 @@ export default async function DashboardPage() {
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-6 md:gap-8 py-6 md:py-8 border-b" style={{ borderColor: PALETTE.ui.border }}>
         {[
           { label: 'Total Caballos',   value: stats.total,      color: PALETTE.primary.green },
-          { label: 'Activos',          value: stats.active,     color: '#059669' },
+          { label: 'Activos',          value: null,     color: '#059669', custom: true, enCrio: stats.active - noEncontradosCount, noEnCrio: noEncontradosCount },
           { label: 'En Descanso',      value: stats.rest,       color: '#f59e0b' },
           { label: 'En Vetlist',       value: stats.vetlist,    color: '#d97706' },
           { label: 'Meds. Hoy',        value: stats.meds_hoy,   color: '#0ea5e9' },
           { label: 'Referidos',        value: stats.red_flag,   color: '#dc2626' },
           { label: 'Fallecidos',       value: stats.deceased,   color: '#6b7280' },
           ...(admin ? [{ label: 'No en CRIO', value: noEncontradosCount, color: '#dc2626' }] : []),
-        ].map(({ label, value, color }) => (
+        ].map(({ label, value, color, custom, enCrio, noEnCrio }: any) => (
           <div key={label} className="text-center">
-            <div className="text-3xl md:text-4xl font-bold tabular-nums mb-1" style={{ color }}>
-              {value}
-            </div>
-            <div className="text-xs font-semibold uppercase tracking-wider" style={{ color: PALETTE.text.secondary }}>
-              {label}
-            </div>
+            {custom ? (
+              <>
+                <div className="text-3xl md:text-4xl font-bold tabular-nums mb-1" style={{ color }}>
+                  {enCrio}
+                </div>
+                <div className="text-xs font-semibold uppercase tracking-wider mb-1.5" style={{ color: PALETTE.text.secondary }}>
+                  {label}
+                </div>
+                <div className="text-xs font-semibold" style={{ color: '#dc2626' }}>
+                  {noEnCrio} No en CRIO
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="text-3xl md:text-4xl font-bold tabular-nums mb-1" style={{ color }}>
+                  {value}
+                </div>
+                <div className="text-xs font-semibold uppercase tracking-wider" style={{ color: PALETTE.text.secondary }}>
+                  {label}
+                </div>
+              </>
+            )}
           </div>
         ))}
       </div>
