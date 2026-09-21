@@ -405,20 +405,54 @@ export async function commitHorseImport(matchResult: MatchResult): Promise<Impor
       }))
 
       if (inserts.length > 0) {
-        // Usar upsert para evitar duplicados de crio_id
-        // Si crio_id existe, actualiza; si no existe, inserta
-        const { error: insertError, data: insertedData } = await supabase
-          .from('horses')
-          .upsert(inserts, {
-            onConflict: 'crio_id',
-            ignoreDuplicates: false
-          })
-          .select('id')
+        // Para cada insert, buscar si existe un caballo con ese crio_id
+        // Si existe, usar su ID para upsert; si no, insertar nuevo
+        const toUpsert = []
+        const toInsertNew = []
 
-        if (insertError) {
-          errors.push(`Error insertando/actualizando: ${insertError.message}`)
-        } else {
-          inserted += insertedData?.length || 0
+        for (const row of inserts) {
+          if (row.crio_id !== null) {
+            // Buscar si existe un caballo con este crio_id
+            const existing = existingHorses.find((h: any) => h.crio_id === row.crio_id)
+            if (existing) {
+              // Existe por crio_id, agregar ID para upsert
+              toUpsert.push({ ...row, id: existing.id })
+            } else {
+              // No existe, insertar nuevo
+              toInsertNew.push(row)
+            }
+          } else {
+            // Sin crio_id, insertar nuevo
+            toInsertNew.push(row)
+          }
+        }
+
+        // Insertar nuevos
+        if (toInsertNew.length > 0) {
+          const { error: insertError, data: insertedData } = await supabase
+            .from('horses')
+            .insert(toInsertNew)
+            .select('id')
+
+          if (insertError) {
+            errors.push(`Error insertando: ${insertError.message}`)
+          } else {
+            inserted += insertedData?.length || 0
+          }
+        }
+
+        // Upsert los existentes (por ID)
+        if (toUpsert.length > 0) {
+          const { error: upsertError, data: upsertedData } = await supabase
+            .from('horses')
+            .upsert(toUpsert, { onConflict: 'id' })
+            .select('id')
+
+          if (upsertError) {
+            errors.push(`Error actualizando: ${upsertError.message}`)
+          } else {
+            updated += upsertedData?.length || 0
+          }
         }
       }
 
