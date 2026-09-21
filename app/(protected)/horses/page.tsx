@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { Info } from '@phosphor-icons/react/dist/ssr'
 import HorseImportModal from '@/components/horses/horse-import-modal'
+import IncompassSyncModal from '@/components/horses/incompass-sync-modal'
 import SearchForm from '@/components/horses/search-form'
 import { PALETTE } from '@/lib/palette'
 
@@ -141,6 +142,7 @@ export default async function HorsesPage({
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           {admin && <HorseImportModal />}
+          {admin && <IncompassSyncModal />}
         </div>
       </div>
 
