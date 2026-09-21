@@ -51,9 +51,15 @@ export async function POST(request: Request) {
     const results = []
 
     for (const statement of statements) {
-      const { error } = await supabase.rpc('exec', {
-        command: statement,
-      }).catch(err => ({ error: err }))
+      let error = null
+      try {
+        const result = await supabase.rpc('exec', {
+          command: statement,
+        })
+        error = result.error
+      } catch (err) {
+        error = err
+      }
 
       if (error && typeof error === 'object' && 'code' in error && error.code !== 'PGRST116') {
         // PGRST116 = function doesn't exist, ignore that error
