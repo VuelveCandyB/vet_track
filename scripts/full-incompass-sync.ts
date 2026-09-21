@@ -32,6 +32,7 @@ async function main() {
     .eq('status', 'active')
     .not('microchip', 'is', null)
     .order('name')
+    .limit(2000)  // Supabase default is 1000, we need more
 
   if (error || !horses) {
     console.error('❌ Error fetching horses:', error?.message)
