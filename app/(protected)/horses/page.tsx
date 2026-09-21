@@ -68,7 +68,7 @@ export default async function HorsesPage({
 
   const query = supabase
     .from('horses')
-    .select('id, name, color, status, microchip, birth_date, gender, red_flag', { count: 'exact' })
+    .select('id, name, color, status, microchip, birth_date, gender, red_flag, tattoo, raza, madre', { count: 'exact' })
     .order('name')
     .limit(PAGE_SIZE)
     .range(offset, offset + PAGE_SIZE - 1)
@@ -200,7 +200,7 @@ export default async function HorsesPage({
           <table className="w-full text-sm border-collapse">
             <thead>
               <tr style={{ borderBottom: `1px solid ${PALETTE.ui.border}` }}>
-                {['Nombre', 'Color', 'Estado', 'Indicadores', 'Género', 'Edad', 'Microchip'].map(h => (
+                {['Nombre', 'Color', 'Estado', 'Indicadores', 'Género', 'Edad', 'Raza', 'Tatuaje', 'Madre', 'Microchip'].map(h => (
                   <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider"
                     style={{ color: PALETTE.text.secondary }}>
                     {h}
@@ -211,7 +211,7 @@ export default async function HorsesPage({
             <tbody>
               {!horses?.length ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-12 text-center" style={{ color: PALETTE.text.secondary }}>
+                  <td colSpan={10} className="px-4 py-12 text-center" style={{ color: PALETTE.text.secondary }}>
                     Sin resultados
                   </td>
                 </tr>
@@ -281,6 +281,15 @@ export default async function HorsesPage({
                     {horse.birth_date
                       ? `${todayYear - new Date(horse.birth_date).getFullYear()} años`
                       : '—'}
+                  </td>
+                  <td className="px-4 py-3 text-xs" style={{ color: PALETTE.text.secondary }}>
+                    {(horse as any).raza || '—'}
+                  </td>
+                  <td className="px-4 py-3 text-xs" style={{ color: PALETTE.text.secondary }}>
+                    {(horse as any).tattoo || '—'}
+                  </td>
+                  <td className="px-4 py-3 text-xs" style={{ color: PALETTE.text.secondary }}>
+                    {(horse as any).madre || '—'}
                   </td>
                   <td className="px-4 py-3">
                     {horse.microchip ? (

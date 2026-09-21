@@ -75,7 +75,7 @@ export default async function HorseDetailPage({
     horseRes, medsRes, vetlistRes, euthRes,
     drugsRes, vaccineTypesRes, diagRes, treatmentReportsRes, pmfReportsRes, vacRes,
     itemCodesRes, catalogItemsRes, vetName, canEuth, officialVet, isTech, profilesRes,
-    referidosRes, alternatesMicrochipsRes, canManageMicrochip,
+    referidosRes, alternatesMicrochipsRes, canManageMicrochip, markingsRes,
   ] = await Promise.all([
     supabase.from('horses').select('*').eq('id', id).single(),
     supabase.from('medications').select('*').eq('horse_id', id).order('administered_at', { ascending: sort === 'asc' }),
@@ -97,6 +97,7 @@ export default async function HorseDetailPage({
     supabase.from('horse_referidos').select('*').eq('horse_id', id).order('fecha_marcado', { ascending: false }),
     supabase.from('horse_alternate_microchips').select('*').eq('horse_id', id).order('created_at'),
     can(user, 'horses.microchip_alternate', 'full'),
+    supabase.from('horse_markings').select('mark_part_id, text1, text2').eq('horse_id', id),
   ])
 
   const horse = horseRes.data as Horse
@@ -112,6 +113,7 @@ export default async function HorseDetailPage({
   const referidos = (referidosRes.data ?? []) as HorseReferido[]
   const activeReferido = referidos.find(r => !r.fecha_resuelto && !r.vetlist_id) ?? null
   const alternateMicrochips = (alternatesMicrochipsRes.data ?? []) as any[]
+  const markings = (markingsRes.data ?? []) as any[]
 
   // Create a map of vet_name -> license_number
   const licenseMap: Record<string, string> = {}
@@ -269,6 +271,7 @@ export default async function HorseDetailPage({
               ['Género',      horse.gender],
               ['Color',       horse.color],
               ['Microchip',   horse.microchip],
+              ['Tatuaje',     (horse as any).tattoo],
             ].map(([label, val]) => (
               <div key={label} className="flex justify-between items-center py-2"
                 style={{ borderBottom: `1px solid ${PALETTE.ui.border}` }}>
@@ -343,6 +346,26 @@ export default async function HorseDetailPage({
                       </Tooltip>
                     )}
                   </TooltipProvider>
+                </div>
+              </div>
+            )}
+
+            {/* Markings section */}
+            {markings.length > 0 && (
+              <div className="pt-3 mt-3 border-t" style={{ borderColor: PALETTE.ui.border }}>
+                <h4 className="text-xs font-semibold mb-3" style={{ color: PALETTE.text.primary }}>Marcas Corporales</h4>
+                <div className="space-y-2">
+                  {markings.map((marking, idx) => (
+                    <div key={idx} className="text-xs py-2" style={{ borderBottom: `1px solid ${PALETTE.ui.border}` }}>
+                      <div className="font-semibold" style={{ color: PALETTE.text.primary }}>
+                        Zona {marking.mark_part_id}
+                      </div>
+                      <div style={{ color: PALETTE.text.secondary }} className="mt-1">
+                        {marking.text1}
+                        {marking.text2 && ` • ${marking.text2}`}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
