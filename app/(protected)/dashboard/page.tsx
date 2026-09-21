@@ -16,7 +16,7 @@ export default async function DashboardPage() {
     vaccineTypesRes, horsesRes, vaccinationsRes, noEncontradosCountRes, noEncontradosListRes
   ] = await Promise.all([
     supabase.rpc('get_horse_stats'),
-    supabase.from('treatment_reports').select('id, drug:drugs(nombre), fecha_tratamiento, hora_tratamiento, vet_autorizado_nombre, horse_id').order('fecha_tratamiento', { ascending: false }).limit(8),
+    supabase.from('treatment_reports').select('id, fecha_tratamiento, hora_tratamiento, vet_autorizado_nombre, horse_id, treatment_report_medications(drugs(nombre))').order('fecha_tratamiento', { ascending: false }).limit(8),
     supabase.from('horses').select('id, name'),
     supabase.from('vetlist').select('id, horse_id, motivo, fecha_ingreso, horses(name)').is('fecha_egreso', null).order('fecha_ingreso', { ascending: false }).limit(5),
     supabase.from('treatment_reports').select('id', { count: 'exact', head: true }).eq('fecha_tratamiento', today),
@@ -357,7 +357,7 @@ export default async function DashboardPage() {
                         {(m.horses as any)?.name ?? '—'}
                       </div>
                       <div className="text-sm truncate" style={{ color: PALETTE.text.secondary }}>
-                        {m.drug?.nombre ?? '—'}
+                        {(m.treatment_report_medications && m.treatment_report_medications.length > 0 && m.treatment_report_medications[0].drugs?.nombre) ? m.treatment_report_medications[0].drugs.nombre : '—'}
                       </div>
                       <div className="text-sm truncate" style={{ color: PALETTE.text.secondary }}>
                         {m.vet_autorizado_nombre ?? '—'}
