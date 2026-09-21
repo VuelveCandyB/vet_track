@@ -11,6 +11,7 @@ import AnimatedDiagnosticoDot from '@/components/timeline/animated-diagnostico-d
 import AnimatedVaccinationDot from '@/components/timeline/animated-vaccination-dot'
 import VaccinationPdfButton from '@/components/horses/vaccination-pdf-button'
 import AlternateMicrochips from '@/components/horses/alternate-microchips'
+import MarkingsButton from '@/components/horses/markings-button'
 import Link from 'next/link'
 import type { Horse, Medication, VetlistEntry, HorseReferido, EuthanasiaRecord, Drug, Diagnostico, TreatmentReport, Vaccination, VaccineType } from '@/lib/types'
 import { STATUS_LABEL } from '@/lib/constants'
@@ -71,6 +72,8 @@ export default async function HorseDetailPage({
   const { sort = 'desc' } = await searchParams
   const supabase = await createClient()
 
+  console.log('🔍 DEBUG - Horse ID:', id)
+
   const [
     horseRes, medsRes, vetlistRes, euthRes,
     drugsRes, vaccineTypesRes, diagRes, treatmentReportsRes, pmfReportsRes, vacRes,
@@ -103,6 +106,7 @@ export default async function HorseDetailPage({
   const horse = horseRes.data as Horse
   const medications = (medsRes.data ?? []) as Medication[]
   const vetlist = (vetlistRes.data ?? []) as VetlistEntry[]
+
   const euthanasiaRecord = euthRes.data as EuthanasiaRecord | null
   const drugs = (drugsRes.data ?? []) as Drug[]
   const vaccineTypes = (vaccineTypesRes.data ?? []) as VaccineType[]
@@ -114,6 +118,9 @@ export default async function HorseDetailPage({
   const activeReferido = referidos.find(r => !r.fecha_resuelto && !r.vetlist_id) ?? null
   const alternateMicrochips = (alternatesMicrochipsRes.data ?? []) as any[]
   const markings = (markingsRes.data ?? []) as any[]
+
+  // DEBUG
+  console.log('🔍 DEBUG - Horse:', horse.name, 'Markings count:', markings.length)
 
   // Create a map of vet_name -> license_number
   const licenseMap: Record<string, string> = {}
@@ -345,30 +352,12 @@ export default async function HorseDetailPage({
                         <TooltipContent>{(horse as any).categoria}</TooltipContent>
                       </Tooltip>
                     )}
+                    <MarkingsButton markings={markings} />
                   </TooltipProvider>
                 </div>
               </div>
             )}
 
-            {/* Markings section */}
-            {markings.length > 0 && (
-              <div className="pt-3 mt-3 border-t" style={{ borderColor: PALETTE.ui.border }}>
-                <h4 className="text-xs font-semibold mb-3" style={{ color: PALETTE.text.primary }}>Marcas Corporales</h4>
-                <div className="space-y-2">
-                  {markings.map((marking, idx) => (
-                    <div key={idx} className="text-xs py-2" style={{ borderBottom: `1px solid ${PALETTE.ui.border}` }}>
-                      <div className="font-semibold" style={{ color: PALETTE.text.primary }}>
-                        Zona {marking.mark_part_id}
-                      </div>
-                      <div style={{ color: PALETTE.text.secondary }} className="mt-1">
-                        {marking.text1}
-                        {marking.text2 && ` • ${marking.text2}`}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
 
           {/* Vetlist history */}
