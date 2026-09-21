@@ -513,7 +513,7 @@ export async function commitHorseImport(matchResult: MatchResult): Promise<Impor
         // Luego limpiar el flag solo en los que lo tienen
         if (flaggedHorses && flaggedHorses.length > 0) {
           const flaggedIds = flaggedHorses.map(h => h.id)
-          const { error: cleanError, data: cleanedData } = await supabase
+          const { error: cleanError } = await supabase
             .from('horses')
             .update({ crio_not_found_since: null })
             .in('id', flaggedIds)
@@ -521,7 +521,7 @@ export async function commitHorseImport(matchResult: MatchResult): Promise<Impor
           if (cleanError) {
             errors.push(`Error limpiando flag: ${cleanError.message}`)
           } else {
-            reappeared = cleanedData?.length || 0
+            reappeared = flaggedIds.length
           }
         }
       }
