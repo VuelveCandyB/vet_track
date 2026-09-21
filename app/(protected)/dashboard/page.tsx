@@ -12,11 +12,12 @@ export default async function DashboardPage() {
   const admin = await isAdmin(user.id, user.email!)
 
   const [
-    statsRes, recentMedsRes, vetlistRes, medsHoyRes, fallecidosRes, diagRes, redFlagCountRes, redFlagListRes,
+    statsRes, recentMedsRes, recentMedsHorsesRes, vetlistRes, medsHoyRes, fallecidosRes, diagRes, redFlagCountRes, redFlagListRes,
     vaccineTypesRes, horsesRes, vaccinationsRes, noEncontradosCountRes, noEncontradosListRes
   ] = await Promise.all([
     supabase.rpc('get_horse_stats'),
-    supabase.from('treatment_reports').select('id, drug:drugs(nombre), fecha_tratamiento, hora_tratamiento, vet_autorizado_nombre, horse_id, horses(name)').order('fecha_tratamiento', { ascending: false }).limit(8),
+    supabase.from('treatment_reports').select('id, drug:drugs(nombre), fecha_tratamiento, hora_tratamiento, vet_autorizado_nombre, horse_id').order('fecha_tratamiento', { ascending: false }).limit(8),
+    supabase.from('horses').select('id, name'),
     supabase.from('vetlist').select('id, horse_id, motivo, fecha_ingreso, horses(name)').is('fecha_egreso', null).order('fecha_ingreso', { ascending: false }).limit(5),
     supabase.from('treatment_reports').select('id', { count: 'exact', head: true }).eq('fecha_tratamiento', today),
     supabase.from('horses').select('id', { count: 'exact', head: true }).eq('status', 'deceased'),
@@ -32,6 +33,14 @@ export default async function DashboardPage() {
 
   const statsRaw = statsRes.data || {}
   const recentMeds = recentMedsRes.data || []
+  const horseNames = new Map<string, string>()
+  for (const horse of recentMedsHorsesRes.data || []) {
+    horseNames.set(horse.id, horse.name)
+  }
+  const recentMedsWithHorses = (recentMeds as any[]).map(med => ({
+    ...med,
+    horses: { name: horseNames.get(med.horse_id) || '—' }
+  }))
   const vetlistActiva = vetlistRes.data || []
   const medsHoy = medsHoyRes.count || 0
   const fallecidos = fallecidosRes.count || 0
@@ -330,18 +339,18 @@ export default async function DashboardPage() {
             </div>
             {/* Body */}
             <div style={{ overflowY: 'auto', flex: 1 }}>
-              {recentMeds.length === 0 ? (
+              {recentMedsWithHorses.length === 0 ? (
                 <div className="py-8 text-center text-sm" style={{ color: PALETTE.text.secondary }}>
                   Sin medicaciones registradas.
                 </div>
               ) : (
                 <>
-                  {recentMeds.map((m: any, idx: number) => (
+                  {recentMedsWithHorses.map((m: any, idx: number) => (
                     <Link key={m.id} href={`/horses/${m.horse_id}`}
                       className="grid gap-4 px-4 py-3 transition-colors hover:bg-slate-50"
                       style={{
                         gridTemplateColumns: '140px 200px 1fr 160px',
-                        borderBottom: idx < recentMeds.length - 1 ? `1px solid ${PALETTE.ui.border}` : 'none',
+                        borderBottom: idx < recentMedsWithHorses.length - 1 ? `1px solid ${PALETTE.ui.border}` : 'none',
                         alignItems: 'center'
                       }}>
                       <div className="text-sm font-medium truncate" style={{ color: PALETTE.text.primary }}>
