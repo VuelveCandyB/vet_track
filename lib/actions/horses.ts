@@ -158,6 +158,31 @@ export async function addAlternateMicrochip(horseId: string, formData: FormData)
 
   if (!microchip) throw new Error('El microchip es obligatorio')
 
+  // Validar que el microchip no exista como microchip principal en otro caballo
+  const { data: existingHorse } = await supabase
+    .from('horses')
+    .select('id, name')
+    .eq('microchip', microchip)
+    .neq('id', horseId)
+    .single()
+
+  if (existingHorse) {
+    throw new Error(`El microchip "${microchip}" ya existe como microchip principal del caballo "${existingHorse.name}"`)
+  }
+
+  // Validar que el microchip no exista como microchip alterno en otro caballo
+  const { data: existingAltMicrochip } = await supabase
+    .from('horse_alternate_microchips')
+    .select('horse_id, horses(name)')
+    .eq('microchip', microchip)
+    .neq('horse_id', horseId)
+    .single()
+
+  if (existingAltMicrochip) {
+    const horseName = (existingAltMicrochip.horses as any)?.name || 'desconocido'
+    throw new Error(`El microchip "${microchip}" ya existe como microchip alterno del caballo "${horseName}"`)
+  }
+
   const { error } = await supabase.from('horse_alternate_microchips').insert({
     horse_id: horseId,
     microchip,
