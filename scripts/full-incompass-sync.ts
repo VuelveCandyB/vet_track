@@ -78,9 +78,11 @@ async function main() {
           tattoo: data.tattoo || null,
         }
 
-        // Only update name if InCompass has a value
+        // Update name: use InCompass value if available, otherwise use placeholder
         if (data.horseName && data.horseName.trim()) {
           updates.name = data.horseName
+        } else {
+          updates.name = 'Potro - Sin Nombre Oficial'
         }
 
         // Update horse
