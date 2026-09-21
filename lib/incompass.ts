@@ -71,18 +71,28 @@ export async function searchIncompassHorse(
 
     // Handle other HTTP errors
     if (!response.ok) {
-      const errorText = await response.text()
       const statusMessage = `HTTP ${response.status}`
 
       if (response.status === 401 || response.status === 403) {
         throw new Error(`InCompass authentication failed: ${statusMessage}`)
       }
 
-      throw new Error(`InCompass API error: ${statusMessage}. ${errorText}`)
+      throw new Error(`InCompass API error: ${statusMessage}`)
     }
 
     // Parse response
-    const data = (await response.json()) as IncompassHorseData
+    const text = await response.text()
+
+    if (!text) {
+      throw new Error('InCompass API returned empty response')
+    }
+
+    let data: IncompassHorseData
+    try {
+      data = JSON.parse(text) as IncompassHorseData
+    } catch (parseError) {
+      throw new Error(`Failed to parse InCompass response: ${parseError instanceof Error ? parseError.message : 'unknown error'}. Response: ${text.slice(0, 500)}`)
+    }
     return { found: true, data }
   } catch (error) {
     clearTimeout(timeout)
