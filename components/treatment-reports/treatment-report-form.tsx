@@ -99,6 +99,7 @@ interface TreatmentReportFormProps {
   horses: Horse[]
   drugs: Drug[]
   vetName: string
+  doseUnits?: { id: string; name: string }[]
   itemCodes?: CatalogItem[]
   initialSelectedItemCodeIds?: string[]
   initialMedications?: MedicationRow[]
@@ -133,6 +134,7 @@ export default function TreatmentReportForm({
   horses,
   drugs,
   vetName,
+  doseUnits = [],
   itemCodes = [],
   initialSelectedItemCodeIds = [],
   initialMedications,
@@ -521,15 +523,10 @@ export default function TreatmentReportForm({
                       color: PALETTE.text.primary,
                     }}
                   >
-                    <option value="mg">mg</option>
-                    <option value="ml">ml</option>
-                    <option value="cc">cc</option>
-                    <option value="g">g</option>
-                    <option value="IU">IU</option>
-                    <option value="mg/kg">mg/kg</option>
-                    <option value="mcg/kg">mcg/kg</option>
-                    <option value="g/kg">g/kg</option>
-                    <option value="IU/kg">IU/kg</option>
+                    <option value="">Seleccionar unidad</option>
+                    {doseUnits.map(unit => (
+                      <option key={unit.id} value={unit.name}>{unit.name}</option>
+                    ))}
                   </select>
                 </div>
 

@@ -17,10 +17,11 @@ export default async function NewTreatmentReportPage({
   const { horse_id } = await searchParams
   const supabase = await createClient()
 
-  const [{ data: horses }, { data: drugs }, { data: itemCodes }, vetName, { data: targetHorse }] = await Promise.all([
+  const [{ data: horses }, { data: drugs }, { data: itemCodes }, { data: doseUnits }, vetName, { data: targetHorse }] = await Promise.all([
     supabase.from('horses').select('id, name, color, status, microchip, birth_date, gender, red_flag').order('name').limit(5000),
     supabase.from('drugs').select('*').eq('active', true).not('nombre', 'ilike', '%furosemide%').not('nombre', 'ilike', '%salix%').order('nombre'),
     supabase.from('catalog_items').select('id, name').eq('category', 'item_code').eq('active', true).order('name'),
+    supabase.from('catalog_items').select('id, name').eq('category', 'dose').eq('active', true).order('sort_order'),
     getVetName(supabase, user),
     horse_id ? supabase.from('horses').select('id, name, color, status, microchip, birth_date, gender, red_flag').eq('id', horse_id).single() : Promise.resolve({ data: null }),
   ])
@@ -68,6 +69,7 @@ export default async function NewTreatmentReportPage({
           horses={typedHorses}
           drugs={typedDrugs}
           vetName={vetName}
+          doseUnits={(doseUnits ?? []) as { id: string; name: string }[]}
           itemCodes={typedItemCodes}
           initialSelectedItemCodeIds={[]}
           defaultValues={preSelectedHorse ? { horse_id: preSelectedHorse.id } : undefined}

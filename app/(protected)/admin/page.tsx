@@ -9,7 +9,7 @@ import { PALETTE } from '@/lib/palette'
 
 const CATEGORIES: Record<string, string> = {
   med_type:  'Tipos de Medicamento',
-  dose:      'Tipos de Dosis',
+  dose:      'Unidades de Dosis',
   item_code: 'Códigos de Diagnóstico y Procedimientos',
 }
 
