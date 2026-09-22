@@ -104,21 +104,26 @@ async function main() {
       e4 = null
     }
     if (e4 && 'code' in e4 && e4.code === 'PGRST116') {
-      const createSyncError = await supabase.rpc('exec', {
-        command: `CREATE TABLE IF NOT EXISTS public.incompass_sync_runs (
-          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-          status TEXT NOT NULL DEFAULT 'running',
-          current_index INT NOT NULL DEFAULT 0,
-          total INT NOT NULL,
-          matched INT NOT NULL DEFAULT 0,
-          updated INT NOT NULL DEFAULT 0,
-          not_found INT NOT NULL DEFAULT 0,
-          errors JSONB NOT NULL DEFAULT '[]'::jsonb,
-          started_by UUID REFERENCES auth.users(id),
-          started_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-          completed_at TIMESTAMPTZ
-        )`,
-      }).then(() => null).catch(err => err)
+      let createSyncError = null
+      try {
+        await supabase.rpc('exec', {
+          command: `CREATE TABLE IF NOT EXISTS public.incompass_sync_runs (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            status TEXT NOT NULL DEFAULT 'running',
+            current_index INT NOT NULL DEFAULT 0,
+            total INT NOT NULL,
+            matched INT NOT NULL DEFAULT 0,
+            updated INT NOT NULL DEFAULT 0,
+            not_found INT NOT NULL DEFAULT 0,
+            errors JSONB NOT NULL DEFAULT '[]'::jsonb,
+            started_by UUID REFERENCES auth.users(id),
+            started_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            completed_at TIMESTAMPTZ
+          )`,
+        })
+      } catch (err) {
+        createSyncError = err
+      }
       console.log(createSyncError ? `  ✗ ${createSyncError}` : '  ✓ OK')
     } else {
       console.log('  ✓ Tabla ya existe')
