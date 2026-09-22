@@ -10,7 +10,7 @@ import { join } from 'path'
 
 config({ path: join(process.cwd(), '.env.local') })
 
-import { searchIncompassHorse, parseDateFromIncompass, mapSexToGender } from '../lib/incompass'
+import { searchIncompassHorse, parseDateFromIncompass, mapSexToGender, mapColorCode } from '../lib/incompass'
 
 async function main() {
   const chip = process.argv[2]
@@ -60,7 +60,7 @@ async function main() {
         parsed: mapSexToGender(data.sex),
         target: 'horses.gender (code → H/M)'
       },
-      { field: 'color', value: data.color, target: 'horses.color' },
+      { field: 'color', value: data.color, parsed: mapColorCode(data.color), target: 'horses.color' },
       { field: 'tattoo', value: data.tattoo, target: 'horses.tattoo (NEW)' },
       {
         field: 'dam',

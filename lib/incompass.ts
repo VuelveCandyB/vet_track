@@ -148,3 +148,38 @@ export function mapSexToGender(sexCode: string | null): string | null {
   // Unknown code - return null so local value is preserved
   return null
 }
+
+/**
+ * Map InCompass color codes to local color format
+ * Converts InCompass abbreviations to standardized color codes
+ */
+export function mapColorCode(colorCode: string | null): string | null {
+  if (!colorCode) return null
+
+  const normalized = colorCode.toUpperCase().trim()
+
+  // Exact matches first
+  if (['BAY', 'DKBAY', 'CHEST', 'GREY', 'PAINT', 'ROAN', 'BLACK'].includes(normalized)) {
+    return normalized
+  }
+
+  // InCompass abbreviations mapping
+  const colorMap: Record<string, string> = {
+    'B': 'BAY',           // Bay
+    'BAY': 'BAY',
+    'CH': 'CHEST',        // Chestnut
+    'CHEST': 'CHEST',
+    'DK B/': 'DKBAY',     // Dark Bay
+    'DK B': 'DKBAY',
+    'DKBAY': 'DKBAY',
+    'GR/RO': 'GREY',      // Gray/Roan (more commonly gray)
+    'GR': 'GREY',
+    'GREY': 'GREY',
+    'RO': 'ROAN',
+    'ROAN': 'ROAN',
+    'BLACK': 'BLACK',
+    'PAINT': 'PAINT',
+  }
+
+  return colorMap[normalized] || null
+}

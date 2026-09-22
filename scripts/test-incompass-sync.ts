@@ -11,7 +11,7 @@ import { join } from 'path'
 config({ path: join(process.cwd(), '.env.local') })
 
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
-import { searchIncompassHorse, parseDateFromIncompass, mapSexToGender } from '@/lib/incompass'
+import { searchIncompassHorse, parseDateFromIncompass, mapSexToGender, mapColorCode } from '@/lib/incompass'
 
 async function main() {
   const batchSize = parseInt(process.argv[2] || '5', 10)
@@ -71,7 +71,7 @@ async function main() {
           birth_date: data.dob ? parseDateFromIncompass(data.dob) || data.dob : null,
           raza: data.breed,
           gender: mapSexToGender(data.sex) || horse.gender,
-          color: data.color,
+          color: mapColorCode(data.color) || data.color,
           madre: data.dam?.horseName,
           tattoo: data.tattoo || null,
         }

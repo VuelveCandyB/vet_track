@@ -9,7 +9,7 @@ import { join } from 'path'
 config({ path: join(process.cwd(), '.env.local') })
 
 import { createClient } from '@supabase/supabase-js'
-import { searchIncompassHorse, parseDateFromIncompass, mapSexToGender } from '@/lib/incompass'
+import { searchIncompassHorse, parseDateFromIncompass, mapSexToGender, mapColorCode } from '@/lib/incompass'
 
 async function main() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -73,7 +73,7 @@ async function main() {
           birth_date: data.dob ? parseDateFromIncompass(data.dob) || data.dob : null,
           raza: data.breed,
           gender: mapSexToGender(data.sex) || horse.gender,
-          color: data.color,
+          color: mapColorCode(data.color) || data.color,
           madre: data.dam?.horseName,
           tattoo: data.tattoo || null,
         }
