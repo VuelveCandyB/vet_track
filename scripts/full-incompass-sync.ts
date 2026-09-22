@@ -28,7 +28,7 @@ async function main() {
   // Fetch all active horses with microchip
   const { data: horses, error } = await supabase
     .from('horses')
-    .select('id, name, microchip, status')
+    .select('id, name, microchip, status, gender')
     .eq('status', 'active')
     .not('microchip', 'is', null)
     .order('name')
