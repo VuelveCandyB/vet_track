@@ -36,7 +36,7 @@ async function main() {
 
   const workbook = XLSX.readFile(excelPath)
   const sheet = workbook.Sheets[workbook.SheetNames[0]]
-  const data = XLSX.utils.sheet_to_json(sheet)
+  const data = XLSX.utils.sheet_to_json(sheet) as Array<Record<string, any>>
 
   console.log(`📋 Filas en Excel: ${data.length}\n`)
 
