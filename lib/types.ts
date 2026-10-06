@@ -22,6 +22,8 @@ export interface Horse {
   excel_imported_at?: string
   last_seen_at?: string
   crio_not_found_since?: string
+  last_worked_date?: string
+  last_race_date?: string
 }
 
 export interface HorseAlternateMicrochip {

@@ -74,7 +74,7 @@ export async function processIncompassSyncBatch(runId: string, batchSize: number
   // Fetch batch of horses to process
   const { data: horses, error: horsesError } = await supabase
     .from('horses')
-    .select('id, microchip, name, registration, birth_date, raza, madre, gender, tattoo')
+    .select('id, microchip, name, registration, birth_date, raza, madre, gender, tattoo, last_worked_date, last_race_date')
     .not('microchip', 'is', null)
     .order('id')
     .range(runData.current_index, runData.current_index + batchSize - 1)
@@ -120,10 +120,10 @@ export async function processIncompassSyncBatch(runId: string, batchSize: number
         changes.push(`name: "${horse.name}" → "${incompassData.horseName}"`)
       }
 
-      // Map registration
-      if (incompassData.registrationNumber && incompassData.registrationNumber !== horse.registration) {
+      // Map registration (only if horse doesn't already have one)
+      if (incompassData.registrationNumber && !horse.registration) {
         updatePayload.registration = incompassData.registrationNumber
-        changes.push(`registration: "${horse.registration}" → "${incompassData.registrationNumber}"`)
+        changes.push(`registration: null → "${incompassData.registrationNumber}"`)
       }
 
       // Map birth_date (parse MM/DD/YYYY to YYYY-MM-DD)
@@ -158,6 +158,24 @@ export async function processIncompassSyncBatch(runId: string, batchSize: number
       if (incompassData.tattoo && incompassData.tattoo !== horse.tattoo) {
         updatePayload.tattoo = incompassData.tattoo
         changes.push(`tattoo: "${horse.tattoo}" → "${incompassData.tattoo}"`)
+      }
+
+      // Map last_worked_date (new field)
+      if (incompassData.lastWorkedDate) {
+        const parsedLastWorked = parseDateFromIncompass(incompassData.lastWorkedDate)
+        if (parsedLastWorked && parsedLastWorked !== horse.last_worked_date) {
+          updatePayload.last_worked_date = parsedLastWorked
+          changes.push(`last_worked_date: "${horse.last_worked_date}" → "${parsedLastWorked}"`)
+        }
+      }
+
+      // Map last_race_date (new field)
+      if (incompassData.lastRaceDate) {
+        const parsedLastRace = parseDateFromIncompass(incompassData.lastRaceDate)
+        if (parsedLastRace && parsedLastRace !== horse.last_race_date) {
+          updatePayload.last_race_date = parsedLastRace
+          changes.push(`last_race_date: "${horse.last_race_date}" → "${parsedLastRace}"`)
+        }
       }
 
       // Only update if there are changes

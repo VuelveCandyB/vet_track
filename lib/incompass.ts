@@ -27,6 +27,8 @@ export interface IncompassHorseData {
   colorDescription: string | null
   dam: IncompassHorseDam | null
   markings: IncompassMarking[] | null
+  lastWorkedDate: string | null // MM/DD/YYYY
+  lastRaceDate: string | null // MM/DD/YYYY
 }
 
 export interface IncompassSearchResult {

@@ -279,6 +279,8 @@ export default async function HorseDetailPage({
               ['Color',       horse.color],
               ['Microchip',   horse.microchip],
               ['Tatuaje',     (horse as any).tattoo],
+              ['Última Carrera', (horse as any).last_race_date],
+              ['Último Trabajo', (horse as any).last_worked_date],
             ].map(([label, val]) => (
               <div key={label} className="flex justify-between items-center py-2"
                 style={{ borderBottom: `1px solid ${PALETTE.ui.border}` }}>
