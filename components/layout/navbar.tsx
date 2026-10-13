@@ -9,7 +9,7 @@ import { logout } from '@/lib/auth-client'
 import { ServiceTicketModal } from '@/components/service/service-ticket-modal'
 import SosLogo from '@/components/SosLogo'
 
-export default function Navbar({ user, isAdmin, isOfficialVet, vetName, canAccessAdmin, canAccessRaceDay, canAccessRevisiones, pendingReviewCount, isTechnician = false, activeVetName = null, showVetSwitcher = false }: { user: User; isAdmin: boolean; isOfficialVet: boolean; vetName: string; canAccessAdmin: boolean; canAccessRaceDay: boolean; canAccessRevisiones?: boolean; pendingReviewCount?: number; isTechnician?: boolean; activeVetName?: string | null; showVetSwitcher?: boolean }) {
+export default function Navbar({ user, isAdmin, isOfficialVet, vetName, canAccessAdmin, canAccessRaceDay, canAccessRevisiones, pendingReviewCount, isTechnician = false, isVaccinator = false, activeVetName = null, showVetSwitcher = false }: { user: User; isAdmin: boolean; isOfficialVet: boolean; vetName: string; canAccessAdmin: boolean; canAccessRaceDay: boolean; canAccessRevisiones?: boolean; pendingReviewCount?: number; isTechnician?: boolean; activeVetName?: string | null; showVetSwitcher?: boolean; isVaccinator?: boolean }) {
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const router = useRouter()
@@ -23,9 +23,10 @@ export default function Navbar({ user, isAdmin, isOfficialVet, vetName, canAcces
     await logout(router)
   }
 
-  const userRole = isAdmin ? 'Administrador' : isOfficialVet ? 'Veterinario Oficial' : 'Veterinario'
+  const userRole = isVaccinator ? 'Vacunador' : isAdmin ? 'Administrador' : isOfficialVet ? 'Veterinario Oficial' : 'Veterinario'
 
-  const navItems = [
+  // Vaccinator-only users get just the horse list (see lib/vaccinator-access.ts)
+  const navItems = isVaccinator ? [{ href: '/horses', label: 'Caballos' }] : [
     { href: '/dashboard', label: 'Dashboard' },
     { href: '/horses',    label: 'Caballos' },
     // TODO: Carreras ocultas por ahora - requiere más trabajo en race-day
@@ -89,7 +90,7 @@ export default function Navbar({ user, isAdmin, isOfficialVet, vetName, canAcces
               )}
             </Link>
           ))}
-          <SosLogo onClick={() => setServiceModalOpen(true)} />
+          {!isVaccinator && <SosLogo onClick={() => setServiceModalOpen(true)} />}
         </nav>
 
         {/* Desktop user */}
@@ -104,11 +105,13 @@ export default function Navbar({ user, isAdmin, isOfficialVet, vetName, canAcces
               {isTechnician && activeVetName ? `Trabajando con: ${activeVetName}` : userRole}
             </div>
           </div>
-          <Link href="/perfil"
-            className="text-xs px-3 py-1.5 rounded-md border transition-colors"
-            style={{ borderColor: PALETTE.primary.green, color: '#FFFFFF' }}>
-            Mi perfil
-          </Link>
+          {!isVaccinator && (
+            <Link href="/perfil"
+              className="text-xs px-3 py-1.5 rounded-md border transition-colors"
+              style={{ borderColor: PALETTE.primary.green, color: '#FFFFFF' }}>
+              Mi perfil
+            </Link>
+          )}
           <button onClick={handleLogout}
             className="text-xs px-3 py-1.5 rounded-md border transition-colors cursor-pointer"
             style={{ borderColor: PALETTE.primary.green, color: '#FFFFFF' }}>
@@ -164,12 +167,14 @@ export default function Navbar({ user, isAdmin, isOfficialVet, vetName, canAcces
               )}
             </Link>
           ))}
-          <div className="px-4 py-3">
-            <SosLogo onClick={() => {
-              setServiceModalOpen(true)
-              setMenuOpen(false)
-            }} />
-          </div>
+          {!isVaccinator && (
+            <div className="px-4 py-3">
+              <SosLogo onClick={() => {
+                setServiceModalOpen(true)
+                setMenuOpen(false)
+              }} />
+            </div>
+          )}
           <div className="pt-2 mt-2" style={{ borderTop: '1px solid #1e2235' }}>
             <div className="px-4 py-2 text-xs" style={{ color: '#4a5280' }}>{user.email} · {userRole}</div>
             {isTechnician && activeVetName && (
@@ -184,11 +189,13 @@ export default function Navbar({ user, isAdmin, isOfficialVet, vetName, canAcces
                 )}
               </div>
             )}
-            <Link href="/perfil" onClick={() => setMenuOpen(false)}
-              className="flex items-center px-4 py-3 rounded-lg text-sm transition-colors"
-              style={{ color: '#9ca3af' }}>
-              Mi perfil
-            </Link>
+            {!isVaccinator && (
+              <Link href="/perfil" onClick={() => setMenuOpen(false)}
+                className="flex items-center px-4 py-3 rounded-lg text-sm transition-colors"
+                style={{ color: '#9ca3af' }}>
+                Mi perfil
+              </Link>
+            )}
             <button onClick={handleLogout}
               className="w-full text-left px-4 py-3 rounded-lg text-sm transition-colors cursor-pointer"
               style={{ color: '#f87171' }}>

@@ -18,6 +18,7 @@ const ROLES = [
   { id: 'director', label: 'Director', description: 'Gestor de usuarios y auditoría' },
   { id: 'technician', label: 'Técnico', description: 'Ingresa medicaciones bajo supervisión de veterinario' },
   { id: 'euthanasia', label: 'Personal de Eutanasia', description: 'Gestiona eutanasias' },
+  { id: 'vaccinator', label: 'Vacunador', description: 'Solo registra vacunas. Si tiene este rol solo, no ve el resto de la app. No combinar con otros roles' },
 ]
 
 export default function RoleManagementModal({ userId, userEmail, currentRoles, currentUserId }: RoleManagementModalProps) {

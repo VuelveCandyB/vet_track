@@ -215,7 +215,7 @@ export async function setUserRoles(userId: string, roles: string[]) {
   const user = await requireAdmin()
   const supabase = await createClient()
 
-  const validRoles = ['admin', 'authorized_vet', 'official_vet', 'euthanasia', 'director', 'technician']
+  const validRoles = ['admin', 'authorized_vet', 'official_vet', 'euthanasia', 'director', 'technician', 'vaccinator']
   for (const role of roles) {
     if (!validRoles.includes(role)) {
       throw new Error(`Rol inválido: ${role}`)

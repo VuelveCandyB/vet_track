@@ -1,7 +1,7 @@
 'use server'
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
-import { requireUser, isAdmin } from '@/lib/auth'
+import { requireUser, requireNonVaccinator, isAdmin } from '@/lib/auth'
 import { getVetName, getCreatedForVetId } from '@/lib/actions/shared'
 import { logActivity } from '@/lib/actions/activity-log'
 
@@ -15,7 +15,7 @@ interface MedicationRow {
 }
 
 export async function createTreatmentReport(formData: FormData) {
-  const user = await requireUser()
+  const user = await requireNonVaccinator()
   const supabase = await createClient()
 
   const horse_id = formData.get('horse_id') as string
@@ -150,7 +150,7 @@ export async function createTreatmentReport(formData: FormData) {
 }
 
 export async function updateTreatmentReport(id: string, formData: FormData) {
-  const user = await requireUser()
+  const user = await requireNonVaccinator()
   const supabase = await createClient()
 
   const { data: report } = await supabase
@@ -271,7 +271,7 @@ export async function updateTreatmentReport(id: string, formData: FormData) {
 }
 
 export async function deleteTreatmentReport(id: string) {
-  const user = await requireUser()
+  const user = await requireNonVaccinator()
   const supabase = await createClient()
 
   const { data: report } = await supabase

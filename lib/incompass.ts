@@ -119,10 +119,15 @@ export async function searchIncompassHorse(
 }
 
 /**
- * Parse date from MM/DD/YYYY format to YYYY-MM-DD
+ * Parse InCompass date to YYYY-MM-DD.
+ * Accepts MM/DD/YYYY and YYYY-MM-DD (the API returns ISO for dob, lastWorkedDate and lastRaceDate).
+ * InCompass sends 1900-01-01 as a placeholder when a date is unknown; it is treated as null.
  */
 export function parseDateFromIncompass(dateStr: string | null): string | null {
   if (!dateStr) return null
+
+  const iso = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})$/)
+  if (iso) return dateStr === '1900-01-01' ? null : dateStr
 
   const match = dateStr.match(/^(\d{2})\/(\d{2})\/(\d{4})$/)
   if (!match) return null

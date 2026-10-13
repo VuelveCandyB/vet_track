@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { ADMIN_EMAIL } from '@/lib/constants'
 import { PERMISSIONS, type Role, type Level, hasPermission } from '@/lib/permissions'
+import { isOnlyVaccinator } from '@/lib/vaccinator-access'
 import type { User } from '@supabase/supabase-js'
 
 export async function isAdmin(userId: string, email: string): Promise<boolean> {
@@ -60,9 +61,33 @@ export async function can(user: User, key: string, minLevel: Level = 'view'): Pr
     director: roles.includes('director') ? permDef.director : undefined,
     euthanasia: roles.includes('euthanasia') ? permDef.euthanasia : undefined,
     technician: roles.includes('technician') ? permDef.technician : undefined,
+    vaccinator: roles.includes('vaccinator') ? permDef.vaccinator : undefined,
   }
 
   return hasPermission(userLevels, minLevel)
+}
+
+// True only when the user's sole role is 'vaccinator' (admin never counts).
+// Users with vaccinator plus other roles keep their normal access.
+export async function isVaccinatorOnly(userId: string, email: string): Promise<boolean> {
+  if (await isAdmin(userId, email)) return false
+  const roles = await getUserRoles(userId, email)
+  return isOnlyVaccinator(roles)
+}
+
+// Blocks vaccinator-only users without requiring a session, for actions that
+// anonymous callers (e.g. PMF signing) may legitimately reach.
+export async function rejectVaccinatorOnly() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (user && await isVaccinatorOnly(user.id, user.email!)) throw new Error('Acceso denegado')
+}
+
+// Use in server actions that need a session and must not reach vaccinator-only users.
+export async function requireNonVaccinator() {
+  const user = await requireUser()
+  await rejectVaccinatorOnly()
+  return user
 }
 
 export async function canRegisterEuthanasia(userId: string, email: string): Promise<boolean> {

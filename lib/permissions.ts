@@ -3,7 +3,7 @@
 // Levels: 'view' < 'full' < 'special'
 // Admin always has full access (checked separately via isAdmin)
 
-export type Role = 'admin' | 'authorized_vet' | 'official_vet' | 'director' | 'euthanasia' | 'technician'
+export type Role = 'admin' | 'authorized_vet' | 'official_vet' | 'director' | 'euthanasia' | 'technician' | 'vaccinator'
 export type Level = 'view' | 'full' | 'special'
 
 export const PERMISSIONS: Record<string, Partial<Record<Role, Level>>> = {
@@ -16,6 +16,7 @@ export const PERMISSIONS: Record<string, Partial<Record<Role, Level>>> = {
     official_vet: 'view',
     director: 'view',
     technician: 'view',
+    vaccinator: 'view',
   },
   'page.reports': {
     authorized_vet: 'view',
@@ -47,6 +48,7 @@ export const PERMISSIONS: Record<string, Partial<Record<Role, Level>>> = {
     authorized_vet: 'full',
     director: 'full',
     technician: 'full',
+    vaccinator: 'full',
   },
   'horses.vetlist_modal': {
     authorized_vet: 'view',
@@ -113,6 +115,7 @@ export const PERMISSIONS: Record<string, Partial<Record<Role, Level>>> = {
     authorized_vet: 'full',
     official_vet: 'full',
     director: 'full',
+    technician: 'full',
   },
 }
 

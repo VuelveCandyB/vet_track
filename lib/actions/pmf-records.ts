@@ -2,10 +2,10 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { requireUser } from '@/lib/auth'
+import { requireNonVaccinator } from '@/lib/auth'
 
 export async function createPMFRecord(formData: FormData) {
-  await requireUser()
+  await requireNonVaccinator()
   const supabase = await createClient()
 
   const horse_id = formData.get('horse_id') as string
@@ -80,7 +80,7 @@ export async function createPMFRecord(formData: FormData) {
 }
 
 export async function updatePMFRecord(id: string, formData: FormData) {
-  await requireUser()
+  await requireNonVaccinator()
   const supabase = await createClient()
 
   const { data: report } = await supabase
@@ -144,7 +144,7 @@ export async function updatePMFRecord(id: string, formData: FormData) {
 }
 
 export async function deletePMFRecord(id: string) {
-  await requireUser()
+  await requireNonVaccinator()
   const supabase = await createClient()
 
   const { data: report } = await supabase

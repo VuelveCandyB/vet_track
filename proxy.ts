@@ -1,5 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { ADMIN_EMAIL } from '@/lib/constants'
+import { isPathAllowedForVaccinator, isOnlyVaccinator } from '@/lib/vaccinator-access'
 
 export async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
@@ -31,6 +33,19 @@ export async function proxy(request: NextRequest) {
 
   if (user && isLoginPage) {
     return NextResponse.redirect(new URL('/dashboard', request.url))
+  }
+
+  // Vaccinator-only users are confined to the horse list and profile.
+  // The role lookup runs only for routes outside the allowlist.
+  if (user && !isPathAllowedForVaccinator(request.nextUrl.pathname) && user.email !== ADMIN_EMAIL) {
+    const { data: roleRows } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', user.id)
+    const roles = (roleRows ?? []).map(r => r.role as string)
+    if (isOnlyVaccinator(roles)) {
+      return NextResponse.redirect(new URL('/horses', request.url))
+    }
   }
 
   return supabaseResponse

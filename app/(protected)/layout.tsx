@@ -1,4 +1,4 @@
-import { requireUser, isAdmin, isOfficialVet, can, isTechnician } from '@/lib/auth'
+import { requireUser, isAdmin, isOfficialVet, can, isTechnician, isVaccinatorOnly } from '@/lib/auth'
 import { getVetName } from '@/lib/actions/shared'
 import { redirect } from 'next/navigation'
 import Navbar from '@/components/layout/navbar'
@@ -11,6 +11,7 @@ export default async function ProtectedLayout({ children }: { children: React.Re
   const isAdminUser = await isAdmin(user.id, user.email || '')
   const officialVet = await isOfficialVet(user.id, user.email || '')
   const isTech = await isTechnician(user.id, user.email || '')
+  const isVaccinator = await isVaccinatorOnly(user.id, user.email || '')
   const canAccessAdmin = await can(user, 'page.admin', 'view')
   const canAccessRaceDay = await can(user, 'page.race_day', 'view')
 
@@ -81,6 +82,7 @@ export default async function ProtectedLayout({ children }: { children: React.Re
         canAccessRevisiones={canAccessRevisiones}
         pendingReviewCount={pendingReviewCount}
         isTechnician={isTech}
+        isVaccinator={isVaccinator}
         activeVetName={activeVetName}
         showVetSwitcher={showVetSwitcher}
       />

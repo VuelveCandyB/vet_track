@@ -2,7 +2,7 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { requireUser, can } from '@/lib/auth'
+import { requireUser, requireNonVaccinator, can } from '@/lib/auth'
 import { getVetName, resetHorseRedFlagCache } from './shared'
 import { logActivity } from './activity-log'
 
@@ -39,7 +39,7 @@ export async function createHorse(formData: FormData) {
 }
 
 export async function setRedFlag(horseId: string, formData: FormData) {
-  const user = await requireUser()
+  const user = await requireNonVaccinator()
   const supabase = await createClient()
   const vetName = await getVetName(supabase, user)
   const reason = (formData.get('reason') as string || '').trim()
@@ -116,7 +116,7 @@ export async function setRedFlag(horseId: string, formData: FormData) {
 }
 
 export async function clearRedFlag(horseId: string) {
-  await requireUser()
+  await requireNonVaccinator()
   const supabase = await createClient()
 
   // Update horse red_flag state using the shared helper

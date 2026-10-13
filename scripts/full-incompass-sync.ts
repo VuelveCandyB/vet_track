@@ -76,6 +76,8 @@ async function main() {
           color: mapColorCode(data.color) || data.color,
           madre: data.dam?.horseName,
           tattoo: data.tattoo || null,
+          last_worked_date: parseDateFromIncompass(data.lastWorkedDate),
+          last_race_date: parseDateFromIncompass(data.lastRaceDate),
         }
 
         // Update name: use InCompass value if available, otherwise use placeholder

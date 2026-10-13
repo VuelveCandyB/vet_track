@@ -1,4 +1,6 @@
-import { requireUser, canRegisterEuthanasia, isAdmin, isOfficialVet, isTechnician, can } from '@/lib/auth'
+import { notFound } from 'next/navigation'
+import { requireUser, canRegisterEuthanasia, isAdmin, isOfficialVet, isTechnician, can, isVaccinatorOnly } from '@/lib/auth'
+import VaccinatorHorseView from '@/components/horses/vaccinator-horse-view'
 import ConfirmDeleteButton from '@/components/admin/confirm-delete-button'
 import { createClient } from '@/lib/supabase/server'
 import { deleteMedication } from '@/lib/actions/medications'
@@ -71,6 +73,26 @@ export default async function HorseDetailPage({
   const { id } = await params
   const { sort = 'desc' } = await searchParams
   const supabase = await createClient()
+
+  // Vaccinator-only users get a minimal view; the full queries below are skipped
+  if (await isVaccinatorOnly(user.id, user.email!)) {
+    const [horseRes, vaccineTypesRes, vacRes, vetName] = await Promise.all([
+      supabase.from('horses').select('*').eq('id', id).single(),
+      supabase.from('vaccine_types').select('*').eq('active', true).order('sort_order'),
+      supabase.from('vaccinations').select('*, vaccine_types(name, validity_days)').eq('horse_id', id).order('fecha', { ascending: false }),
+      getVetName(supabase, user),
+    ])
+    if (!horseRes.data) notFound()
+    return (
+      <VaccinatorHorseView
+        horse={horseRes.data as Horse}
+        vaccineTypes={(vaccineTypesRes.data ?? []) as VaccineType[]}
+        vaccinations={(vacRes.data ?? []) as Vaccination[]}
+        vetName={vetName}
+        today={new Date().toISOString().split('T')[0]}
+      />
+    )
+  }
 
   console.log('🔍 DEBUG - Horse ID:', id)
 

@@ -4,6 +4,8 @@ export function getRoleLabel(role: string): string {
     'official_vet': 'Veterinario Oficial',
     'director': 'Director',
     'euthanasia': 'Personal de Eutanasia',
+    'technician': 'Técnico',
+    'vaccinator': 'Vacunador',
     'admin': 'Administrador',
   }
   return labels[role] || role

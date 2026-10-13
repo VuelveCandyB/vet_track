@@ -2,6 +2,7 @@
 
 import { createClient } from '@supabase/supabase-js'
 import { RaceDay, RaceEntry } from '@/lib/types/pmf'
+import { rejectVaccinatorOnly } from '@/lib/auth'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -19,6 +20,7 @@ export async function createRaceDay(input: {
   fuente: 'equibase' | 'csv' | 'manual'
   userId: string
 }): Promise<{ success: boolean; raceDay?: RaceDay; error?: string }> {
+  await rejectVaccinatorOnly()
   try {
     const { data, error } = await supabase
       .from('race_days')
@@ -65,6 +67,7 @@ export async function parseCSV(csvContent: string): Promise<{
   }>
   errors?: string[]
 }> {
+  await rejectVaccinatorOnly()
   const lines = csvContent.trim().split('\n')
   const errors: string[] = []
   const entries: Array<{
@@ -193,6 +196,7 @@ export async function matchHorses(entries: Array<{
     match_status: 'unmatched'
   }>
 }> {
+  await rejectVaccinatorOnly()
   const matched: Array<{
     entry: typeof entries[0]
     horse_id: string
@@ -279,6 +283,7 @@ export async function uploadRaceEntries(input: {
     match_status: 'unmatched'
   }>
 }): Promise<{ success: boolean; count?: number; error?: string }> {
+  await rejectVaccinatorOnly()
   try {
     const allEntries = [
       ...input.matched.map((m) => ({
@@ -355,6 +360,7 @@ export async function getRaceDayWithEntries(
   raceDay?: RaceDay & { entries: RaceEntry[] }
   error?: string
 }> {
+  await rejectVaccinatorOnly()
   try {
     // Get race day
     const { data: raceDay, error: rdError } = await supabase
@@ -400,6 +406,7 @@ export async function assignHorseToEntry(input: {
   raceEntryId: string
   horseId: string
 }): Promise<{ success: boolean; error?: string }> {
+  await rejectVaccinatorOnly()
   try {
     const { error } = await supabase
       .from('race_entries')
@@ -431,6 +438,7 @@ export async function getAllRaceDays(): Promise<{
   raceDays?: Array<RaceDay & { entry_count: number; matched_count: number }>
   error?: string
 }> {
+  await rejectVaccinatorOnly()
   try {
     const { data, error } = await supabase
       .from('race_days')
@@ -471,6 +479,7 @@ export async function updateRaceDayStatus(input: {
   raceDayId: string
   status: 'borrador' | 'activo' | 'cerrado'
 }): Promise<{ success: boolean; error?: string }> {
+  await rejectVaccinatorOnly()
   try {
     const { error } = await supabase
       .from('race_days')
@@ -500,6 +509,7 @@ export async function updateRaceDayStatus(input: {
 export async function deleteRaceDay(
   raceDayId: string
 ): Promise<{ success: boolean; error?: string }> {
+  await rejectVaccinatorOnly()
   try {
     // Check if there are any PMF records linked to this race day
     const { data: pmfRecords } = await supabase
@@ -551,6 +561,7 @@ export async function deleteRaceDay(
 export async function deleteRaceEntries(
   raceDayId: string
 ): Promise<{ success: boolean; error?: string; deleted?: number }> {
+  await rejectVaccinatorOnly()
   try {
     // First, count how many entries exist
     const { count: existingCount } = await supabase

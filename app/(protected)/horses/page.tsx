@@ -1,4 +1,4 @@
-import { requirePageAccess, requireUser, isAdmin } from '@/lib/auth'
+import { requirePageAccess, requireUser, isAdmin, isVaccinatorOnly } from '@/lib/auth'
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
@@ -50,6 +50,8 @@ export default async function HorsesPage({
   await requirePageAccess('page.horses')
   const user = await requireUser()
   const admin = await isAdmin(user.id, user.email!)
+  // Vaccinator-only users don't see vetlist/referido indicators
+  const vaccinatorOnly = await isVaccinatorOnly(user.id, user.email!)
   const { q = '', page = '1', letter = '' } = await searchParams
   const currentPage = Math.max(1, parseInt(page, 10))
   const offset = (currentPage - 1) * PAGE_SIZE
@@ -68,7 +70,7 @@ export default async function HorsesPage({
 
   const query = supabase
     .from('horses')
-    .select('id, name, color, status, microchip, birth_date, gender, red_flag, tattoo, raza, madre', { count: 'exact' })
+    .select('id, name, color, status, microchip, birth_date, gender, red_flag', { count: 'exact' })
     .order('name')
     .limit(PAGE_SIZE)
     .range(offset, offset + PAGE_SIZE - 1)
@@ -84,12 +86,13 @@ export default async function HorsesPage({
   }
   if (letter) query.ilike('name', `${letter}%`)
 
+  const noRows = Promise.resolve({ data: [] as any[] })
   const [{ data: horses, count: paginatedCount }, { count: total }, { data: vetlistData }, { data: vetlistAllData }, { data: referidosData }] = await Promise.all([
     query,
     supabase.from('horses').select('id', { count: 'exact', head: true }),
-    supabase.from('vetlist').select('horse_id').is('fecha_egreso', null),
-    supabase.from('vetlist').select('horse_id'),
-    supabase.from('horse_referidos').select('horse_id'),
+    vaccinatorOnly ? noRows : supabase.from('vetlist').select('horse_id').is('fecha_egreso', null),
+    vaccinatorOnly ? noRows : supabase.from('vetlist').select('horse_id'),
+    vaccinatorOnly ? noRows : supabase.from('horse_referidos').select('horse_id'),
   ])
 
   // Fetch alternate microchips for the horses in this page
@@ -200,7 +203,7 @@ export default async function HorsesPage({
           <table className="w-full text-sm border-collapse">
             <thead>
               <tr style={{ borderBottom: `1px solid ${PALETTE.ui.border}` }}>
-                {['Nombre', 'Color', 'Estado', 'Indicadores', 'Género', 'Edad', 'Raza', 'Tatuaje', 'Madre', 'Microchip'].map(h => (
+                {['Nombre', 'Color', 'Estado', ...(vaccinatorOnly ? [] : ['Indicadores']), 'Género', 'Edad', 'Microchip'].map(h => (
                   <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider"
                     style={{ color: PALETTE.text.secondary }}>
                     {h}
@@ -211,7 +214,7 @@ export default async function HorsesPage({
             <tbody>
               {!horses?.length ? (
                 <tr>
-                  <td colSpan={10} className="px-4 py-12 text-center" style={{ color: PALETTE.text.secondary }}>
+                  <td colSpan={vaccinatorOnly ? 6 : 7} className="px-4 py-12 text-center" style={{ color: PALETTE.text.secondary }}>
                     Sin resultados
                   </td>
                 </tr>
@@ -239,6 +242,7 @@ export default async function HorsesPage({
                       {STATUS_LABEL[horse.status] ?? horse.status}
                     </Badge>
                   </td>
+                  {!vaccinatorOnly && (
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-1.5 flex-wrap">
                       {referidoCounts.has(horse.id) && (
@@ -264,6 +268,7 @@ export default async function HorsesPage({
                       )}
                     </div>
                   </td>
+                  )}
                   <td className="px-4 py-3">
                     {horse.gender === 'M' && (
                       <span className="px-2 py-0.5 rounded text-xs font-semibold" style={{ background: '#e0f2fe', color: '#0369a1' }}>
@@ -281,15 +286,6 @@ export default async function HorsesPage({
                     {horse.birth_date
                       ? `${todayYear - new Date(horse.birth_date).getFullYear()} años`
                       : '—'}
-                  </td>
-                  <td className="px-4 py-3 text-xs" style={{ color: PALETTE.text.secondary }}>
-                    {(horse as any).raza || '—'}
-                  </td>
-                  <td className="px-4 py-3 text-xs" style={{ color: PALETTE.text.secondary }}>
-                    {(horse as any).tattoo || '—'}
-                  </td>
-                  <td className="px-4 py-3 text-xs" style={{ color: PALETTE.text.secondary }}>
-                    {(horse as any).madre || '—'}
                   </td>
                   <td className="px-4 py-3">
                     {horse.microchip ? (

@@ -2,7 +2,7 @@
 
 import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/server'
-import { requireUser } from '@/lib/auth'
+import { requireUser, rejectVaccinatorOnly } from '@/lib/auth'
 
 const supabase = createAdminClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -10,6 +10,7 @@ const supabase = createAdminClient(
 )
 
 export async function registerHorseInLOES(horseId: string) {
+  await rejectVaccinatorOnly()
   try {
     const now = new Date().toISOString()
 
@@ -35,6 +36,7 @@ export async function registerHorseInLOES(horseId: string) {
 }
 
 export async function removeAllHorsesFromLOES() {
+  await rejectVaccinatorOnly()
   try {
     const { data, error } = await supabase
       .from('horses')

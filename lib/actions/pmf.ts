@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@supabase/supabase-js'
+import { rejectVaccinatorOnly } from '@/lib/auth'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -8,6 +9,7 @@ const supabase = createClient(
 )
 
 export async function getPMFData(entryId: string, raceDayId: string) {
+  await rejectVaccinatorOnly()
   try {
     // Get race entry with horse and race day info
     const { data: entry, error: entryError } = await supabase
@@ -70,6 +72,7 @@ export async function createPMFRecord(input: {
   vetOficialNombre: string
   repNombre?: string
 }) {
+  await rejectVaccinatorOnly()
   try {
     const { data: raceEntry, error: raceError } = await supabase
       .from('race_entries')
@@ -131,6 +134,7 @@ export async function signPMFAsVetOficial(
   vetOficialId: string,
   vetOficialNombre: string
 ) {
+  await rejectVaccinatorOnly()
   try {
     const now = new Date().toISOString()
 
@@ -170,6 +174,7 @@ export async function signPMFAsRepresentante(
   pmfRecordId: string,
   repNombre: string
 ) {
+  await rejectVaccinatorOnly()
   try {
     const now = new Date().toISOString()
 
@@ -315,6 +320,7 @@ async function validatePMFRecord(pmfRecordId: string): Promise<ValidationResult>
 }
 
 export async function certifyPMFRecord(pmfRecordId: string) {
+  await rejectVaccinatorOnly()
   try {
     // Validate before certifying
     const validation = await validatePMFRecord(pmfRecordId)
@@ -357,6 +363,7 @@ export async function certifyPMFRecord(pmfRecordId: string) {
 }
 
 export async function getPMFStatus(raceEntryId: string) {
+  await rejectVaccinatorOnly()
   try {
     // Get the most recent PMF record (in case of duplicates)
     const { data, error } = await supabase
@@ -382,6 +389,7 @@ export async function getPMFStatus(raceEntryId: string) {
 }
 
 export async function getPMFStatusBatch(raceEntryIds: string[]) {
+  await rejectVaccinatorOnly()
   try {
     if (raceEntryIds.length === 0) {
       return { success: true, statuses: {} }
@@ -429,6 +437,7 @@ export async function updatePMFAdministration(input: {
   hora_admin: string
   fecha_admin: string
 }) {
+  await rejectVaccinatorOnly()
   try {
     const { data, error } = await supabase
       .from('pmf_records')
