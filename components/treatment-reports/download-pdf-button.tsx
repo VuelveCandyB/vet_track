@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { PALETTE } from '@/lib/palette'
 import jsPDF from 'jspdf'
 import html2canvas from 'html2canvas'
+import { courseDays, courseLabel, formatDaysLabel, restrictionUntilLabel } from '@/lib/treatment-course'
 import type { TreatmentReport } from '@/lib/types'
 
 interface DownloadPdfButtonProps {
@@ -17,6 +18,7 @@ interface DownloadPdfButtonProps {
     dosis_unidad?: string
     nivel_dosificacion?: string
     tiempo_restriccion?: number | null
+    hasta_cuando?: string | null
     drug?: { nombre: string; categoria: string; tipo_restriccion?: string }
   }>
 }
@@ -65,8 +67,9 @@ export default function DownloadPdfButton({ report, medications = [] }: Download
           <strong>Categoría:</strong> ${med.drug?.categoria || '—'}<br/>
           <strong>Dosis:</strong> ${med.dosis} ${med.dosis_unidad || 'mg'}<br/>
           ${med.nivel_dosificacion ? `<strong>Nivel:</strong> ${med.nivel_dosificacion}<br/>` : ''}
+          ${courseLabel(report.fecha_tratamiento, med.hasta_cuando) ? `<strong>Administración:</strong> 1 dosis diaria, del ${formatDate(report.fecha_tratamiento)} al ${formatDate(med.hasta_cuando ?? null)} (${formatDaysLabel(courseDays(report.fecha_tratamiento, med.hasta_cuando))})<br/>` : ''}
           ${med.drug?.tipo_restriccion ? `<strong>Restricción:</strong> ${med.drug.tipo_restriccion}<br/>` : ''}
-          ${med.tiempo_restriccion ? `<strong>Tiempo Restricción:</strong> ${med.tiempo_restriccion}h` : ''}
+          ${med.tiempo_restriccion ? `<strong>Tiempo Restricción:</strong> ${med.tiempo_restriccion}h` : ''}${restrictionUntilLabel({ fecha: report.fecha_tratamiento, hora: report.hora_tratamiento, hasta_cuando: med.hasta_cuando, tiempo_restriccion: med.tiempo_restriccion }) ? ` (${restrictionUntilLabel({ fecha: report.fecha_tratamiento, hora: report.hora_tratamiento, hasta_cuando: med.hasta_cuando, tiempo_restriccion: med.tiempo_restriccion })})` : ''}
         </div>
       `).join('') : '<p>Sin medicamentos registrados</p>'
 

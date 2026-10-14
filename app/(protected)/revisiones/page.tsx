@@ -132,7 +132,7 @@ export default async function RevisionesPage({
   if (treatmentIds.length > 0) {
     const { data: meds } = await supabase
       .from('treatment_report_medications')
-      .select('id, treatment_report_id, drug_id, dosis, dosis_unidad, tiempo_restriccion, drug:drugs(id, nombre, withdrawal_time_dias)')
+      .select('id, treatment_report_id, drug_id, dosis, dosis_unidad, tiempo_restriccion, hasta_cuando, drug:drugs(id, nombre, withdrawal_time_dias)')
       .in('treatment_report_id', treatmentIds)
 
     if (meds) {

@@ -8,7 +8,7 @@ import type { TreatmentReport } from '@/lib/types'
 interface TreatmentReportsPageClientProps {
   reports: (TreatmentReport & {
     horse?: { name: string; registration?: string }
-    medications?: Array<{ drug?: { nombre: string; categoria?: string; tipo_restriccion?: string } }>
+    medications?: Array<{ hasta_cuando?: string | null; drug?: { nombre: string; categoria?: string; tipo_restriccion?: string } }>
   })[]
   currentUserId: string
   isAdmin: boolean
@@ -69,6 +69,11 @@ export default function TreatmentReportsPageClient({
                   const [year, month, day] = dateStr.split('-')
                   return `${day}/${month}/${year}`
                 }
+                const lastDose = (report.medications ?? [])
+                  .map(m => m.hasta_cuando)
+                  .filter((d): d is string => !!d)
+                  .sort()
+                  .pop()
 
                 return (
                   <tr key={report.id}
@@ -87,7 +92,14 @@ export default function TreatmentReportsPageClient({
                       )}
                     </td>
                     <td className="px-4 py-3">{report.establo || '—'}</td>
-                    <td className="px-4 py-3 text-xs">{formatDate(report.fecha_tratamiento)}</td>
+                    <td className="px-4 py-3 text-xs">
+                      {formatDate(report.fecha_tratamiento)}
+                      {lastDose && (
+                        <div className="font-semibold" style={{ color: PALETTE.primary.green }}>
+                          Diaria hasta {formatDate(lastDose)}
+                        </div>
+                      )}
+                    </td>
                     <td className="px-4 py-3 text-xs">{report.vet_autorizado_nombre}</td>
                     <td className="px-4 py-3 flex gap-2">
                       <Link href={`/treatment-reports/${report.id}`}>

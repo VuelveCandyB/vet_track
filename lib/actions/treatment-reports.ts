@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { requireUser, requireNonVaccinator, isAdmin } from '@/lib/auth'
 import { getVetName, getCreatedForVetId } from '@/lib/actions/shared'
 import { logActivity } from '@/lib/actions/activity-log'
+import { validateCourse } from '@/lib/treatment-course'
 
 interface MedicationRow {
   drug_id: string
@@ -12,6 +13,15 @@ interface MedicationRow {
   nivel_dosificacion?: string
   tiempo_restriccion?: number | null
   hasta_cuando?: string | null
+}
+
+// Valida el rango de cada medicamento y devuelve la fecha fin a guardar
+// (null para dosis única o si coincide con el día de inicio).
+function resolveHastaCuando(med: MedicationRow, fecha_tratamiento: string): string | null {
+  if (!med.hasta_cuando || !fecha_tratamiento) return null
+  const rangeError = validateCourse(fecha_tratamiento, med.hasta_cuando)
+  if (rangeError) throw new Error(rangeError)
+  return med.hasta_cuando > fecha_tratamiento ? med.hasta_cuando : null
 }
 
 export async function createTreatmentReport(formData: FormData) {
@@ -63,6 +73,9 @@ export async function createTreatmentReport(formData: FormData) {
     }
   }
 
+  // Validar rangos de dosificación diaria antes de escribir nada
+  medications.forEach(med => resolveHastaCuando(med, fecha_tratamiento))
+
   // Calcular el nombre del médico y el ID del médico para el que se crea
   const vet_autorizado_nombre = await getVetName(supabase, user)
   const created_for_vet_id = await getCreatedForVetId(supabase, user)
@@ -102,6 +115,7 @@ export async function createTreatmentReport(formData: FormData) {
     dosis_unidad: med.dosis_unidad || 'mg',
     nivel_dosificacion: med.nivel_dosificacion || null,
     tiempo_restriccion: med.tiempo_restriccion || null,
+    hasta_cuando: resolveHastaCuando(med, fecha_tratamiento),
   }))
 
   console.log('📝 Inserting medications:', medicationData)
@@ -187,6 +201,9 @@ export async function updateTreatmentReport(id: string, formData: FormData) {
   const hora_tratamiento = (formData.get('hora_tratamiento') as string) || '00:00'
   const notas = formData.get('notas') as string | null
 
+  // Validar rangos de dosificación diaria antes de escribir nada
+  medications.forEach(med => resolveHastaCuando(med, fecha_tratamiento))
+
   // Calcular el nombre del médico y el ID del médico para el que se edita
   const vet_autorizado_nombre = await getVetName(supabase, user)
   const created_for_vet_id = await getCreatedForVetId(supabase, user)
@@ -230,6 +247,7 @@ export async function updateTreatmentReport(id: string, formData: FormData) {
     dosis_unidad: med.dosis_unidad || 'mg',
     nivel_dosificacion: med.nivel_dosificacion || null,
     tiempo_restriccion: med.tiempo_restriccion || null,
+    hasta_cuando: resolveHastaCuando(med, fecha_tratamiento),
   }))
 
   const { error: medError } = await supabase
@@ -302,103 +320,4 @@ export async function deleteTreatmentReport(id: string) {
   })
 
   revalidatePath('/treatment-reports')
-}
-
-export async function replicateDailyTreatmentReports() {
-  const supabase = await createClient()
-
-  const today = new Date().toISOString().split('T')[0]
-
-  // Buscar informes que están activos (en borrador) y cuya duración aún está vigente
-  const { data: activeReports } = await supabase
-    .from('treatment_reports')
-    .select('*')
-    .eq('estado', 'borrador')
-    .eq('es_auto_generado', false)
-
-  if (!activeReports || activeReports.length === 0) return { replicated: 0 }
-
-  let replicated = 0
-
-  for (const report of activeReports) {
-    // Obtener medicamentos del informe original
-    const { data: originalMeds } = await supabase
-      .from('treatment_report_medications')
-      .select('*')
-      .eq('treatment_report_id', report.id)
-
-    if (!originalMeds || originalMeds.length === 0) {
-      // Sin medicamentos, skip
-      continue
-    }
-
-    // Verificar si ya existe un informe para hoy para este caballo
-    const { data: existingToday } = await supabase
-      .from('treatment_reports')
-      .select('id')
-      .eq('horse_id', report.horse_id)
-      .eq('fecha_tratamiento', today)
-      .eq('es_auto_generado', true)
-      .eq('informe_padre_id', report.id)
-      .single()
-
-    if (existingToday) {
-      // Ya existe informe para hoy, skip
-      continue
-    }
-
-    // Crear copia del informe para hoy
-    const { data: newReport, error } = await supabase.from('treatment_reports').insert({
-      horse_id: report.horse_id,
-      numero_identificacion_caballo: report.numero_identificacion_caballo,
-      establo: report.establo,
-      tratamiento: null,
-      diagnostico: report.diagnostico,
-      fecha_tratamiento: today,
-      hora_tratamiento: report.hora_tratamiento,
-      notas: report.notas,
-      vet_autorizado_nombre: report.vet_autorizado_nombre,
-      estado: 'sometido', // Auto-generado ya sale sometido
-      es_auto_generado: true,
-      informe_padre_id: report.id,
-      created_by: report.created_by,
-    }).select('id').single()
-
-    if (!error && newReport) {
-      // Copiar medicamentos del informe original
-      const newMeds = originalMeds.map(med => ({
-        treatment_report_id: newReport.id,
-        drug_id: med.drug_id,
-        dosis: med.dosis,
-        dosis_unidad: med.dosis_unidad,
-        nivel_dosificacion: med.nivel_dosificacion,
-        tiempo_restriccion: med.tiempo_restriccion,
-      }))
-
-      await supabase
-        .from('treatment_report_medications')
-        .insert(newMeds)
-
-      // Copiar también los enlaces de códigos del informe original
-      const { data: originalCodes } = await supabase
-        .from('treatment_report_item_codes')
-        .select('catalog_item_id')
-        .eq('treatment_report_id', report.id)
-
-      if (originalCodes && originalCodes.length > 0) {
-        const newCodes = originalCodes.map(item => ({
-          treatment_report_id: newReport.id,
-          catalog_item_id: item.catalog_item_id,
-        }))
-
-        await supabase
-          .from('treatment_report_item_codes')
-          .insert(newCodes)
-      }
-
-      replicated++
-    }
-  }
-
-  return { replicated }
 }

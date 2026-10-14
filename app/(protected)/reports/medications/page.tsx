@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 import { PALETTE } from '@/lib/palette'
 import ExportButton from '@/components/reports/export-button'
+import { courseLabel, restrictionUntilLabel } from '@/lib/treatment-course'
 
 const RESTRICTION_STYLE: Record<string, [string, string]> = {
   'WDT':        ['#facc15', '#2e2a0d'],
@@ -70,6 +71,7 @@ export default async function MedicationsReportPage({
         dosis: med.dosis,
         dosis_unidad: med.dosis_unidad,
         tiempo_restriccion: med.tiempo_restriccion,
+        hasta_cuando: med.hasta_cuando,
       }))
     )
 
@@ -191,10 +193,18 @@ export default async function MedicationsReportPage({
                       <td className="px-4 py-3 whitespace-nowrap">
                         <div className="text-xs" style={{ color: PALETTE.text.secondary }}>{r.vet_autorizado_nombre}</div>
                         <div className="text-xs" style={{ color: PALETTE.text.secondary }}>{formatDate(r.fecha_tratamiento)}</div>
+                        {courseLabel(r.fecha_tratamiento, r.hasta_cuando) && (
+                          <div className="text-xs font-semibold" style={{ color: PALETTE.primary.green }}>{courseLabel(r.fecha_tratamiento, r.hasta_cuando)}</div>
+                        )}
                       </td>
                       <td className="px-4 py-3">
                         {r.tiempo_restriccion
-                          ? <span className="text-xs font-semibold" style={{ color: PALETTE.primary.green }}>{r.tiempo_restriccion}h</span>
+                          ? <span className="text-xs font-semibold" style={{ color: PALETTE.primary.green }}>
+                              {r.tiempo_restriccion}h
+                              {r.hasta_cuando && restrictionUntilLabel({ fecha: r.fecha_tratamiento, hora: r.hora_tratamiento, hasta_cuando: r.hasta_cuando, tiempo_restriccion: r.tiempo_restriccion })
+                                ? ` (${restrictionUntilLabel({ fecha: r.fecha_tratamiento, hora: r.hora_tratamiento, hasta_cuando: r.hasta_cuando, tiempo_restriccion: r.tiempo_restriccion })})`
+                                : ''}
+                            </span>
                           : <span style={{ color: PALETTE.text.secondary }}>—</span>}
                       </td>
                     </tr>

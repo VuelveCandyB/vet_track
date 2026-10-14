@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import DownloadPdfButton from '@/components/treatment-reports/download-pdf-button'
 import { PALETTE } from '@/lib/palette'
+import { courseDays, formatCourseRange, formatDaysLabel, formatShortDate, restrictionEnd } from '@/lib/treatment-course'
 import type { TreatmentReport } from '@/lib/types'
 
 async function deleteReport(id: string) {
@@ -195,6 +196,30 @@ export default async function TreatmentReportDetailPage({
                     <p className="text-lg font-semibold">{med.tiempo_restriccion}h ({Math.round(med.tiempo_restriccion / 24 * 10) / 10} días)</p>
                   </div>
                 )}
+                {med.hasta_cuando && (
+                  <div>
+                    <p className="text-xs" style={{ color: PALETTE.text.secondary }}>Administración</p>
+                    <p className="text-lg font-semibold">
+                      Diaria, {formatCourseRange(typed.fecha_tratamiento, med.hasta_cuando)} ({formatDaysLabel(courseDays(typed.fecha_tratamiento, med.hasta_cuando))})
+                    </p>
+                  </div>
+                )}
+                {(() => {
+                  const end = restrictionEnd({
+                    fecha: typed.fecha_tratamiento,
+                    hora: typed.hora_tratamiento,
+                    hasta_cuando: med.hasta_cuando,
+                    tiempo_restriccion: med.tiempo_restriccion,
+                  })
+                  return end ? (
+                    <div>
+                      <p className="text-xs" style={{ color: PALETTE.text.secondary }}>
+                        {med.hasta_cuando ? 'Fin de la restricción (desde la última dosis)' : 'Fin de la restricción'}
+                      </p>
+                      <p className="text-lg font-semibold">{formatShortDate(end.date, true)}, {formatTo12Hour(end.time)}</p>
+                    </div>
+                  ) : null
+                })()}
                 {med.created_at && (
                   <div>
                     <p className="text-xs" style={{ color: PALETTE.text.secondary }}>Fecha de Entrada</p>

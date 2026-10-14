@@ -18,6 +18,7 @@ import Link from 'next/link'
 import type { Horse, Medication, VetlistEntry, HorseReferido, EuthanasiaRecord, Drug, Diagnostico, TreatmentReport, Vaccination, VaccineType } from '@/lib/types'
 import { STATUS_LABEL } from '@/lib/constants'
 import { PALETTE } from '@/lib/palette'
+import { courseLabel, restrictionUntilLabel } from '@/lib/treatment-course'
 
 const STATUS_STYLE: Record<string, string> = {
   active:   'bg-green-100 text-green-800 border-green-300',
@@ -735,9 +736,14 @@ export default async function HorseDetailPage({
                                     <div style={{ color: PALETTE.text.secondary }}>
                                       {med.dosis} {med.dosis_unidad || 'mg'}{med.nivel_dosificacion ? ` · ${med.nivel_dosificacion}` : ''}
                                     </div>
+                                    {courseLabel(t.fecha_tratamiento, med.hasta_cuando) && (
+                                      <div style={{ color: PALETTE.primary.green, fontSize: '0.75rem', fontWeight: 600 }}>
+                                        {courseLabel(t.fecha_tratamiento, med.hasta_cuando)}
+                                      </div>
+                                    )}
                                     {med.drug?.tipo_restriccion && (
                                       <div style={{ color: '#f97316', fontSize: '0.75rem' }}>
-                                        Restricción: {med.drug.tipo_restriccion}{med.tiempo_restriccion ? ` · ${med.tiempo_restriccion}h` : ''}
+                                        Restricción: {med.drug.tipo_restriccion}{med.tiempo_restriccion ? ` · ${med.tiempo_restriccion}h` : ''}{med.hasta_cuando && restrictionUntilLabel({ fecha: t.fecha_tratamiento, hora: t.hora_tratamiento, hasta_cuando: med.hasta_cuando, tiempo_restriccion: med.tiempo_restriccion }) ? ` · ${restrictionUntilLabel({ fecha: t.fecha_tratamiento, hora: t.hora_tratamiento, hasta_cuando: med.hasta_cuando, tiempo_restriccion: med.tiempo_restriccion })}` : ''}
                                       </div>
                                     )}
                                   </div>
@@ -808,6 +814,11 @@ export default async function HorseDetailPage({
                                       <div style={{ color: PALETTE.text.secondary }}>
                                         {med.dosis} {med.dosis_unidad || 'mg'}{med.nivel_dosificacion ? ` · ${med.nivel_dosificacion}` : ''}
                                       </div>
+                                      {courseLabel(t.fecha_tratamiento, med.hasta_cuando) && (
+                                        <div style={{ color: PALETTE.primary.green, fontSize: '0.75rem', fontWeight: 600 }}>
+                                          {courseLabel(t.fecha_tratamiento, med.hasta_cuando)}
+                                        </div>
+                                      )}
                                       {med.created_at && (
                                         <div style={{ color: PALETTE.text.secondary, fontSize: '0.7rem' }}>
                                           {new Date(med.created_at).toLocaleString('es-ES')}
@@ -815,7 +826,7 @@ export default async function HorseDetailPage({
                                       )}
                                       {med.drug?.tipo_restriccion && (
                                         <div style={{ color: '#f97316', fontSize: '0.75rem' }}>
-                                          Restricción: {med.drug.tipo_restriccion}{med.tiempo_restriccion ? ` · ${med.tiempo_restriccion}h` : ''}
+                                          Restricción: {med.drug.tipo_restriccion}{med.tiempo_restriccion ? ` · ${med.tiempo_restriccion}h` : ''}{med.hasta_cuando && restrictionUntilLabel({ fecha: t.fecha_tratamiento, hora: t.hora_tratamiento, hasta_cuando: med.hasta_cuando, tiempo_restriccion: med.tiempo_restriccion }) ? ` · ${restrictionUntilLabel({ fecha: t.fecha_tratamiento, hora: t.hora_tratamiento, hasta_cuando: med.hasta_cuando, tiempo_restriccion: med.tiempo_restriccion })}` : ''}
                                         </div>
                                       )}
                                     </div>
