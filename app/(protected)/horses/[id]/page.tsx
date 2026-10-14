@@ -282,7 +282,7 @@ export default async function HorseDetailPage({
       />
 
       {/* Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-5">
+      <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-5" style={{ height: 'calc(100vh - 250px)' }}>
 
         {/* Left panel */}
         <div className="space-y-4">
@@ -483,8 +483,8 @@ export default async function HorseDetailPage({
         </div>
 
         {/* Timeline */}
-        <div className="rounded-lg p-6" style={{ background: PALETTE.background.white, border: `1px solid ${PALETTE.ui.border}` }}>
-          <div className="flex items-center justify-between mb-6">
+        <div className="rounded-lg p-6 flex flex-col overflow-hidden" style={{ background: PALETTE.background.white, border: `1px solid ${PALETTE.ui.border}` }}>
+          <div className="flex items-center justify-between mb-6 flex-shrink-0">
             <h2 className="text-base font-semibold" style={{ color: PALETTE.text.dark }}>Historial Médico</h2>
             <div className="flex gap-1">
               {[['desc', 'Más reciente'], ['asc', 'Más antiguo']].map(([val, label]) => (
@@ -499,6 +499,7 @@ export default async function HorseDetailPage({
             </div>
           </div>
 
+          <div className="flex-1 overflow-y-auto">
           {medications.length === 0 && treatmentReports.length === 0 && pmfReports.length === 0 && diagnosticos.length === 0 && vaccinations.length === 0 ? (
             <div className="text-center py-14">
               <div className="text-base font-semibold mb-1" style={{ color: PALETTE.text.primary }}>Sin registros médicos</div>
@@ -938,6 +939,7 @@ export default async function HorseDetailPage({
               })()}
             </div>
           )}
+          </div>
         </div>
 
       </div>
