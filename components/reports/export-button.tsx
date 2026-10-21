@@ -2,7 +2,6 @@
 import { Button } from '@/components/ui/button'
 import { PALETTE } from '@/lib/palette'
 import * as XLSX from 'xlsx'
-import { restrictionUntilLabel } from '@/lib/treatment-course'
 
 interface ExportButtonProps {
   data: any[]
@@ -24,14 +23,7 @@ export default function ExportButton({ data, filename, disabled = false }: Expor
       Restricción: row.drugs?.tipo_restriccion || '—',
       Veterinario: row.vet_autorizado_nombre || '—',
       Fecha: row.fecha_tratamiento || '—',
-      'Hasta cuándo': row.hasta_cuando || '—',
       'Retiro (horas)': row.tiempo_restriccion || '—',
-      'Fin de restricción': restrictionUntilLabel({
-        fecha: row.fecha_tratamiento,
-        hora: row.hora_tratamiento,
-        hasta_cuando: row.hasta_cuando,
-        tiempo_restriccion: row.tiempo_restriccion,
-      })?.replace('hasta ', '') || '—',
     }))
 
     // Crear workbook y worksheet

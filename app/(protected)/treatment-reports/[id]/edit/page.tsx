@@ -15,8 +15,6 @@ interface MedicationRow {
   dosis_unidad: string
   nivel_dosificacion: string
   selectedCategoria: string
-  frecuencia: 'unica' | 'diaria'
-  hasta_cuando: string
 }
 
 export default async function EditTreatmentReportPage({
@@ -70,8 +68,6 @@ export default async function EditTreatmentReportPage({
       dosis_unidad: med.dosis_unidad ?? 'mg',
       nivel_dosificacion: med.nivel_dosificacion ?? '',
       selectedCategoria: drug?.categoria ?? '',
-      frecuencia: med.hasta_cuando ? 'diaria' : 'unica',
-      hasta_cuando: med.hasta_cuando ?? '',
     }
   })
 

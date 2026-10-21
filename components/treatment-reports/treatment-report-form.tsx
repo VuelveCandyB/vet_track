@@ -11,7 +11,6 @@ import { Globe } from '@phosphor-icons/react'
 import ItemCodesSelect from './item-codes-select'
 import { TreatmentReportFormSkeleton } from './treatment-report-form-skeleton'
 import { PALETTE } from '@/lib/palette'
-import { MAX_COURSE_DAYS, addDays, courseDays, formatCourseRange, formatDaysLabel, validateCourse } from '@/lib/treatment-course'
 import type { Horse, Drug } from '@/lib/types'
 import type { CatalogItem } from './item-codes-select'
 
@@ -94,8 +93,6 @@ interface MedicationRow {
   dosis_unidad: string
   nivel_dosificacion: string
   selectedCategoria: string
-  frecuencia: 'unica' | 'diaria'
-  hasta_cuando: string
 }
 
 interface TreatmentReportFormProps {
@@ -131,8 +128,6 @@ const makeEmptyRow = (): MedicationRow => ({
   dosis_unidad: 'mg',
   nivel_dosificacion: '',
   selectedCategoria: '',
-  frecuencia: 'unica',
-  hasta_cuando: '',
 })
 
 export default function TreatmentReportForm({
@@ -227,17 +222,6 @@ export default function TreatmentReportForm({
         setError(`Fila ${i + 1}: Debe ingresar la dosis`)
         return
       }
-      if (row.frecuencia === 'diaria') {
-        if (!row.hasta_cuando) {
-          setError(`Fila ${i + 1}: Debe indicar hasta cuándo se administra`)
-          return
-        }
-        const rangeError = validateCourse(fechaTratamiento, row.hasta_cuando)
-        if (rangeError) {
-          setError(`Fila ${i + 1}: ${rangeError}`)
-          return
-        }
-      }
     }
 
     if (mode === 'create') {
@@ -253,7 +237,7 @@ export default function TreatmentReportForm({
           dosis_unidad: row.dosis_unidad || 'mg',
           nivel_dosificacion: row.nivel_dosificacion || null,
           tiempo_restriccion: drug?.withdrawal_time_horas || null,
-          hasta_cuando: row.frecuencia === 'diaria' && row.hasta_cuando ? row.hasta_cuando : null,
+          hasta_cuando: null,
         }
       })
 
@@ -272,7 +256,7 @@ export default function TreatmentReportForm({
           dosis_unidad: row.dosis_unidad || 'mg',
           nivel_dosificacion: row.nivel_dosificacion || null,
           tiempo_restriccion: drug?.withdrawal_time_horas || null,
-          hasta_cuando: row.frecuencia === 'diaria' && row.hasta_cuando ? row.hasta_cuando : null,
+          hasta_cuando: null,
         }
       })
 
@@ -555,60 +539,6 @@ export default function TreatmentReportForm({
                     disabled={pending}
                     className="mt-1"
                   />
-                </div>
-
-                <div className="md:col-span-2">
-                  <Label style={{ color: PALETTE.text.primary }}>Frecuencia *</Label>
-                  <div
-                    role="group"
-                    aria-label="Frecuencia de administración"
-                    className="mt-1 flex w-fit overflow-hidden rounded-md"
-                    style={{ border: `1px solid ${PALETTE.ui.border}` }}
-                  >
-                    {([['unica', 'Dosis única'], ['diaria', 'Diaria']] as const).map(([val, label]) => {
-                      const active = row.frecuencia === val
-                      return (
-                        <button
-                          key={val}
-                          type="button"
-                          aria-pressed={active}
-                          disabled={pending}
-                          onClick={() => updateRow(idx, val === 'unica' ? { frecuencia: val, hasta_cuando: '' } : { frecuencia: val })}
-                          className="h-9 px-4 text-sm font-medium transition-colors"
-                          style={{
-                            background: active ? PALETTE.primary.green : '#FFFFFF',
-                            color: active ? '#FFFFFF' : PALETTE.text.primary,
-                            cursor: pending ? 'not-allowed' : 'pointer',
-                          }}
-                        >
-                          {label}
-                        </button>
-                      )
-                    })}
-                  </div>
-
-                  {row.frecuencia === 'diaria' && (
-                    <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
-                      <div>
-                        <Label style={{ color: PALETTE.text.primary }}>Hasta cuándo *</Label>
-                        <Input
-                          type="date"
-                          value={row.hasta_cuando}
-                          onChange={(e) => updateRow(idx, { hasta_cuando: e.target.value })}
-                          min={fechaTratamiento}
-                          max={fechaTratamiento ? addDays(fechaTratamiento, MAX_COURSE_DAYS - 1) : undefined}
-                          required
-                          disabled={pending}
-                          className="mt-1"
-                        />
-                      </div>
-                      <p className="text-xs md:self-end md:pb-2" style={{ color: PALETTE.text.secondary }}>
-                        {row.hasta_cuando && fechaTratamiento && !validateCourse(fechaTratamiento, row.hasta_cuando)
-                          ? `1 dosis diaria a las ${horaTratamiento}, del ${formatCourseRange(fechaTratamiento, row.hasta_cuando)} (${formatDaysLabel(courseDays(fechaTratamiento, row.hasta_cuando))}).`
-                          : `Una dosis cada día, desde la fecha de tratamiento hasta este día (máximo ${MAX_COURSE_DAYS} días).`}
-                      </p>
-                    </div>
-                  )}
                 </div>
               </div>
 

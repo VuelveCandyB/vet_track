@@ -1,25 +1,172 @@
-# Implementación: Art. 811d — Tratamientos de dosificación diaria
+# Implementación: Art. 811d — Duración + Replicación Diaria
 
-## Diseño actual
+## ✅ Completado
 
-Un tratamiento de varios días es **un solo informe**. Cada medicamento indica su frecuencia:
+### 1. **Cambios en la base de datos**
+Archivo: `supabase_migrations/add_tratamiento_duracion.sql`
 
-- **Dosis única** (por defecto): comportamiento de siempre.
-- **Diaria**: aparece el campo "Hasta cuándo" (`treatment_report_medications.hasta_cuando`). Se asume una dosis por día, a la hora del informe, desde `fecha_tratamiento` hasta `hasta_cuando` inclusive. No se registra cada dosis.
+Nuevos campos en tabla `treatment_reports`:
+- `hasta_cuando (DATE)` — Hasta cuándo durará el medicamento
+- `es_auto_generado (BOOLEAN)` — Si fue generado automáticamente
+- `informe_padre_id (UUID)` — Referencia al informe original
 
-Reglas:
-- `hasta_cuando` >= `fecha_tratamiento` y como máximo 30 días en total (`MAX_COURSE_DAYS` en `lib/treatment-course.ts`). Se valida en el formulario y en el servidor (`lib/actions/treatment-reports.ts`).
-- Si `hasta_cuando` coincide con el día de inicio se guarda `null` (dosis única).
-- Los días se calculan al leer (`courseDays`, `courseDates`); no se guardan filas por día ni se generan copias.
-- El fin de la restricción se cuenta desde la **última dosis**: `restrictionEnd()` = (`hasta_cuando` o `fecha_tratamiento`) + hora + `tiempo_restriccion` horas.
+Tabla auxiliar: `treatment_reports_replication_log`
 
-Dónde se ve: formulario (selector Frecuencia), detalle del informe, lista de informes, ficha del caballo (una sola tarjeta por curso), revisiones, reporte de medicamentos (pantalla y Excel) y PDF.
+**Acción requerida:** Ejecutar la migración en Supabase
+```bash
+# Copiar el contenido de supabase_migrations/add_tratamiento_duracion.sql
+# y ejecutarlo en la consola SQL de Supabase
+```
 
-## Replicación diaria retirada
+### 2. **Cambios en el formulario**
+Archivo: `components/treatment-reports/treatment-report-form.tsx`
 
-El diseño anterior copiaba el informe cada día con un cron (`replicateDailyTreatmentReports` y `/api/cron/replicate-daily-reports`). Nunca se ejecutó en producción (0 informes auto-generados) y habría clonado todos los borradores indefinidamente, por lo que se eliminó. Las columnas `es_auto_generado`, `informe_padre_id` y la tabla `treatment_reports_replication_log` siguen en la base sin uso.
+Nueva sección: "Duración del Tratamiento (Art. 811d)"
+- Campo obligatorio: "Hasta cuándo durará el medicamento"
+- Helper text explica la replicación automática
+- Validación: `hasta_cuando >= fecha_tratamiento`
 
-## Pendiente
+### 3. **Lógica de replicación**
+Archivo: `lib/actions/treatment-reports.ts`
 
-- Confirmar con el reglamento si se exige un documento separado por día. De ser así, el PDF podría imprimir una página por fecha del rango (`courseDates`) desde el mismo registro.
-- Registro de dosis administradas por día y recordatorios (fuera de alcance por ahora).
+Nueva acción: `replicateDailyTreatmentReports()`
+- Busca informes "borrador" con `hasta_cuando >= hoy`
+- Verifica que no exista informe para hoy
+- Crea copia automática con:
+  - `es_auto_generado = true`
+  - `informe_padre_id = id del original`
+  - Estado = "sometido" (auto-generado sale ya sometido)
+
+### 4. **Endpoint para cron job**
+Archivo: `app/api/cron/replicate-daily-reports/route.ts`
+
+Endpoint: `POST /api/cron/replicate-daily-reports`
+Requiere: Header `Authorization: Bearer <CRON_SECRET>`
+
+Respuesta:
+```json
+{
+  "success": true,
+  "message": "Replicados X informes de tratamiento",
+  "replicated": X,
+  "timestamp": "2026-02-23T12:00:00Z"
+}
+```
+
+### 5. **Actualización de vistas**
+- **Tabla de informes:** Columna nueva "Hasta cuándo" + badge "⚙️ auto"
+- **Página de detalle:** Sección "Duración del Tratamiento" + indicador de auto-generación
+
+---
+
+## 🔧 Configuración del Cron Job
+
+### Opción 1: Vercel Cron (Recomendado)
+Archivo: `vercel.json`
+```json
+{
+  "crons": [{
+    "path": "/api/cron/replicate-daily-reports",
+    "schedule": "0 0 * * *"
+  }]
+}
+```
+
+### Opción 2: External Cron (ej: EasyCron, AWS EventBridge)
+```
+URL: https://tu-domain.com/api/cron/replicate-daily-reports
+Method: POST
+Headers: Authorization: Bearer <CRON_SECRET>
+Schedule: Diariamente a las 00:00 UTC
+```
+
+### Configurar variable de entorno
+Archivo: `.env.local`
+```
+CRON_SECRET=your-secure-random-secret-here
+```
+
+---
+
+## 📋 Flujo Completo (Art. 811d)
+
+### Día 1 (Lunes)
+```
+1. Vet Autorizado crea informe
+   - Medicamento: Phenylbutazone
+   - Fecha: 24/02/2025
+   - Hasta cuándo: 28/02/2025
+   - Estado: borrador
+   
+2. Vet somete: estado = "sometido"
+```
+
+### Día 2-5 (Martes-Viernes) — AUTOMÁTICO
+```
+Cron job (medianoche):
+1. Busca informes "borrador" con hasta_cuando >= hoy
+2. Verifica: ¿existe informe para 25/02 para Phenylbutazone + caballo X?
+   → NO existe
+3. Crea copia automática:
+   - Fecha: 25/02/2025
+   - Hasta cuándo: 28/02/2025
+   - es_auto_generado: true
+   - informe_padre_id: <ID del informe del lunes>
+   - Estado: sometido (sale ya sometido)
+
+4. Se repite para 26/02, 27/02, 28/02
+```
+
+### Resultado
+Secretaría ve 5 informes en la tabla:
+```
+24/02 - Phenylbutazone - Hasta 28/02 - Sometido (manual)
+25/02 - Phenylbutazone - Hasta 28/02 - Sometido (⚙️ auto)
+26/02 - Phenylbutazone - Hasta 28/02 - Sometido (⚙️ auto)
+27/02 - Phenylbutazone - Hasta 28/02 - Sometido (⚙️ auto)
+28/02 - Phenylbutazone - Hasta 28/02 - Sometido (⚙️ auto)
+```
+
+---
+
+## ✨ Ventajas
+
+✅ **Cumplimiento regulatorio:** Art. 811d implementado completamente
+✅ **Automatización:** Vet Autorizado no necesita acordarse de someter diariamente
+✅ **Auditoría:** Registro completo de cada día administrado
+✅ **Transparencia:** Secretaría ve todo el historial
+✅ **Escalabilidad:** Funciona para múltiples medicamentos y caballos
+
+---
+
+## 🚀 Testing
+
+### Manual
+```bash
+# 1. Crear informe en /treatment-reports/new
+#    - Hasta cuándo: mañana
+#    - Someter
+
+# 2. Llamar endpoint manualmente
+curl -X POST http://localhost:3000/api/cron/replicate-daily-reports \
+  -H "Authorization: Bearer <CRON_SECRET>"
+
+# 3. Verificar que se creó nuevo informe en /treatment-reports
+#    - Estado: submitido
+#    - es_auto_generado: true
+```
+
+### Verificar logs
+Endpoint retorna:
+```json
+{ "replicated": 1, "timestamp": "..." }
+```
+
+---
+
+## 📝 Notas
+
+- Los informes auto-generados salen ya en estado "sometido" (no "borrador")
+- El campo `informe_padre_id` permite rastrear el linaje
+- La replicación ocurre en medianoche UTC
+- Si un informe se radica antes de hasta_cuando, la replicación se detiene automáticamente

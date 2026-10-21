@@ -1,7 +1,6 @@
 'use client'
 import { useState } from 'react'
 import { PALETTE } from '@/lib/palette'
-import { courseDays, formatDaysLabel } from '@/lib/treatment-course'
 import ReviewMedicationButton from './review-medication-button'
 
 interface MedicationRow {
@@ -10,7 +9,6 @@ interface MedicationRow {
   dosis: number
   dosis_unidad: string
   tiempo_restriccion?: number | null
-  hasta_cuando?: string | null
   drug?: { id: string; nombre: string; withdrawal_time_dias?: number }
 }
 
@@ -134,13 +132,8 @@ export default function RevisionesTree({ groups, tab, technicianMap, canReview }
                         <div className="text-sm truncate" style={{ color: PALETTE.text.secondary }}>
                           {med.drug?.nombre ?? '—'}
                         </div>
-                        <div className="text-sm" style={{ color: PALETTE.text.secondary }}>
-                          <div className="truncate">{med.dosis ? `${med.dosis} ${med.dosis_unidad || 'mg'}` : '—'}</div>
-                          {med.hasta_cuando && courseDays(treatment.fecha_tratamiento, med.hasta_cuando) > 1 && (
-                            <div className="text-xs" style={{ color: PALETTE.primary.green }}>
-                              Diaria, {formatDaysLabel(courseDays(treatment.fecha_tratamiento, med.hasta_cuando))}
-                            </div>
-                          )}
+                        <div className="text-sm truncate" style={{ color: PALETTE.text.secondary }}>
+                          {med.dosis ? `${med.dosis} ${med.dosis_unidad || 'mg'}` : '—'}
                         </div>
                         <div className="text-sm" style={{ color: PALETTE.text.secondary }}>
                           {med.tiempo_restriccion ? (
