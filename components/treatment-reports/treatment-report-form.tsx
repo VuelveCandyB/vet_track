@@ -534,16 +534,6 @@ export default function TreatmentReportForm({
                   </select>
                 </div>
 
-                <div>
-                  <Label style={{ color: PALETTE.text.primary }}>Nivel de Dosificación</Label>
-                  <Input
-                    value={row.nivel_dosificacion}
-                    onChange={(e) => updateRow(idx, { nivel_dosificacion: e.target.value })}
-                    placeholder="Ej: Terapéutico, Profiláctico, etc."
-                    disabled={pending}
-                    className="mt-1"
-                  />
-                </div>
               </div>
 
               {selectedDrug && (
