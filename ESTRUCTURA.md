@@ -76,7 +76,7 @@ vet_next/
 │   │   ├── medications.ts               # createMedication, deleteMedication
 │   │   ├── vetlist.ts                   # createVetlistEntry, releaseVetlistEntry
 │   │   ├── euthanasia.ts                # createEuthanasia (role-gated)
-│   │   ├── vaccinations.ts              # createVaccination
+│   │   ├── vaccinations.ts              # createVaccinations (varias vacunas por envío)
 │   │   ├── horses.ts                    # createHorse
 │   │   ├── horse-import.ts              # parseHorseExcel, matchHorseRows, commitHorseImport
 │   │   └── admin.ts                     # CRUD catalog, drugs, users, roles

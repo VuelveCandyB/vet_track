@@ -18,6 +18,18 @@ export async function getVetName(supabase: any, user: any): Promise<string> {
   return user.email
 }
 
+// Nombre del propio usuario (ignora active_vet_id). Usado para firmar vacunaciones.
+export async function getUserFullName(supabase: any, user: any): Promise<string> {
+  try {
+    const { data: profile } = await supabase.from('profiles').select('first_name, last_name').eq('id', user.id).single()
+    if (profile) {
+      const full = `${profile.first_name ?? ''} ${profile.last_name ?? ''}`.trim()
+      if (full) return full
+    }
+  } catch {}
+  return user.email
+}
+
 export async function getCreatedForVetId(supabase: any, user: any): Promise<string> {
   try {
     const { data: profile } = await supabase.from('profiles').select('active_vet_id').eq('id', user.id).single()

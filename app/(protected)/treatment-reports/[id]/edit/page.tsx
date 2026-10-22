@@ -26,11 +26,12 @@ export default async function EditTreatmentReportPage({
   const { id } = await params
   const supabase = await createClient()
 
-  const [reportRes, { data: horses }, { data: drugs }, { data: itemCodes }, { data: selectedCodes }, { data: medications }, vetName] = await Promise.all([
+  const [reportRes, { data: horses }, { data: drugs }, { data: itemCodes }, { data: doseUnits }, { data: selectedCodes }, { data: medications }, vetName] = await Promise.all([
     supabase.from('treatment_reports').select('*, created_by').eq('id', id).single(),
     supabase.from('horses').select('id, name, color, status, microchip, birth_date, gender, red_flag').order('name').limit(5000),
     supabase.from('drugs').select('*').eq('active', true).order('nombre'),
     supabase.from('catalog_items').select('id, name').eq('category', 'item_code').eq('active', true).order('name'),
+    supabase.from('catalog_items').select('id, name').eq('category', 'dose').eq('active', true).order('sort_order'),
     supabase.from('treatment_report_item_codes').select('catalog_item_id').eq('treatment_report_id', id),
     supabase.from('treatment_report_medications').select('*').eq('treatment_report_id', id),
     getVetName(supabase, user),
@@ -111,6 +112,7 @@ export default async function EditTreatmentReportPage({
           horses={typedHorses}
           drugs={typedDrugs}
           vetName={vetName}
+          doseUnits={(doseUnits ?? []) as { id: string; name: string }[]}
           itemCodes={typedItemCodes}
           initialSelectedItemCodeIds={selectedItemCodeIds}
           initialMedications={initialMedications}

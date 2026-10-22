@@ -2,7 +2,7 @@
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { requireUser, can } from '@/lib/auth'
-import { getVetName } from './shared'
+import { getUserFullName } from './shared'
 import { logActivity } from './activity-log'
 
 export async function getVaccinationPdfUrl(vaccinationId: string, pdfPath: string) {
@@ -27,7 +27,9 @@ export async function getVaccinationPdfUrl(vaccinationId: string, pdfPath: strin
   return data.signedUrl
 }
 
-async function sendVaccinationEmail(supabase: any, horseName: string, fecha: string, vaccineName: string, microchip: string | null | undefined) {
+type SentVaccination = { fecha: string; vaccineName: string; serial: string | null }
+
+async function sendVaccinationEmail(supabase: any, horseName: string, items: SentVaccination[], microchip: string | null | undefined) {
   try {
     const { data: recipients } = await supabase
       .from('profiles')
@@ -45,6 +47,12 @@ async function sendVaccinationEmail(supabase: any, horseName: string, fecha: str
 
     if (!emails.length) return
 
+    const subject = items.length === 1
+      ? `VetTrack - Vacunación registrada: ${horseName} (${items[0].vaccineName})`
+      : `VetTrack - ${items.length} vacunaciones registradas: ${horseName}`
+
+    const rows = items.map(i => `<li><strong>${i.vaccineName}</strong> - ${i.fecha}${i.serial ? ` (#Ser ${i.serial})` : ''}</li>`).join('')
+
     const url = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/resend-email`
     await fetch(url, {
       method: 'POST',
@@ -54,13 +62,12 @@ async function sendVaccinationEmail(supabase: any, horseName: string, fecha: str
       },
       body: JSON.stringify({
         to: emails,
-        subject: `VetTrack - Vacunación registrada: ${horseName} (${vaccineName})`,
+        subject,
         html: `
-          <h2>Nueva vacunación registrada</h2>
+          <h2>${items.length === 1 ? 'Nueva vacunación registrada' : 'Nuevas vacunaciones registradas'}</h2>
           <p><strong>Caballo:</strong> ${horseName}</p>
-          <p><strong>Vacuna:</strong> ${vaccineName}</p>
-          <p><strong>Fecha de vacunación:</strong> ${fecha}</p>
           <p><strong>Microchip:</strong> ${microchip || 'N/A'}</p>
+          <ul>${rows}</ul>
         `,
       }),
     })
@@ -69,45 +76,72 @@ async function sendVaccinationEmail(supabase: any, horseName: string, fecha: str
   }
 }
 
-export async function createVaccination(horseId: string, formData: FormData) {
+export async function createVaccinations(horseId: string, formData: FormData) {
   const user = await requireUser()
   const allowed = await can(user, 'horses.vaccination_modal', 'full')
   if (!allowed) throw new Error('Acceso denegado')
   const supabase = await createClient()
-  const vetName = await getVetName(supabase, user)
+  const vetName = await getUserFullName(supabase, user)
   const fecha = formData.get('fecha') as string
-  const vaccineTypeId = formData.get('vaccine_type_id') as string
   const pdfFile = formData.get('pdf') as File | null
 
-  if (!vaccineTypeId) throw new Error('Tipo de vacuna requerido')
+  if (!fecha || isNaN(new Date(fecha).getTime())) throw new Error('Fecha de vacunación inválida')
 
-  // Fetch vaccine type to get validity_days and name
-  const { data: vaccineType, error: vaccineError } = await supabase
+  // Parse the rows sent by the modal
+  let rows: { vaccine_type_id: string; serial_number?: string; notas?: string; fecha_override?: string }[]
+  try {
+    rows = JSON.parse((formData.get('vaccinations') as string) || '[]')
+  } catch {
+    throw new Error('Datos de vacunas inválidos')
+  }
+  if (!Array.isArray(rows) || rows.length === 0) throw new Error('Agrega al menos una vacuna')
+
+  const typeIds = rows.map(r => r.vaccine_type_id)
+  if (typeIds.some(id => !id)) throw new Error('Tipo de vacuna requerido')
+  if (new Set(typeIds).size !== typeIds.length) throw new Error('No puedes repetir la misma vacuna en un mismo registro')
+
+  for (const r of rows) {
+    if (r.serial_number && !/^[A-Za-z0-9]{0,10}$/.test(r.serial_number)) {
+      throw new Error('El #Ser debe tener máximo 10 caracteres alfanuméricos')
+    }
+    if (r.fecha_override && isNaN(new Date(r.fecha_override).getTime())) {
+      throw new Error('Fecha de vacunación inválida')
+    }
+  }
+
+  // Fetch all vaccine types in one query
+  const { data: vaccineTypes, error: vaccineError } = await supabase
     .from('vaccine_types')
-    .select('name, validity_days')
-    .eq('id', vaccineTypeId)
-    .single()
+    .select('id, name, validity_days')
+    .in('id', typeIds)
 
-  if (vaccineError || !vaccineType) throw new Error('Tipo de vacuna no encontrado')
+  if (vaccineError) throw vaccineError
+  const typeById = new Map((vaccineTypes ?? []).map(v => [v.id, v]))
+  if (typeIds.some(id => !typeById.has(id))) throw new Error('Tipo de vacuna no encontrado')
 
-  // Check if this specific vaccine has been given recently (per-vaccine blocking)
-  const { data: lastVaccination } = await supabase
-    .from('vaccinations')
-    .select('fecha')
-    .eq('horse_id', horseId)
-    .eq('vaccine_type_id', vaccineTypeId)
-    .order('fecha', { ascending: false })
-    .limit(1)
-    .maybeSingle()
+  // Validate every row BEFORE writing anything (todo o nada)
+  for (const r of rows) {
+    const vt = typeById.get(r.vaccine_type_id)!
+    const fechaRow = r.fecha_override || fecha
 
-  if (lastVaccination) {
-    const last = new Date(lastVaccination.fecha)
-    const next = new Date(last)
-    next.setDate(next.getDate() + vaccineType.validity_days)
-    if (new Date(fecha) < next) {
-      throw new Error(
-        `Ya existe un registro de "${vaccineType.name}" el ${lastVaccination.fecha}. La próxima aplicación no puede registrarse antes del ${next.toISOString().split('T')[0]}.`
-      )
+    const { data: lastVaccination } = await supabase
+      .from('vaccinations')
+      .select('fecha')
+      .eq('horse_id', horseId)
+      .eq('vaccine_type_id', r.vaccine_type_id)
+      .order('fecha', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    if (lastVaccination) {
+      const last = new Date(lastVaccination.fecha)
+      const next = new Date(last)
+      next.setDate(next.getDate() + vt.validity_days)
+      if (new Date(fechaRow) < next) {
+        throw new Error(
+          `Ya existe un registro de "${vt.name}" el ${lastVaccination.fecha}. La próxima aplicación no puede registrarse antes del ${next.toISOString().split('T')[0]}.`
+        )
+      }
     }
   }
 
@@ -117,11 +151,10 @@ export async function createVaccination(horseId: string, formData: FormData) {
     .eq('id', horseId)
     .single()
 
-  // Handle PDF upload if provided
-  let pdfPath = null
-  let pdfName = null
+  // Upload the shared PDF once
+  let pdfPath: string | null = null
+  let pdfName: string | null = null
   if (pdfFile && pdfFile.size > 0) {
-    // Validate PDF file
     if (pdfFile.type !== 'application/pdf') {
       throw new Error('El archivo debe ser un PDF válido')
     }
@@ -129,7 +162,6 @@ export async function createVaccination(horseId: string, formData: FormData) {
       throw new Error('El PDF no debe superar 5MB')
     }
 
-    // Upload to Supabase Storage
     const fileName = `${horseId}/${Date.now()}-${pdfFile.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`
     const arrayBuffer = await pdfFile.arrayBuffer()
     const { data, error: uploadError } = await supabase.storage
@@ -144,31 +176,47 @@ export async function createVaccination(horseId: string, formData: FormData) {
     pdfName = pdfFile.name
   }
 
-  const { data: vaccination, error } = await supabase.from('vaccinations').insert({
-    horse_id:       horseId,
-    vaccine_type_id: vaccineTypeId,
-    vet_name:       vetName,
-    fecha,
-    notas:          (formData.get('notas') as string) || null,
-    serial_number:  (formData.get('serial_number') as string) || null,
-    pdf_path:       pdfPath,
-    pdf_name:       pdfName,
-    created_by:     user.id,
-  }).select('id').single()
+  // One insert for all rows
+  const payload = rows.map(r => ({
+    horse_id:        horseId,
+    vaccine_type_id: r.vaccine_type_id,
+    vet_name:        vetName,
+    fecha:           r.fecha_override || fecha,
+    notas:           r.notas || null,
+    serial_number:   r.serial_number || null,
+    pdf_path:        pdfPath,
+    pdf_name:        pdfName,
+    created_by:      user.id,
+  }))
 
-  if (error) throw error
+  const { data: inserted, error } = await supabase
+    .from('vaccinations')
+    .insert(payload)
+    .select('id, vaccine_type_id, fecha')
 
-  sendVaccinationEmail(supabase, horse?.name ?? 'Caballo', fecha, vaccineType.name, horse?.microchip)
+  if (error) {
+    if (pdfPath) await supabase.storage.from('vaccinations').remove([pdfPath])
+    throw error
+  }
 
-  // Log activity
-  await logActivity({
-    user,
-    action: 'vaccination.create',
-    entityType: 'vaccination',
-    entityId: vaccination?.id,
-    horseId,
-    description: `Registró vacunación: ${vaccineType.name} el ${fecha}`,
-  })
+  const sent: SentVaccination[] = (inserted ?? []).map(v => ({
+    fecha: v.fecha,
+    vaccineName: typeById.get(v.vaccine_type_id)?.name ?? '',
+    serial: rows.find(r => r.vaccine_type_id === v.vaccine_type_id)?.serial_number || null,
+  }))
+
+  sendVaccinationEmail(supabase, horse?.name ?? 'Caballo', sent, horse?.microchip)
+
+  for (const v of inserted ?? []) {
+    await logActivity({
+      user,
+      action: 'vaccination.create',
+      entityType: 'vaccination',
+      entityId: v.id,
+      horseId,
+      description: `Registró vacunación: ${typeById.get(v.vaccine_type_id)?.name} el ${v.fecha}`,
+    })
+  }
 
   revalidatePath(`/horses/${horseId}`)
 }

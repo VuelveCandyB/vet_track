@@ -267,7 +267,11 @@ export default function TreatmentReportForm({
           if (defaultValues?.id) {
             await updateAction(defaultValues.id, formData)
             formRef.current?.reset()
-            onSuccess?.()
+            if (onSuccess) {
+              onSuccess()
+            } else if (defaultValues.horse_id) {
+              router.push(`/horses/${defaultValues.horse_id}`)
+            }
           }
         } catch (err) {
           alert(`Error: ${err instanceof Error ? err.message : 'Unknown error'}`)
