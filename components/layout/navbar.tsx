@@ -127,7 +127,7 @@ export default function Navbar({ user, isAdmin, isOfficialVet, vetName, canAcces
           </div>
           <button onClick={() => setMenuOpen(!menuOpen)}
             className="p-2 rounded-md transition-colors cursor-pointer"
-            style={{ color: '#9ca3af' }}
+            style={{ color: '#FFFFFF' }}
             aria-label="Menú">
             {menuOpen ? (
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -148,7 +148,7 @@ export default function Navbar({ user, isAdmin, isOfficialVet, vetName, canAcces
         style={{
           maxHeight: menuOpen ? '400px' : '0px',
           opacity: menuOpen ? 1 : 0,
-          borderTop: menuOpen ? '1px solid #252d4a' : 'none',
+          borderTop: menuOpen ? '1px solid #FFFFFF40' : 'none',
         }}
       >
         <div className="px-4 pb-4 space-y-1">
@@ -157,8 +157,8 @@ export default function Navbar({ user, isAdmin, isOfficialVet, vetName, canAcces
               onClick={() => setMenuOpen(false)}
               className="flex items-center justify-between px-4 py-3 rounded-lg text-sm font-medium transition-colors hover:bg-white/5"
               style={isActive(href)
-                ? { background: '#2B55F420', color: '#fff', borderLeft: '3px solid #C8F135' }
-                : { color: '#9ca3af' }}>
+                ? { background: '#FFFFFF26', color: '#FFFFFF', borderLeft: '3px solid #C8F135' }
+                : { color: '#FFFFFF' }}>
               {label}
               {badge !== undefined && badge > 0 && (
                 <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold" style={{ background: '#dc2626', color: '#fff' }}>
@@ -175,15 +175,15 @@ export default function Navbar({ user, isAdmin, isOfficialVet, vetName, canAcces
               }} />
             </div>
           )}
-          <div className="pt-2 mt-2" style={{ borderTop: '1px solid #1e2235' }}>
-            <div className="px-4 py-2 text-xs" style={{ color: '#4a5280' }}>{user.email} · {userRole}</div>
+          <div className="pt-2 mt-2" style={{ borderTop: '1px solid #FFFFFF40' }}>
+            <div className="px-4 py-2 text-xs" style={{ color: '#FFFFFF' }}>{user.email} · {userRole}</div>
             {isTechnician && activeVetName && (
-              <div className="px-4 py-2 text-xs font-medium" style={{ color: '#059669' }}>
+              <div className="px-4 py-2 text-xs font-medium" style={{ color: '#FFFFFF' }}>
                 Trabajando con: {activeVetName}
                 {showVetSwitcher && (
                   <Link href="/seleccionar-medico" onClick={() => setMenuOpen(false)}
                     className="block mt-1 text-[11px] transition-colors cursor-pointer"
-                    style={{ color: '#059669', textDecoration: 'underline' }}>
+                    style={{ color: '#FFFFFF', textDecoration: 'underline' }}>
                     Cambiar médico
                   </Link>
                 )}
@@ -192,13 +192,12 @@ export default function Navbar({ user, isAdmin, isOfficialVet, vetName, canAcces
             {!isVaccinator && (
               <Link href="/perfil" onClick={() => setMenuOpen(false)}
                 className="flex items-center px-4 py-3 rounded-lg text-sm transition-colors"
-                style={{ color: '#9ca3af' }}>
+                style={{ color: '#FFFFFF' }}>
                 Mi perfil
               </Link>
             )}
             <button onClick={handleLogout}
-              className="w-full text-left px-4 py-3 rounded-lg text-sm transition-colors cursor-pointer"
-              style={{ color: '#f87171' }}>
+              className="ml-4 mt-3 inline-flex cursor-pointer items-center justify-center rounded-lg border border-white/40 px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-white/10 active:scale-[0.98]">
               Cerrar sesión
             </button>
           </div>
