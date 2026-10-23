@@ -17,7 +17,7 @@ interface Props {
 }
 
 function vaccineStatus(vt: VaccineType, lastVac: Vaccination | undefined) {
-  if (!lastVac) return { label: 'Nunca aplicada', color: PALETTE.text.secondary }
+  if (!lastVac) return { label: 'No aplicada', color: PALETTE.text.secondary }
 
   const vencDate = new Date(new Date(lastVac.fecha).getTime() + vt.validity_days * 24 * 60 * 60 * 1000)
   const daysUntilExpiry = Math.floor((vencDate.getTime() - Date.now()) / (24 * 60 * 60 * 1000))

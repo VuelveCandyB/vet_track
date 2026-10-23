@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/medication-summary",
       "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/cron/vaccination-summary",
+      "schedule": "0 9 * * *"
     }
   ]
 }

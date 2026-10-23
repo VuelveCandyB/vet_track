@@ -440,7 +440,7 @@ export default async function HorseDetailPage({
                 <div className="text-xs font-semibold mb-2" style={{ color: PALETTE.text.primary }}>Vacunas</div>
                 {vaccineTypes.map(vt => {
                   const lastVac = vaccinations.find(v => v.vaccine_type_id === vt.id)
-                  let status = 'Nunca aplicada'
+                  let status = 'No aplicada'
                   let statusColor = PALETTE.text.secondary
 
                   if (lastVac) {

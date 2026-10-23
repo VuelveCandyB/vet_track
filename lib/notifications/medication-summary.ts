@@ -37,11 +37,15 @@ interface SummaryReport {
   }>
 }
 
-async function getRecipients(supabase: ReturnType<typeof createAdminClient>): Promise<string[]> {
+// Destinatarios de un resumen: usuarios con la casilla indicada (Admin → Usuarios)
+// más la lista fija RESUMEN_MEDICACION_EMAILS.
+export async function getSummaryRecipients(
+  supabase: ReturnType<typeof createAdminClient>,
+  flag: 'notify_medications' | 'notify_vaccinations'
+): Promise<string[]> {
   const emails = new Set<string>()
 
-  // Usuarios con la casilla "Notif. Medicación" activa en Admin → Usuarios
-  const { data: profiles } = await supabase.from('profiles').select('id').eq('notify_medications', true)
+  const { data: profiles } = await supabase.from('profiles').select('id').eq(flag, true)
   if (profiles?.length) {
     const { data: authUsers } = await supabase.rpc('list_auth_users')
     const ids = new Set(profiles.map(p => p.id))
@@ -85,7 +89,7 @@ export async function sendDailyMedicationSummary(): Promise<{
     (a.horse?.name ?? '').localeCompare(b.horse?.name ?? '')
   )
 
-  const recipients = await getRecipients(supabase)
+  const recipients = await getSummaryRecipients(supabase, 'notify_medications')
   if (!recipients.length) {
     return { fecha, tratamientos: reports.length, destinatarios: 0, enviado: false }
   }

@@ -27,55 +27,8 @@ export async function getVaccinationPdfUrl(vaccinationId: string, pdfPath: strin
   return data.signedUrl
 }
 
-type SentVaccination = { fecha: string; vaccineName: string; serial: string | null }
-
-async function sendVaccinationEmail(supabase: any, horseName: string, items: SentVaccination[], microchip: string | null | undefined) {
-  try {
-    const { data: recipients } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('notify_vaccinations', true)
-
-    if (!recipients?.length) return
-
-    const { data: authUsers } = await supabase.rpc('list_auth_users')
-    const idSet = new Set(recipients.map((r: any) => r.id))
-    const emails = (authUsers ?? [])
-      .filter((u: any) => idSet.has(u.id))
-      .map((u: any) => u.email)
-      .filter(Boolean)
-
-    if (!emails.length) return
-
-    const subject = items.length === 1
-      ? `VetTrack - Vacunación registrada: ${horseName} (${items[0].vaccineName})`
-      : `VetTrack - ${items.length} vacunaciones registradas: ${horseName}`
-
-    const rows = items.map(i => `<li><strong>${i.vaccineName}</strong> - ${i.fecha}${i.serial ? ` (#Ser ${i.serial})` : ''}</li>`).join('')
-
-    const url = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/resend-email`
-    await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        to: emails,
-        subject,
-        html: `
-          <h2>${items.length === 1 ? 'Nueva vacunación registrada' : 'Nuevas vacunaciones registradas'}</h2>
-          <p><strong>Caballo:</strong> ${horseName}</p>
-          <p><strong>Microchip:</strong> ${microchip || 'N/A'}</p>
-          <ul>${rows}</ul>
-        `,
-      }),
-    })
-  } catch (error) {
-    console.error('[Vaccination] Failed to send notification email:', error)
-  }
-}
-
+// Las vacunaciones no envían correo al guardar: el resumen diario de las 5 am
+// (lib/notifications/vaccination-summary.ts) las incluye.
 export async function createVaccinations(horseId: string, formData: FormData) {
   const user = await requireUser()
   const allowed = await can(user, 'horses.vaccination_modal', 'full')
@@ -145,12 +98,6 @@ export async function createVaccinations(horseId: string, formData: FormData) {
     }
   }
 
-  const { data: horse } = await supabase
-    .from('horses')
-    .select('name, microchip')
-    .eq('id', horseId)
-    .single()
-
   // Upload the shared PDF once
   let pdfPath: string | null = null
   let pdfName: string | null = null
@@ -198,14 +145,6 @@ export async function createVaccinations(horseId: string, formData: FormData) {
     if (pdfPath) await supabase.storage.from('vaccinations').remove([pdfPath])
     throw error
   }
-
-  const sent: SentVaccination[] = (inserted ?? []).map(v => ({
-    fecha: v.fecha,
-    vaccineName: typeById.get(v.vaccine_type_id)?.name ?? '',
-    serial: rows.find(r => r.vaccine_type_id === v.vaccine_type_id)?.serial_number || null,
-  }))
-
-  sendVaccinationEmail(supabase, horse?.name ?? 'Caballo', sent, horse?.microchip)
 
   for (const v of inserted ?? []) {
     await logActivity({
