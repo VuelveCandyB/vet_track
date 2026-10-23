@@ -210,6 +210,13 @@ export async function setVaccinationNotifications(userId: string, enabled: boole
   revalidatePath('/admin/users')
 }
 
+export async function setMedicationNotifications(userId: string, enabled: boolean) {
+  await requireAdmin()
+  const supabase = await createClient()
+  await supabase.from('profiles').upsert({ id: userId, notify_medications: enabled }, { onConflict: 'id' })
+  revalidatePath('/admin/users')
+}
+
 // ── GESTIÓN DE ROLES (multi-rol) ────
 export async function setUserRoles(userId: string, roles: string[]) {
   const user = await requireAdmin()

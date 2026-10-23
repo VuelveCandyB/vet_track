@@ -4,6 +4,11 @@ import { ADMIN_EMAIL } from '@/lib/constants'
 import { isPathAllowedForVaccinator, isOnlyVaccinator } from '@/lib/vaccinator-access'
 
 export async function proxy(request: NextRequest) {
+  // Vercel Cron no tiene sesión: cada ruta /api/cron valida su propio CRON_SECRET.
+  if (request.nextUrl.pathname.startsWith('/api/cron/')) {
+    return NextResponse.next()
+  }
+
   let supabaseResponse = NextResponse.next({ request })
 
   const supabase = createServerClient(

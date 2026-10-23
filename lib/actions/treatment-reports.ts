@@ -139,6 +139,7 @@ export async function createTreatmentReport(formData: FormData) {
     description: `Creó informe de tratamiento con ${medications.length} medicamento(s) para el caballo`,
   })
 
+
   revalidatePath('/treatment-reports')
   revalidatePath(`/treatment-reports/${insertedReport.id}`)
   if (from_horse && from_horse.trim()) {
@@ -266,6 +267,7 @@ export async function updateTreatmentReport(id: string, formData: FormData) {
     horseId: horse_id,
     description: `Editó informe de tratamiento con ${medications.length} medicamento(s)`,
   })
+
 
   revalidatePath('/treatment-reports')
 }

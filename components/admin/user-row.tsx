@@ -7,7 +7,7 @@ import RoleManagementModal from '@/components/admin/role-management-modal'
 import PasswordChangeModal from '@/components/admin/password-change-modal'
 import SupervisorSelect from '@/components/admin/supervisor-select'
 import ConfirmDeleteButton from '@/components/admin/confirm-delete-button'
-import { updateUserProfile, setVaccinationNotifications, blockUser, unblockUser } from '@/lib/actions/admin'
+import { updateUserProfile, setVaccinationNotifications, setMedicationNotifications, blockUser, unblockUser } from '@/lib/actions/admin'
 import { PALETTE } from '@/lib/palette'
 
 interface UserRowProps {
@@ -19,6 +19,7 @@ interface UserRowProps {
     last_sign_in_at: string | null
     roles: string[]
     notify_vaccinations: boolean
+    notify_medications: boolean
     license_number: string
     license_renewal_date: string
     phone1: string
@@ -35,6 +36,8 @@ export default function UserRow({ user: u, blocked = false, availableVets = [], 
   const [firstName, setFirstName] = useState(u.first_name)
   const [lastName, setLastName] = useState(u.last_name)
   const [notifyVaccinations, setNotifyVaccinations] = useState(u.notify_vaccinations)
+  const [notifyMedications, setNotifyMedications] = useState(u.notify_medications)
+  const [notifyMedPending, setNotifyMedPending] = useState(false)
   const [licenseNumber, setLicenseNumber] = useState(u.license_number)
   const [licenseRenewalDate, setLicenseRenewalDate] = useState(u.license_renewal_date)
   const [phone1, setPhone1] = useState(u.phone1)
@@ -71,6 +74,18 @@ export default function UserRow({ user: u, blocked = false, availableVets = [], 
       setNotifyVaccinations(!checked)
     } finally {
       setNotifyPending(false)
+    }
+  }
+
+  const handleToggleMedNotify = async (checked: boolean) => {
+    setNotifyMedications(checked)
+    setNotifyMedPending(true)
+    try {
+      await setMedicationNotifications(u.id, checked)
+    } catch {
+      setNotifyMedications(!checked)
+    } finally {
+      setNotifyMedPending(false)
     }
   }
 
@@ -230,6 +245,16 @@ export default function UserRow({ user: u, blocked = false, availableVets = [], 
           checked={notifyVaccinations}
           disabled={notifyPending}
           onChange={e => handleToggleNotify(e.target.checked)}
+          className="w-4 h-4"
+          style={{ accentColor: PALETTE.primary.green }}
+        />
+      </td>
+      <td className="px-3 py-2 text-center">
+        <input
+          type="checkbox"
+          checked={notifyMedications}
+          disabled={notifyMedPending}
+          onChange={e => handleToggleMedNotify(e.target.checked)}
           className="w-4 h-4"
           style={{ accentColor: PALETTE.primary.green }}
         />

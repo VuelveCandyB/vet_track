@@ -133,6 +133,7 @@ export interface Profile {
   phone1?: string
   phone2?: string
   notify_vaccinations?: boolean
+  notify_medications?: boolean
   active_vet_id?: string | null
 }
 

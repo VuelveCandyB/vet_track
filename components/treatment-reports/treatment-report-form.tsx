@@ -306,7 +306,14 @@ export default function TreatmentReportForm({
   }
 
   if (pending) {
-    return <TreatmentReportFormSkeleton />
+    return (
+      <div>
+        <p className="mb-3 text-sm font-medium" style={{ color: PALETTE.primary.green }}>
+          Guardando medicamento...
+        </p>
+        <TreatmentReportFormSkeleton />
+      </div>
+    )
   }
 
   return (

@@ -49,6 +49,7 @@ export default async function AdminUsersPage() {
     last_name:  profileMap[u.id]?.last_name ?? '',
     roles:      rolesMap[u.id] ?? [],
     notify_vaccinations: profileMap[u.id]?.notify_vaccinations ?? false,
+    notify_medications: profileMap[u.id]?.notify_medications ?? false,
     license_number: profileMap[u.id]?.license_number ?? '',
     license_renewal_date: profileMap[u.id]?.license_renewal_date ?? '',
     phone1: profileMap[u.id]?.phone1 ?? '',
@@ -78,7 +79,7 @@ export default async function AdminUsersPage() {
           <table className="w-full text-sm border-collapse">
             <thead>
               <tr style={{ borderBottom: `1px solid ${PALETTE.ui.border}` }}>
-                {['Email', 'Nombre', 'Apellido', 'Licencia', 'Teléfono', 'Último acceso', 'Estado', 'Rol', 'Contraseña', 'Supervisor', 'Notif. Vacuna', 'Guardar'].map(h => (
+                {['Email', 'Nombre', 'Apellido', 'Licencia', 'Teléfono', 'Último acceso', 'Estado', 'Rol', 'Contraseña', 'Supervisor', 'Notif. Vacuna', 'Notif. Medicación', 'Guardar'].map(h => (
                   <th key={h} className="px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wider"
                     style={{ color: PALETTE.text.secondary }}>
                     {h === 'Supervisor' ? <SupervisorSelectHeader /> : h}
