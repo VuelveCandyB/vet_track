@@ -153,13 +153,10 @@ export default function TreatmentReportForm({
   const [error, setError] = useState<string | null>(null)
   const [horaTratamiento, setHoraTratamiento] = useState('12:00')
 
-  // Get today's date in YYYY-MM-DD format
-  const getTodayDate = () => new Date().toISOString().split('T')[0]
-  const getMinDateFor72Hours = () => {
-    const now = new Date()
-    const seventyTwoHoursAgo = new Date(now.getTime() - 72 * 60 * 60 * 1000)
-    return seventyTwoHoursAgo.toISOString().split('T')[0]
-  }
+  // Fecha en Puerto Rico (YYYY-MM-DD). Con toISOString (UTC) la fecha cambiaba a las 8 pm.
+  const dateInPR = (date: Date) => date.toLocaleDateString('en-CA', { timeZone: 'America/Puerto_Rico' })
+  const getTodayDate = () => dateInPR(new Date())
+  const getMinDateFor72Hours = () => dateInPR(new Date(Date.now() - 72 * 60 * 60 * 1000))
   const [fechaTratamiento, setFechaTratamiento] = useState(getTodayDate())
 
   const categories = Array.from(new Set(drugs.map(d => d.categoria).filter(Boolean)))

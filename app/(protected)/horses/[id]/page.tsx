@@ -89,7 +89,7 @@ export default async function HorseDetailPage({
         vaccineTypes={(vaccineTypesRes.data ?? []) as VaccineType[]}
         vaccinations={(vacRes.data ?? []) as Vaccination[]}
         vetName={vetName}
-        today={new Date().toISOString().split('T')[0]}
+        today={new Date().toLocaleDateString('en-CA', { timeZone: 'America/Puerto_Rico' })}
       />
     )
   }
