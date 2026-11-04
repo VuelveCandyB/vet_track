@@ -165,6 +165,21 @@ export interface VaccineType {
   created_at?: string
 }
 
+export interface ServiceTicket {
+  id: string
+  vet_name: string
+  vet_email: string
+  situacion: string
+  detalle: string
+  created_by: string | null
+  created_at: string
+  status: 'pendiente' | 'resuelto'
+  notas: string | null
+  resuelto_por: string | null
+  resuelto_por_nombre: string | null
+  resuelto_en: string | null
+}
+
 export interface Vaccination {
   id: string
   horse_id: string

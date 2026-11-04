@@ -154,7 +154,8 @@ export async function updateVaccineType(vaccineTypeId: string, formData: FormDat
 export async function deleteVaccineType(vaccineTypeId: string) {
   await requireAdmin()
   const supabase = await createClient()
-  await supabase.from('vaccine_types').update({ active: false }).eq('id', vaccineTypeId)
+  const { error } = await supabase.from('vaccine_types').update({ active: false }).eq('id', vaccineTypeId)
+  if (error) throw new Error(`Error al eliminar vacuna: ${error.message}`)
   revalidatePath('/admin/vaccines')
 }
 

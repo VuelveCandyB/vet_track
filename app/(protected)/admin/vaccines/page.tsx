@@ -14,6 +14,7 @@ export default async function VaccinesPage() {
   const { data: vaccineTypes } = await supabase
     .from('vaccine_types')
     .select('*')
+    .eq('active', true)
     .order('sort_order', { ascending: true })
 
   return (
