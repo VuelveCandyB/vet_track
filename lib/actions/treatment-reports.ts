@@ -309,7 +309,7 @@ export async function deleteTreatmentReport(id: string) {
 export async function replicateDailyTreatmentReports() {
   const supabase = await createClient()
 
-  const today = new Date().toISOString().split('T')[0]
+  const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Puerto_Rico' })
 
   // Buscar informes que están activos (en borrador) y cuya duración aún está vigente
   const { data: activeReports } = await supabase
