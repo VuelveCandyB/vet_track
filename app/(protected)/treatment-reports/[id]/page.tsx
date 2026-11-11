@@ -1,16 +1,11 @@
 import { requireUser, isAdmin } from '@/lib/auth'
 import { createClient } from '@/lib/supabase/server'
-import { deleteTreatmentReport } from '@/lib/actions/treatment-reports'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import DownloadPdfButton from '@/components/treatment-reports/download-pdf-button'
+import DeleteReportDialog from '@/components/treatment-reports/delete-report-dialog'
 import { PALETTE } from '@/lib/palette'
 import type { TreatmentReport } from '@/lib/types'
-
-async function deleteReport(id: string) {
-  'use server'
-  await deleteTreatmentReport(id)
-}
 
 export default async function TreatmentReportDetailPage({
   params,
@@ -126,6 +121,9 @@ export default async function TreatmentReportDetailPage({
                 Editar
               </Button>
             </Link>
+          )}
+          {!typed.reviewed_by && (typed.created_by === user.id || typed.created_for_vet_id === user.id || userIsAdmin) && (
+            <DeleteReportDialog reportId={id} horseId={typed.horse?.id ?? null} />
           )}
           <DownloadPdfButton report={typed} medications={typedMeds} />
         </div>

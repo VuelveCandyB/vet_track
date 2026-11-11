@@ -39,16 +39,18 @@ export async function buildTreatmentReportPdf(report: PdfReport, medications: Pd
 
   const formatDateTime = (dateTimeStr: string | null) => {
     if (!dateTimeStr) return '—'
-    const date = new Date(dateTimeStr)
-    const day = String(date.getDate()).padStart(2, '0')
-    const month = String(date.getMonth() + 1).padStart(2, '0')
-    const year = date.getFullYear()
-    let hours = date.getHours()
-    const minutes = String(date.getMinutes()).padStart(2, '0')
-    const ampm = hours >= 12 ? 'PM' : 'AM'
-    hours = hours % 12 || 12
-    const hoursStr = String(hours).padStart(2, '0')
-    return `${day}/${month}/${year} ${hoursStr}:${minutes} ${ampm}`
+    // Siempre en hora de Puerto Rico, sin importar la zona horaria del navegador que genera el PDF
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/Puerto_Rico',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true,
+    }).formatToParts(new Date(dateTimeStr))
+    const get = (type: string) => parts.find((p) => p.type === type)?.value ?? ''
+    return `${get('day')}/${get('month')}/${get('year')} ${get('hour')}:${get('minute')} ${get('dayPeriod')}`
   }
 
   const medicamentosHTML = medications.length > 0 ? medications.map((med, idx) => `

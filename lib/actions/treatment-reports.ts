@@ -2,8 +2,9 @@
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { requireUser, requireNonVaccinator, isAdmin } from '@/lib/auth'
-import { getVetName, getCreatedForVetId } from '@/lib/actions/shared'
+import { getVetName, getCreatedForVetId, getUserFullName } from '@/lib/actions/shared'
 import { logActivity } from '@/lib/actions/activity-log'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 interface MedicationRow {
   drug_id: string
@@ -272,38 +273,107 @@ export async function updateTreatmentReport(id: string, formData: FormData) {
   revalidatePath('/treatment-reports')
 }
 
-export async function deleteTreatmentReport(id: string) {
+// Borra un informe completo (medicamentos y códigos incluidos). Requiere razón.
+// Solo puede borrarlo el técnico que lo creó, el veterinario asignado o un administrador,
+// y únicamente mientras el informe no esté revisado. Deja un registro en
+// treatment_report_deletions que sale en el correo diario de borrados.
+export async function deleteTreatmentReport(id: string, razon: string) {
   const user = await requireNonVaccinator()
-  const supabase = await createClient()
+  const motivo = (razon ?? '').trim()
+  if (motivo.length < 10) {
+    throw new Error('Escribe una razón de al menos 10 caracteres')
+  }
 
-  const { data: report } = await supabase
+  const supabase = await createClient()
+  const { data: report, error: readError } = await supabase
     .from('treatment_reports')
-    .select('estado, horse_id')
+    .select(`
+      id, horse_id, fecha_tratamiento, hora_tratamiento, vet_autorizado_nombre, diagnostico,
+      created_by, created_for_vet_id, reviewed_by,
+      horse:horses(name),
+      medications:treatment_report_medications(dosis, dosis_unidad, tiempo_restriccion, drug:drugs(nombre))
+    `)
     .eq('id', id)
     .single()
 
-  if (report?.estado !== 'borrador') {
-    throw new Error('Solo se pueden eliminar informes en estado borrador')
+  if (readError || !report) throw new Error('Informe no encontrado')
+  if (report.reviewed_by) throw new Error('No se puede eliminar un informe que ya fue revisado')
+
+  const userIsAdmin = await isAdmin(user.id, user.email!)
+  const esResponsable = report.created_by === user.id || report.created_for_vet_id === user.id
+  if (!userIsAdmin && !esResponsable) {
+    throw new Error('No tienes permiso para eliminar este informe')
   }
 
-  const { error } = await supabase
-    .from('treatment_reports')
-    .delete()
-    .eq('id', id)
+  // Los borrados van con el cliente admin: las políticas RLS de medicamentos
+  // solo dejan borrar al creador, y el veterinario asignado también debe poder.
+  const admin = createAdminClient()
+  const deletedByNombre = await getUserFullName(supabase, user)
+  const horse = report.horse as unknown as { name: string } | null
+  const medications = ((report.medications ?? []) as unknown as Array<{
+    dosis: number
+    dosis_unidad: string | null
+    tiempo_restriccion: number | null
+    drug: { nombre: string } | null
+  }>).map(m => ({
+    medicamento: m.drug?.nombre ?? null,
+    dosis: m.dosis,
+    dosis_unidad: m.dosis_unidad,
+    tiempo_restriccion: m.tiempo_restriccion,
+  }))
 
-  if (error) throw new Error(error.message)
+  const { data: auditRow, error: auditError } = await admin
+    .from('treatment_report_deletions')
+    .insert({
+      report_id: id,
+      horse_id: report.horse_id,
+      horse_name: horse?.name ?? null,
+      fecha_tratamiento: report.fecha_tratamiento,
+      hora_tratamiento: report.hora_tratamiento,
+      vet_autorizado_nombre: report.vet_autorizado_nombre,
+      diagnostico: report.diagnostico,
+      medications,
+      razon: motivo,
+      deleted_by: user.id,
+      deleted_by_nombre: deletedByNombre,
+    })
+    .select('id')
+    .single()
 
-  // Log activity
+  if (auditError) throw new Error(`No se pudo registrar la eliminación: ${auditError.message}`)
+
+  // Si algo falla al borrar, se quita el registro de auditoría para no dejar un borrado fantasma.
+  const rollbackAudit = () => admin.from('treatment_report_deletions').delete().eq('id', auditRow.id)
+
+  const { error: codesError } = await admin.from('treatment_report_item_codes').delete().eq('treatment_report_id', id)
+  if (codesError) {
+    await rollbackAudit()
+    throw new Error(`Error al eliminar códigos: ${codesError.message}`)
+  }
+
+  const { error: medsError } = await admin.from('treatment_report_medications').delete().eq('treatment_report_id', id)
+  if (medsError) {
+    await rollbackAudit()
+    throw new Error(`Error al eliminar medicamentos: ${medsError.message}`)
+  }
+
+  const { error: reportError } = await admin.from('treatment_reports').delete().eq('id', id)
+  if (reportError) {
+    await rollbackAudit()
+    throw new Error(`Error al eliminar informe: ${reportError.message}`)
+  }
+
   await logActivity({
     user,
     action: 'treatment_report.delete',
     entityType: 'treatment_report',
     entityId: id,
-    horseId: report?.horse_id,
-    description: 'Eliminó informe de tratamiento',
+    horseId: report.horse_id,
+    description: `Eliminó informe de tratamiento (${medications.length} medicamento(s)). Razón: ${motivo}`,
   })
 
   revalidatePath('/treatment-reports')
+  if (report.horse_id) revalidatePath(`/horses/${report.horse_id}`)
 }
 
 export async function replicateDailyTreatmentReports() {
