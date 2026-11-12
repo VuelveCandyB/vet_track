@@ -214,6 +214,8 @@ export interface TreatmentReport {
   radicado_en?: string | null
   created_by?: string
   created_at?: string
+  reviewed_by?: string | null
+  reviewed_at?: string | null
 }
 
 export interface TreatmentReportMedication {
