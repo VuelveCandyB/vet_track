@@ -2,6 +2,7 @@
 import { Button } from '@/components/ui/button'
 import { PALETTE } from '@/lib/palette'
 import * as XLSX from 'xlsx'
+import { courseLabel } from '@/lib/treatment-course'
 
 interface ExportButtonProps {
   data: any[]
@@ -23,6 +24,7 @@ export default function ExportButton({ data, filename, disabled = false }: Expor
       Restricción: row.drugs?.tipo_restriccion || '—',
       Veterinario: row.vet_autorizado_nombre || '—',
       Fecha: row.fecha_tratamiento || '—',
+      Frecuencia: courseLabel(row.fecha_tratamiento, row.hasta_cuando) || 'Dosis única',
       'Retiro (horas)': row.tiempo_restriccion || '—',
     }))
 
@@ -32,7 +34,7 @@ export default function ExportButton({ data, filename, disabled = false }: Expor
     XLSX.utils.book_append_sheet(wb, ws, 'Medicaciones')
 
     // Ajustar ancho de columnas
-    const colWidths = [18, 18, 15, 12, 15, 15, 18, 15, 15]
+    const colWidths = [18, 18, 15, 12, 15, 15, 18, 15, 15, 18]
     ws['!cols'] = colWidths.map(w => ({ wch: w }))
 
     // Descargar archivo

@@ -3,6 +3,7 @@
 import jsPDF from 'jspdf'
 import html2canvas from 'html2canvas'
 import type { TreatmentReport } from '@/lib/types'
+import { courseLabel, restrictionUntilLabel } from '@/lib/treatment-course'
 
 export interface PdfMedication {
   id?: string
@@ -11,6 +12,7 @@ export interface PdfMedication {
   dosis_unidad?: string
   nivel_dosificacion?: string
   tiempo_restriccion?: number | null
+  hasta_cuando?: string | null
   drug?: { nombre: string; categoria: string; tipo_restriccion?: string }
 }
 
@@ -53,16 +55,27 @@ export async function buildTreatmentReportPdf(report: PdfReport, medications: Pd
     return `${get('day')}/${get('month')}/${get('year')} ${get('hour')}:${get('minute')} ${get('dayPeriod')}`
   }
 
-  const medicamentosHTML = medications.length > 0 ? medications.map((med, idx) => `
+  const medicamentosHTML = medications.length > 0 ? medications.map((med, idx) => {
+    const curso = courseLabel(report.fecha_tratamiento, med.hasta_cuando)
+    const restriccionHasta = restrictionUntilLabel({
+      fecha: report.fecha_tratamiento,
+      hora: report.hora_tratamiento,
+      hasta_cuando: med.hasta_cuando,
+      tiempo_restriccion: med.tiempo_restriccion,
+    })
+    return `
     <div style="margin-bottom: 15px; padding: 10px; background: #f9f9f9; border-left: 3px solid #059669;">
       <strong>Medicamento ${idx + 1}:</strong> ${med.drug?.nombre || '—'}<br/>
       <strong>Categoría:</strong> ${med.drug?.categoria || '—'}<br/>
-      <strong>Dosis:</strong> ${med.dosis} ${med.dosis_unidad || 'mg'}<br/>
+      <strong>Dosis${curso ? ' por día' : ''}:</strong> ${med.dosis} ${med.dosis_unidad || 'mg'}<br/>
+      ${curso ? `<strong>Frecuencia:</strong> ${curso}<br/>` : ''}
       ${med.nivel_dosificacion ? `<strong>Nivel:</strong> ${med.nivel_dosificacion}<br/>` : ''}
       ${med.drug?.tipo_restriccion ? `<strong>Restricción:</strong> ${med.drug.tipo_restriccion}<br/>` : ''}
       ${med.tiempo_restriccion ? `<strong>Tiempo Restricción:</strong> ${med.tiempo_restriccion}h` : ''}
+      ${restriccionHasta ? ` (${restriccionHasta})` : ''}
     </div>
-  `).join('') : '<p>Sin medicamentos registrados</p>'
+  `
+  }).join('') : '<p>Sin medicamentos registrados</p>'
 
   element.innerHTML = `
     <div style="text-align: center; margin-bottom: 40px; padding-bottom: 20px; border-bottom: 2px solid #333;">

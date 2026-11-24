@@ -12,6 +12,23 @@ Resumen de lo trabajado en esta sesión: cambios de código, cambios de datos en
 
 Antes de seguir, hay que hacer commit y push de los cambios no commiteados para que el repo coincida con lo desplegado.
 
+## 0. Tratamientos de varios días (registro retroactivo)
+
+Pedido por un veterinario: poder reportar un tratamiento de varios días (clenbuterol, prednisolona, omeprazole, penicilina procaína, ácido aminocaproico, ranitidina, cimetidina, guaifenesin, cetirizina, fenilbutazona) en un solo registro, en vez de uno por día.
+
+- Por medicamento: **Frecuencia** (Dosis única / Diaria). Si es Diaria, **Hasta cuándo** = fecha de la última dosis.
+- Un curso se registra solo hasta hoy (no hay fechas futuras). Máximo **7 días**, inclusive inicio y fin. Con hoy 23, el inicio más temprano es el 17.
+- Un curso que sigue después de hoy se registra en otro informe cuando pasen esos días.
+- Dosis única: se mantiene la regla de 72 horas.
+- La restricción se cuenta desde la última dosis.
+- Se muestra el curso en el detalle, el PDF, el reporte de medicaciones (pantalla y Excel), la línea de tiempo del caballo y el correo diario.
+- El correo diario incluye un curso el día después de registrarse (resume el día anterior).
+- Helper compartido: `lib/treatment-course.ts` (recuperado de `ed6f508`, con `MAX_COURSE_DAYS = 7`).
+- Migración: `supabase/migrations/20261014_treatment_med_hasta_cuando.sql` (idempotente; la columna ya existía en producción).
+- Se eliminó `replicateDailyTreatmentReports`, que había vuelto con el revert.
+- Pendiente: la lista de informes (`treatment-reports/page-client.tsx`) y revisiones todavía muestran solo la fecha de inicio. El reporte de medicaciones filtra por la fecha de inicio, así que un curso aparece solo en el rango de su primer día.
+- Pendiente de confirmar con el reglamento: que un curso pueda registrarse hasta 7 días atrás (ver `PREGUNTAS_REGULATORIAS.md`).
+
 ## 1. Revert de dosificación diaria
 
 - Se revirtió el commit `ed6f508` ("tratamientos de dosificación diaria con fecha de fin por medicamento") con el commit `0d66ef9`.

@@ -197,12 +197,12 @@ export default function DrugManager({ drugs }: { drugs: Drug[] }) {
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs font-semibold uppercase tracking-wider" style={{ color: PALETTE.text.secondary }}>Unidad de dosis</Label>
-                <select name="dosis_unidad"
+                <select name="dosis_unidad" key={`unidad-${editing?.id ?? 'new'}`} defaultValue={editing?.dosis_unidad ?? ''}
                   className="flex h-9 w-full rounded-md border px-3 py-1 text-sm"
                   style={{ background: PALETTE.background.white, borderColor: PALETTE.ui.border, color: PALETTE.text.primary }}>
                   <option value="">Sin especificar</option>
                   {UNIT_OPTIONS.map(u => (
-                    <option key={u} value={u} selected={editing?.dosis_unidad === u}>{u}</option>
+                    <option key={u} value={u}>{u}</option>
                   ))}
                 </select>
               </div>
@@ -216,12 +216,12 @@ export default function DrugManager({ drugs }: { drugs: Drug[] }) {
               </div>
               <div className="col-span-2 space-y-1.5">
                 <Label className="text-xs font-semibold uppercase tracking-wider" style={{ color: PALETTE.text.secondary }}>Tipo restricción</Label>
-                <select name="tipo_restriccion"
+                <select name="tipo_restriccion" key={`tipo-${editing?.id ?? 'new'}`} defaultValue={editing?.tipo_restriccion ?? ''}
                   className="flex h-9 w-full rounded-md border px-3 py-1 text-sm"
                   style={{ background: PALETTE.background.white, borderColor: PALETTE.ui.border, color: PALETTE.text.primary }}>
                   <option value="">Sin restricción</option>
                   {TIPOS_RESTRICCION.map(t => (
-                    <option key={t} value={t} selected={editing?.tipo_restriccion === t}>{t}</option>
+                    <option key={t} value={t}>{t}</option>
                   ))}
                 </select>
                 <p className="text-xs" style={{ color: PALETTE.text.secondary }}>

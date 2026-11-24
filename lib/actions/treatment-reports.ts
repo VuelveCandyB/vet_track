@@ -5,6 +5,7 @@ import { requireUser, requireNonVaccinator, isAdmin } from '@/lib/auth'
 import { getVetName, getCreatedForVetId, getUserFullName } from '@/lib/actions/shared'
 import { logActivity } from '@/lib/actions/activity-log'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { validateCourse } from '@/lib/treatment-course'
 
 interface MedicationRow {
   drug_id: string
@@ -13,6 +14,51 @@ interface MedicationRow {
   nivel_dosificacion?: string
   tiempo_restriccion?: number | null
   hasta_cuando?: string | null
+}
+
+// Fecha de hoy en Puerto Rico (YYYY-MM-DD), igual que el resto de la app.
+function todayPR(): string {
+  return new Date().toLocaleDateString('en-CA', { timeZone: 'America/Puerto_Rico' })
+}
+
+// Reglas de fechas (registro retroactivo, solo hasta hoy):
+// - Dosis única: no más de 72 horas atrás y no en el futuro.
+// - Tratamiento diario (hasta_cuando): el fin no puede ser posterior a hoy,
+//   y el curso no puede pasar de MAX_COURSE_DAYS días (incluyendo inicio y fin).
+function validateTreatmentDates(fecha: string, medications: MedicationRow[]) {
+  const cursos = medications.filter(m => m.hasta_cuando)
+
+  if (cursos.length > 0) {
+    const hoy = todayPR()
+    if (!fecha) throw new Error('Debe indicar la fecha de inicio del tratamiento')
+    if (fecha.slice(0, 10) > hoy) {
+      throw new Error('La fecha de inicio no puede ser en el futuro')
+    }
+    for (const m of cursos) {
+      const hasta = m.hasta_cuando as string
+      const error = validateCourse(fecha, hasta)
+      if (error) throw new Error(error)
+      if (hasta.slice(0, 10) > hoy) {
+        throw new Error('"Hasta cuándo" no puede ser una fecha futura')
+      }
+    }
+    return
+  }
+
+  if (fecha) {
+    const fechaTratamientoDate = new Date(fecha)
+    const ahora = new Date()
+    const diferenciaMilisegundos = ahora.getTime() - fechaTratamientoDate.getTime()
+    const diferenciasHoras = diferenciaMilisegundos / (1000 * 60 * 60)
+
+    if (diferenciasHoras > 72) {
+      throw new Error('La fecha del tratamiento no puede ser más de 72 horas atrás')
+    }
+
+    if (fechaTratamientoDate > ahora) {
+      throw new Error('La fecha del tratamiento no puede ser en el futuro')
+    }
+  }
 }
 
 export async function createTreatmentReport(formData: FormData) {
@@ -48,21 +94,7 @@ export async function createTreatmentReport(formData: FormData) {
   const notas = formData.get('notas') as string | null
   const from_horse = formData.get('from_horse') as string | null
 
-  // Validar que la fecha no sea más de 72 horas atrás
-  if (fecha_tratamiento) {
-    const fechaTratamientoDate = new Date(fecha_tratamiento)
-    const ahora = new Date()
-    const diferenciaMilisegundos = ahora.getTime() - fechaTratamientoDate.getTime()
-    const diferenciasHoras = diferenciaMilisegundos / (1000 * 60 * 60)
-
-    if (diferenciasHoras > 72) {
-      throw new Error('La fecha del tratamiento no puede ser más de 72 horas atrás')
-    }
-
-    if (fechaTratamientoDate > ahora) {
-      throw new Error('La fecha del tratamiento no puede ser en el futuro')
-    }
-  }
+  validateTreatmentDates(fecha_tratamiento, medications)
 
   // Calcular el nombre del médico y el ID del médico para el que se crea
   const vet_autorizado_nombre = await getVetName(supabase, user)
@@ -103,6 +135,7 @@ export async function createTreatmentReport(formData: FormData) {
     dosis_unidad: med.dosis_unidad || 'mg',
     nivel_dosificacion: med.nivel_dosificacion || null,
     tiempo_restriccion: med.tiempo_restriccion || null,
+    hasta_cuando: med.hasta_cuando || null,
   }))
 
   console.log('📝 Inserting medications:', medicationData)
@@ -189,6 +222,8 @@ export async function updateTreatmentReport(id: string, formData: FormData) {
   const hora_tratamiento = (formData.get('hora_tratamiento') as string) || '00:00'
   const notas = formData.get('notas') as string | null
 
+  validateTreatmentDates(fecha_tratamiento, medications)
+
   // Calcular el nombre del médico y el ID del médico para el que se edita
   const vet_autorizado_nombre = await getVetName(supabase, user)
   const created_for_vet_id = await getCreatedForVetId(supabase, user)
@@ -232,6 +267,7 @@ export async function updateTreatmentReport(id: string, formData: FormData) {
     dosis_unidad: med.dosis_unidad || 'mg',
     nivel_dosificacion: med.nivel_dosificacion || null,
     tiempo_restriccion: med.tiempo_restriccion || null,
+    hasta_cuando: med.hasta_cuando || null,
   }))
 
   const { error: medError } = await supabase
@@ -376,101 +412,3 @@ export async function deleteTreatmentReport(id: string, razon: string) {
   if (report.horse_id) revalidatePath(`/horses/${report.horse_id}`)
 }
 
-export async function replicateDailyTreatmentReports() {
-  const supabase = await createClient()
-
-  const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Puerto_Rico' })
-
-  // Buscar informes que están activos (en borrador) y cuya duración aún está vigente
-  const { data: activeReports } = await supabase
-    .from('treatment_reports')
-    .select('*')
-    .eq('estado', 'borrador')
-    .eq('es_auto_generado', false)
-
-  if (!activeReports || activeReports.length === 0) return { replicated: 0 }
-
-  let replicated = 0
-
-  for (const report of activeReports) {
-    // Obtener medicamentos del informe original
-    const { data: originalMeds } = await supabase
-      .from('treatment_report_medications')
-      .select('*')
-      .eq('treatment_report_id', report.id)
-
-    if (!originalMeds || originalMeds.length === 0) {
-      // Sin medicamentos, skip
-      continue
-    }
-
-    // Verificar si ya existe un informe para hoy para este caballo
-    const { data: existingToday } = await supabase
-      .from('treatment_reports')
-      .select('id')
-      .eq('horse_id', report.horse_id)
-      .eq('fecha_tratamiento', today)
-      .eq('es_auto_generado', true)
-      .eq('informe_padre_id', report.id)
-      .single()
-
-    if (existingToday) {
-      // Ya existe informe para hoy, skip
-      continue
-    }
-
-    // Crear copia del informe para hoy
-    const { data: newReport, error } = await supabase.from('treatment_reports').insert({
-      horse_id: report.horse_id,
-      numero_identificacion_caballo: report.numero_identificacion_caballo,
-      establo: report.establo,
-      tratamiento: null,
-      diagnostico: report.diagnostico,
-      fecha_tratamiento: today,
-      hora_tratamiento: report.hora_tratamiento,
-      notas: report.notas,
-      vet_autorizado_nombre: report.vet_autorizado_nombre,
-      estado: 'sometido', // Auto-generado ya sale sometido
-      es_auto_generado: true,
-      informe_padre_id: report.id,
-      created_by: report.created_by,
-    }).select('id').single()
-
-    if (!error && newReport) {
-      // Copiar medicamentos del informe original
-      const newMeds = originalMeds.map(med => ({
-        treatment_report_id: newReport.id,
-        drug_id: med.drug_id,
-        dosis: med.dosis,
-        dosis_unidad: med.dosis_unidad,
-        nivel_dosificacion: med.nivel_dosificacion,
-        tiempo_restriccion: med.tiempo_restriccion,
-      }))
-
-      await supabase
-        .from('treatment_report_medications')
-        .insert(newMeds)
-
-      // Copiar también los enlaces de códigos del informe original
-      const { data: originalCodes } = await supabase
-        .from('treatment_report_item_codes')
-        .select('catalog_item_id')
-        .eq('treatment_report_id', report.id)
-
-      if (originalCodes && originalCodes.length > 0) {
-        const newCodes = originalCodes.map(item => ({
-          treatment_report_id: newReport.id,
-          catalog_item_id: item.catalog_item_id,
-        }))
-
-        await supabase
-          .from('treatment_report_item_codes')
-          .insert(newCodes)
-      }
-
-      replicated++
-    }
-  }
-
-  return { replicated }
-}

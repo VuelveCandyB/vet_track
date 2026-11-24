@@ -6,6 +6,7 @@ import DownloadPdfButton from '@/components/treatment-reports/download-pdf-butto
 import DeleteReportDialog from '@/components/treatment-reports/delete-report-dialog'
 import { PALETTE } from '@/lib/palette'
 import type { TreatmentReport } from '@/lib/types'
+import { courseLabel, restrictionUntilLabel } from '@/lib/treatment-course'
 
 export default async function TreatmentReportDetailPage({
   params,
@@ -187,10 +188,23 @@ export default async function TreatmentReportDetailPage({
                     <p className="text-lg font-semibold" style={{ color: '#b91c1c' }}>{med.drug.tipo_restriccion}</p>
                   </div>
                 )}
+                {courseLabel(typed.fecha_tratamiento, med.hasta_cuando) && (
+                  <div>
+                    <p className="text-xs" style={{ color: PALETTE.text.secondary }}>Frecuencia</p>
+                    <p className="text-lg font-semibold">{courseLabel(typed.fecha_tratamiento, med.hasta_cuando)}</p>
+                  </div>
+                )}
                 {med.tiempo_restriccion && (
                   <div>
                     <p className="text-xs" style={{ color: PALETTE.text.secondary }}>Tiempo de Restricción</p>
-                    <p className="text-lg font-semibold">{med.tiempo_restriccion}h ({Math.round(med.tiempo_restriccion / 24 * 10) / 10} días)</p>
+                    <p className="text-lg font-semibold">
+                      {med.tiempo_restriccion}h ({Math.round(med.tiempo_restriccion / 24 * 10) / 10} días)
+                    </p>
+                    {restrictionUntilLabel({ fecha: typed.fecha_tratamiento, hora: typed.hora_tratamiento, hasta_cuando: med.hasta_cuando, tiempo_restriccion: med.tiempo_restriccion }) && (
+                      <p className="text-xs" style={{ color: PALETTE.text.secondary }}>
+                        {restrictionUntilLabel({ fecha: typed.fecha_tratamiento, hora: typed.hora_tratamiento, hasta_cuando: med.hasta_cuando, tiempo_restriccion: med.tiempo_restriccion })}
+                      </p>
+                    )}
                   </div>
                 )}
                 {med.created_at && (

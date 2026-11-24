@@ -2,6 +2,7 @@
 // Lo llama app/api/cron/medication-summary (Vercel Cron, 5:00 am hora de Puerto Rico).
 import 'server-only'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { courseLabel } from '@/lib/treatment-course'
 
 const TZ = 'America/Puerto_Rico'
 
@@ -22,6 +23,7 @@ export function escapeHtml(text: string): string {
 }
 
 interface SummaryReport {
+  id: string
   fecha_tratamiento: string
   hora_tratamiento: string | null
   establo: string | null
@@ -33,8 +35,16 @@ interface SummaryReport {
     dosis: number
     dosis_unidad: string | null
     tiempo_restriccion: number | null
+    hasta_cuando: string | null
     drug: { nombre: string; nombre_comercial: string | null } | null
   }>
+}
+
+// Límites UTC del día calendario en Puerto Rico (UTC-4 todo el año, sin horario de verano).
+function prDayBoundsUtc(fecha: string): { start: string; end: string } {
+  const start = new Date(`${fecha}T00:00:00-04:00`)
+  const end = new Date(start.getTime() + 24 * 60 * 60 * 1000)
+  return { start: start.toISOString(), end: end.toISOString() }
 }
 
 // Destinatarios de un resumen: usuarios con la casilla indicada (Admin → Usuarios)
@@ -72,20 +82,42 @@ export async function sendDailyMedicationSummary(): Promise<{
   const supabase = createAdminClient()
   const fecha = previousDayInPR()
 
-  const { data, error } = await supabase
-    .from('treatment_reports')
-    .select(`
-      fecha_tratamiento, hora_tratamiento, establo, diagnostico, vet_autorizado_nombre,
+  const SELECT_SUMMARY = `
+      id, fecha_tratamiento, hora_tratamiento, establo, diagnostico, vet_autorizado_nombre,
       numero_identificacion_caballo,
       horse:horses(name, microchip, registration),
-      medications:treatment_report_medications(dosis, dosis_unidad, tiempo_restriccion, drug:drugs(nombre, nombre_comercial))
-    `)
+      medications:treatment_report_medications(dosis, dosis_unidad, tiempo_restriccion, hasta_cuando, drug:drugs(nombre, nombre_comercial))
+    `
+
+  // 1) Tratamientos con fecha de tratamiento de ayer (dosis única y cursos que empezaron ayer).
+  const { data, error } = await supabase
+    .from('treatment_reports')
+    .select(SELECT_SUMMARY)
     .eq('fecha_tratamiento', fecha)
     .order('hora_tratamiento', { ascending: true })
 
   if (error) throw new Error(`Error consultando informes: ${error.message}`)
 
-  const reports = ((data ?? []) as unknown as SummaryReport[]).sort((a, b) =>
+  // 2) Cursos (varios días) registrados ayer: aparecen una sola vez, el día en que se registran,
+  //    aunque su fecha de inicio sea anterior.
+  const bounds = prDayBoundsUtc(fecha)
+  const { data: registradosAyer, error: errorCursos } = await supabase
+    .from('treatment_reports')
+    .select(SELECT_SUMMARY)
+    .gte('created_at', bounds.start)
+    .lt('created_at', bounds.end)
+
+  if (errorCursos) throw new Error(`Error consultando cursos: ${errorCursos.message}`)
+
+  const cursosRegistrados = ((registradosAyer ?? []) as unknown as SummaryReport[])
+    .filter(r => r.medications.some(m => m.hasta_cuando))
+
+  const porId = new Map<string, SummaryReport>()
+  for (const r of [...((data ?? []) as unknown as SummaryReport[]), ...cursosRegistrados]) {
+    porId.set(r.id, r)
+  }
+
+  const reports = [...porId.values()].sort((a, b) =>
     (a.horse?.name ?? '').localeCompare(b.horse?.name ?? '')
   )
 
@@ -102,8 +134,9 @@ export async function sendDailyMedicationSummary(): Promise<{
     const drugName = m.drug
       ? `${m.drug.nombre}${m.drug.nombre_comercial ? ` (${m.drug.nombre_comercial})` : ''}`
       : 'Medicamento'
+    const fechaCelda = courseLabel(r.fecha_tratamiento, m.hasta_cuando) ?? r.fecha_tratamiento
     return `<tr>
-      ${td(r.fecha_tratamiento)}
+      ${td(fechaCelda)}
       ${td(r.hora_tratamiento ?? '')}
       ${td(r.horse?.name ?? '')}
       ${td(r.horse?.microchip ?? '')}

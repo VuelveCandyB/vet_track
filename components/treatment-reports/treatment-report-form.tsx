@@ -11,6 +11,7 @@ import { Globe } from '@phosphor-icons/react'
 import ItemCodesSelect from './item-codes-select'
 import { TreatmentReportFormSkeleton } from './treatment-report-form-skeleton'
 import { PALETTE } from '@/lib/palette'
+import { MAX_COURSE_DAYS, validateCourse, addDays, courseDays, formatCourseRange, formatDaysLabel } from '@/lib/treatment-course'
 import type { Horse, Drug } from '@/lib/types'
 import type { CatalogItem } from './item-codes-select'
 
@@ -93,6 +94,8 @@ interface MedicationRow {
   dosis_unidad: string
   nivel_dosificacion: string
   selectedCategoria: string
+  frecuencia?: 'unica' | 'diaria'
+  hasta_cuando?: string
 }
 
 interface TreatmentReportFormProps {
@@ -121,6 +124,11 @@ interface TreatmentReportFormProps {
   updateAction?: typeof updateTreatmentReport | typeof updatePMFRecord
 }
 
+const FRECUENCIA_OPTIONS = [
+  { value: 'unica' as const, label: 'Dosis única' },
+  { value: 'diaria' as const, label: 'Varios días' },
+]
+
 const makeEmptyRow = (): MedicationRow => ({
   id: Math.random().toString(36).substring(7),
   drug_id: '',
@@ -128,6 +136,8 @@ const makeEmptyRow = (): MedicationRow => ({
   dosis_unidad: 'mg',
   nivel_dosificacion: '',
   selectedCategoria: '',
+  frecuencia: 'unica',
+  hasta_cuando: '',
 })
 
 export default function TreatmentReportForm({
@@ -157,7 +167,13 @@ export default function TreatmentReportForm({
   const dateInPR = (date: Date) => date.toLocaleDateString('en-CA', { timeZone: 'America/Puerto_Rico' })
   const getTodayDate = () => dateInPR(new Date())
   const getMinDateFor72Hours = () => dateInPR(new Date(Date.now() - 72 * 60 * 60 * 1000))
+  // Un tratamiento diario puede empezar hasta MAX_COURSE_DAYS días atrás (incluyendo hoy).
+  const getMinDateForCourse = () => addDays(getTodayDate(), -(MAX_COURSE_DAYS - 1))
   const [fechaTratamiento, setFechaTratamiento] = useState(getTodayDate())
+
+  // Tratamientos diarios (varios días) solo aplican al registro de tratamientos, no a PMF.
+  const allowCourse = createAction === createTreatmentReport
+  const anyCourse = allowCourse && rows.some(r => r.frecuencia === 'diaria')
 
   const categories = Array.from(new Set(drugs.map(d => d.categoria).filter(Boolean)))
 
@@ -219,6 +235,21 @@ export default function TreatmentReportForm({
         setError(`Fila ${i + 1}: Debe ingresar la dosis`)
         return
       }
+      if (allowCourse && row.frecuencia === 'diaria') {
+        if (!row.hasta_cuando) {
+          setError(`Fila ${i + 1}: Debe indicar hasta cuándo se dio el tratamiento`)
+          return
+        }
+        const courseError = validateCourse(fechaTratamiento, row.hasta_cuando)
+        if (courseError) {
+          setError(`Fila ${i + 1}: ${courseError}`)
+          return
+        }
+        if (row.hasta_cuando > getTodayDate()) {
+          setError(`Fila ${i + 1}: "Hasta cuándo" no puede ser una fecha futura`)
+          return
+        }
+      }
     }
 
     if (mode === 'create') {
@@ -234,7 +265,7 @@ export default function TreatmentReportForm({
           dosis_unidad: row.dosis_unidad || 'mg',
           nivel_dosificacion: row.nivel_dosificacion || null,
           tiempo_restriccion: drug?.withdrawal_time_horas || null,
-          hasta_cuando: null,
+          hasta_cuando: allowCourse && row.frecuencia === 'diaria' && row.hasta_cuando ? row.hasta_cuando : null,
         }
       })
 
@@ -253,7 +284,7 @@ export default function TreatmentReportForm({
           dosis_unidad: row.dosis_unidad || 'mg',
           nivel_dosificacion: row.nivel_dosificacion || null,
           tiempo_restriccion: drug?.withdrawal_time_horas || null,
-          hasta_cuando: null,
+          hasta_cuando: allowCourse && row.frecuencia === 'diaria' && row.hasta_cuando ? row.hasta_cuando : null,
         }
       })
 
@@ -401,6 +432,46 @@ export default function TreatmentReportForm({
         </div>
       </div>
 
+      {/* SECCIÓN: FECHA Y HORA */}
+      <div className="p-6 rounded-lg" style={{ background: PALETTE.background.white, border: `1px solid #E2E8F0`, boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+        <h3 className="text-sm font-semibold uppercase tracking-wider mb-6" style={{ color: PALETTE.primary.green }}>
+          Fecha y Hora
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="fecha_tratamiento" style={{ color: PALETTE.text.primary }}>
+              {anyCourse ? 'Fecha de inicio medicación *' : 'Fecha de inicio medicación * (máx. 72 h atrás)'}
+            </Label>
+            <Input
+              id="fecha_tratamiento"
+              name="fecha_tratamiento"
+              type="date"
+              value={fechaTratamiento}
+              onChange={(e) => setFechaTratamiento(e.target.value)}
+              min={anyCourse ? getMinDateForCourse() : getMinDateFor72Hours()}
+              max={getTodayDate()}
+              required
+              disabled={pending}
+              className="mt-1"
+            />
+          </div>
+          <div>
+            <Label htmlFor="hora_tratamiento" style={{ color: PALETTE.text.primary }}>{anyCourse ? 'Hora de la última dosis *' : 'Hora de tratamiento *'}</Label>
+            <Input
+              id="hora_tratamiento"
+              name="hora_tratamiento"
+              type="time"
+              value={horaTratamiento}
+              onChange={(e) => setHoraTratamiento(e.target.value)}
+              required
+              disabled={pending}
+              className="mt-1"
+            />
+          </div>
+        </div>
+      </div>
+
+
       {/* SECCIÓN: MEDICAMENTOS */}
       <div className="p-6 rounded-lg" style={{ background: PALETTE.background.white, border: `1px solid #E2E8F0`, boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
         <h3 className="text-sm font-semibold uppercase tracking-wider mb-6" style={{ color: PALETTE.primary.green }}>
@@ -501,6 +572,39 @@ export default function TreatmentReportForm({
                   </select>
                 </div>
 
+              </div>
+
+              {allowCourse && (
+                <div className="mb-4">
+                  <Label style={{ color: PALETTE.text.primary }}>Frecuencia</Label>
+                  <div role="radiogroup" aria-label="Frecuencia del tratamiento" className="inline-flex mt-1 p-1 rounded-md" style={{ background: '#F1F5F9' }}>
+                    {FRECUENCIA_OPTIONS.map(opt => {
+                      const active = (row.frecuencia ?? 'unica') === opt.value
+                      return (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          role="radio"
+                          aria-checked={active}
+                          disabled={pending}
+                          onClick={() => updateRow(idx, { frecuencia: opt.value, hasta_cuando: '' })}
+                          className="px-4 py-1.5 text-sm rounded transition-colors"
+                          style={{
+                            background: active ? PALETTE.primary.green : 'transparent',
+                            color: active ? '#FFFFFF' : PALETTE.text.primary,
+                            fontWeight: active ? 600 : 400,
+                            cursor: pending ? 'not-allowed' : 'pointer',
+                          }}
+                        >
+                          {opt.label}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <div>
                   <Label style={{ color: PALETTE.text.primary }}>Dosis *</Label>
                   <Input
@@ -555,6 +659,37 @@ export default function TreatmentReportForm({
                   </p>
                 </div>
               )}
+
+              {allowCourse && row.frecuencia === 'diaria' && (
+                <div className="mt-4 md:max-w-xs">
+                  <Label style={{ color: PALETTE.text.primary }}>Fecha final *</Label>
+                  <Input
+                    type="date"
+                    value={row.hasta_cuando ?? ''}
+                    onChange={(e) => updateRow(idx, { hasta_cuando: e.target.value })}
+                    min={fechaTratamiento}
+                    max={getTodayDate()}
+                    required
+                    disabled={pending}
+                    className="mt-1"
+                  />
+                  {(() => {
+                    if (!row.hasta_cuando) {
+                      return <p className="text-xs mt-1" style={{ color: PALETTE.text.secondary }}>Máximo {MAX_COURSE_DAYS} días, hasta hoy.</p>
+                    }
+                    const err = validateCourse(fechaTratamiento, row.hasta_cuando)
+                      ?? (row.hasta_cuando > getTodayDate() ? 'La fecha final no puede ser futura' : null)
+                    if (err) {
+                      return <p className="text-xs mt-1" style={{ color: '#dc2626' }}>{err}</p>
+                    }
+                    return (
+                      <p className="text-xs mt-1 font-semibold" style={{ color: PALETTE.primary.green }}>
+                        Del {formatCourseRange(fechaTratamiento, row.hasta_cuando)} · {formatDaysLabel(courseDays(fechaTratamiento, row.hasta_cuando))}
+                      </p>
+                    )
+                  })()}
+                </div>
+              )}
             </div>
           )
         })}
@@ -568,43 +703,6 @@ export default function TreatmentReportForm({
         >
           + Agregar otro medicamento
         </Button>
-      </div>
-
-      {/* SECCIÓN: FECHA Y HORA */}
-      <div className="p-6 rounded-lg" style={{ background: PALETTE.background.white, border: `1px solid #E2E8F0`, boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-        <h3 className="text-sm font-semibold uppercase tracking-wider mb-6" style={{ color: PALETTE.primary.green }}>
-          Fecha y Hora
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <Label htmlFor="fecha_tratamiento" style={{ color: PALETTE.text.primary }}>Fecha de Tratamiento * (máx. 72 horas atrás)</Label>
-            <Input
-              id="fecha_tratamiento"
-              name="fecha_tratamiento"
-              type="date"
-              value={fechaTratamiento}
-              onChange={(e) => setFechaTratamiento(e.target.value)}
-              min={getMinDateFor72Hours()}
-              max={getTodayDate()}
-              required
-              disabled={pending}
-              className="mt-1"
-            />
-          </div>
-          <div>
-            <Label htmlFor="hora_tratamiento" style={{ color: PALETTE.text.primary }}>Hora de Tratamiento *</Label>
-            <Input
-              id="hora_tratamiento"
-              name="hora_tratamiento"
-              type="time"
-              value={horaTratamiento}
-              onChange={(e) => setHoraTratamiento(e.target.value)}
-              required
-              disabled={pending}
-              className="mt-1"
-            />
-          </div>
-        </div>
       </div>
 
       {/* SECCIÓN: NOTAS */}
